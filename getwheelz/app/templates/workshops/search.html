@@ -1,1 +1,111 @@
+{% extends "base.html" %}
 
+{% block title %}Find Workshops — Getwheelz{% endblock %}
+
+{% block content %}
+<section class="search-results-page">
+    <div class="search-header">
+        <h1>Find a Workshop</h1>
+        <form action="{{ url_for('workshops.search') }}" method="get" class="search-form">
+            <input type="text" name="service" placeholder="What service do you need?" value="{{ service }}">
+            <button type="submit" class="fw-btn-con"><span class="fw-btn">Search</span></button>
+        </form>
+    </div>
+
+    <div class="view-toggle">
+        <button id="show-map-btn" class="toggle-btn active">Map View</button>
+        <button id="show-list-btn" class="toggle-btn">List View</button>
+    </div>
+
+    <div id="map" class="results-map"></div>
+
+    <div id="workshop-list" class="workshop-list hidden">
+        {% if workshops %}
+        {% for workshop in workshops %}
+        <a href="{{ url_for('workshops.profile', w_id=workshop.w_id) }}" class="workshop-card">
+            <div class="workshop-card-info">
+                <h3>{{ workshop.name }}</h3>
+                <p><i class='bx bx-map'></i> {{ workshop.address }}</p>
+            </div>
+            <i class='bx bx-chevron-right'></i>
+        </a>
+        {% endfor %}
+        {% else %}
+        <p class="no-results">No workshops found. Try a different search.</p>
+        {% endif %}
+    </div>
+</section>
+<div class="login-modal" id="loginModal">
+    <form action="{{ url_for('auth.login') }}" method="post" class="login-form">
+        <h2>Login</h2>
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <div class="fw-btn-con">
+            <button class="fw-btn" type="submit">Login</button>
+        </div>
+        <p>Don't have an account? <a data-signup="signupBtn">Sign Up</a></p>
+        <p>or</p>
+        <button class="ggl-btn" id="google-login-btn">Login with Google</button>
+    </form>
+</div>
+<div class="signup-modal" id="signUpModal">
+    <form action="{{ url_for('auth.signup') }}" method="post" class="signup-form">
+        <h2>Sign Up</h2>
+        <input type="text" name="name" placeholder="Username" required>
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <input type="password" name="confirm_password" placeholder="Confirm Password" required>
+        <select name="role">
+            <option value="customer">Customer</option>
+            <option value="owner">Workshop Owner</option>
+            <option value="mechanic">Mechanic</option>
+        </select>
+        <div class="fw-btn-con">
+            <button class="fw-btn" type="submit">Sign Up</button>
+        </div>
+        <p>Already have an account? <a data-login="loginBtn">Login</a></p>
+        <p>or</p>
+        <button class="ggl-btn" id="google-signup-btn">Sign Up with Google</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const workshopData = [
+        {% for workshop in workshops %}
+        {
+            id: {{ workshop.w_id }},
+            name: {{ workshop.name | tojson }},
+            address: {{ workshop.address | tojson }},
+            lat: {{ workshop.latitude or 'null' }},
+            lng: {{ workshop.longitude or 'null' }}
+        },
+        {% endfor %}
+    ];
+    const presetUserLat = {{ user_lat or 'null' }};
+    const presetUserLng = {{ user_lng or 'null' }};
+</script>
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+<script>
+    const showMapBtn = document.getElementById('show-map-btn');
+    const showListBtn = document.getElementById('show-list-btn');
+    const mapEl = document.getElementById('map');
+    const listEl = document.getElementById('workshop-list');
+
+    if (showMapBtn && showListBtn) {
+        showMapBtn.addEventListener('click', () => {
+            mapEl.classList.remove('hidden');
+            listEl.classList.add('hidden');
+            showMapBtn.classList.add('active');
+            showListBtn.classList.remove('active');
+        });
+        showListBtn.addEventListener('click', () => {
+            mapEl.classList.add('hidden');
+            listEl.classList.remove('hidden');
+            showListBtn.classList.add('active');
+            showMapBtn.classList.remove('active');
+        });
+    }
+</script>
+{% endblock %}

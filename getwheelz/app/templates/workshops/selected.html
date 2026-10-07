@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}{{ workshop.name }} — Getwheelz{% endblock %}
+
+{% block content %}
+<section class="workshop-profile">
+
+    <div class="profile-header">
+        <div class="profile-header-info">
+            <h1>{{ workshop.name }}</h1>
+            <p class="profile-address"><i class='bx bx-map'></i> {{ workshop.address }}</p>
+            {% if workshop.contact_info %}
+            <p class="profile-contact"><i class='bx bx-phone'></i> {{ workshop.contact_info }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="profile-body">
+        <div class="profile-main">
+            <h2>Services Offered</h2>
+            <div class="service-list">
+                {% for service in services %}
+                <div class="service-item">
+                    <div class="service-info">
+                        <h3>{{ service.s_name }}</h3>
+                        <p>
+                            {% if service.duration %}<span><i class='bx bx-time'></i> {{ service.duration }}</span>{% endif %}
+                            {% if service.price_range %}<span><i class='bx bx-rupee'></i> {{ service.price_range }}</span>{% endif %}
+                        </p>
+                    </div>
+                    <a href="{{ url_for('bookings.new', w_id=workshop.w_id, s_id=service.s_id) }}" class="book-btn">Book</a>
+                </div>
+                {% else %}
+                <p class="no-results">This workshop hasn't listed any services yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="profile-sidebar">
+            <div id="profile-map"></div>
+            <a href="{{ url_for('bookings.new', w_id=workshop.w_id) }}" class="book-btn full-width">Book a Service</a>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const workshopLat = {{ workshop.latitude or 'null' }};
+    const workshopLng = {{ workshop.longitude or 'null' }};
+    const workshopName = {{ workshop.name | tojson }};
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (workshopLat && workshopLng) {
+            const map = L.map('profile-map').setView([workshopLat, workshopLng], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+            L.marker([workshopLat, workshopLng]).addTo(map).bindPopup(workshopName);
+        }
+    });
+</script>
+{% endblock %}
