@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}About Us — Getwheelz{% endblock %}
+
+{% block content %}
+<div class="index-con" id="mainCon">
+    <section class="static-page">
+        <div class="static-page-hero">
+            <h1>About Getwheelz</h1>
+            <p>Connecting vehicle owners with trusted mechanics, one booking at a time.</p>
+        </div>
+
+        <div class="static-page-content">
+            <h2>Our Mission</h2>
+            <p>
+                Finding a reliable mechanic shouldn't mean asking around for recommendations or
+                gambling on the nearest garage. Getwheelz was built to make that process simple —
+                search by the service you need, see real workshops near you, and book directly
+                without the back-and-forth.
+            </p>
+
+            <h2>What We Offer</h2>
+            <div class="about-grid">
+                <div class="about-card">
+                    <i class='bx bx-search-alt'></i>
+                    <h3>Find Workshops</h3>
+                    <p>Search by service type and location to discover mechanics near you.</p>
+                </div>
+                <div class="about-card">
+                    <i class='bx bx-calendar-check'></i>
+                    <h3>Book Instantly</h3>
+                    <p>Reserve a service slot directly through the platform — no phone calls needed.</p>
+                </div>
+                <div class="about-card">
+                    <i class='bx bx-wrench'></i>
+                    <h3>For Workshop Owners</h3>
+                    <p>List your services, manage bookings, and grow your customer base online.</p>
+                </div>
+                <div class="about-card">
+                    <i class='bx bx-group'></i>
+                    <h3>For Mechanics</h3>
+                    <p>Join a workshop that fits your skills and start working through the platform.</p>
+                </div>
+            </div>
+
+            <h2>Get In Touch</h2>
+            <p>
+                Have questions, feedback, or want to list your workshop? Reach out on our
+                <a href="{{ url_for('main.contact') }}">contact page</a> — we'd love to hear from you.
+            </p>
+        </div>
+    </section>
+</div>
+<div class="login-modal" id="loginModal">
+    <form action="{{ url_for('auth.login') }}" method="post" class="login-form">
+        <h2>Login</h2>
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <div class="fw-btn-con">
+            <button class="fw-btn" type="submit">Login</button>
+        </div>
+        <p>Don't have an account? <a data-signup="signupBtn">Sign Up</a></p>
+        <p>or</p>
+        <button class="ggl-btn" id="google-login-btn">Login with Google</button>
+    </form>
+</div>
+<div class="signup-modal" id="signUpModal">
+    <form action="{{ url_for('auth.signup') }}" method="post" class="signup-form">
+        <h2>Sign Up</h2>
+        <input type="text" name="name" placeholder="Username" required>
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <input type="password" name="confirm_password" placeholder="Confirm Password" required>
+        <select name="role">
+            <option value="customer">Customer</option>
+            <option value="owner">Workshop Owner</option>
+            <option value="mechanic">Mechanic</option>
+        </select>
+        <div class="fw-btn-con">
+            <button class="fw-btn" type="submit">Sign Up</button>
+        </div>
+        <p>Already have an account? <a data-login="loginBtn">Login</a></p>
+        <p>or</p>
+        <button class="ggl-btn" id="google-signup-btn">Sign Up with Google</button>
+    </form>
+</div>
+{% endblock %}

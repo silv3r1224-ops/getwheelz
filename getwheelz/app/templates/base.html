@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Getwheelz{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    {% include 'partials/navbar.html' %}
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+    {% if session.role != 'admin' and session.role != 'owner' %}
+    {% include 'partials/footer.html' %}
+    {% endif %}
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+    {% block scripts %}{% endblock %}
+
+</body>
+</html>

@@ -1,1 +1,126 @@
+{% extends "base.html" %}
 
+{% block title %}GetWheelz — Find Trusted Mechanics{% endblock %}
+
+{% block content %}
+<div class="index-con" id="mainCon">
+    <section class="hero">
+        <h1>Find Trusted Mechanics Near You</h1>
+        <p id="sub-ttl">Book a workshop for any service, anytime.</p>
+
+        <form action="{{ url_for('workshops.search') }}" method="get" class="search-form">
+            <input type="text" name="service" placeholder="What service do you need?">
+            <div class="fw-btn-con">
+                <button class="fw-btn" type="submit">Find Workshops</button>
+            </div>
+        </form>
+        <div class="container">
+            <div class="fw-btn-con">
+                <a class="fw-btn" data-signup="signupBtn">Get Started</a>
+            </div>
+        </div>
+
+        <div id="hero-3d-canvas"></div>
+    </section>
+
+    <section class="categories">
+        <h2>Browse by Service</h2>
+        <div class="category-grid">
+            <a href="{{ url_for('workshops.search', service='engine') }}" class="category-card">
+                <i class='bx bx-cog'></i>
+                <span>Engine Repair</span>
+            </a>
+            <a href="{{ url_for('workshops.search', service='electrical') }}" class="category-card">
+                <i class='bx bx-bulb'></i>
+                <span>Electrical</span>
+            </a>
+            <a href="{{ url_for('workshops.search', service='tires') }}" class="category-card">
+                <i class='bx bx-disc'></i>
+                <span>Tires</span>
+            </a>
+            <a href="{{ url_for('workshops.search', service='ac') }}" class="category-card">
+                <i class='bx bx-wind'></i>
+                <span>AC Service</span>
+            </a>
+            <a href="{{ url_for('workshops.search', service='general') }}" class="category-card">
+                <i class='bx bx-wrench'></i>
+                <span>General Servicing</span>
+            </a>
+        </div>
+    </section>
+
+    <section class="map-section">
+        <h2>Workshops Near You</h2>
+        <div id="map"></div>
+    </section>
+
+    <section class="how-it-works">
+        <h2>How It Works</h2>
+        <div class="steps">
+            <div class="step">
+                <span class="step-number">1</span>
+                <p>Search nearby workshops</p>
+            </div>
+            <div class="step">
+                <span class="step-number">2</span>
+                <p>Book a service slot</p>
+            </div>
+            <div class="step">
+                <span class="step-number">3</span>
+                <p>Get your vehicle serviced</p>
+            </div>
+        </div>
+    </section>
+</div>
+<div class="login-modal" id="loginModal">
+    <form action="{{ url_for('auth.login') }}" method="post" class="login-form">
+        <h2>Login</h2>
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <div class="fw-btn-con">
+            <button class="fw-btn" type="submit">Login</button>
+        </div>
+        <p>Don't have an account? <a data-signup="signupBtn">Sign Up</a></p>
+        <p>or</p>
+        <button class="ggl-btn" id="google-login-btn">Login with Google</button>
+    </form>
+</div>
+<div class="signup-modal" id="signUpModal">
+    <form action="{{ url_for('auth.signup') }}" method="post" class="signup-form">
+        <h2>Sign Up</h2>
+        <input type="text" name="name" placeholder="Username" required>
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <input type="password" name="confirm_password" placeholder="Confirm Password" required>
+        <select name="role">
+            <option value="customer">Customer</option>
+            <option value="owner">Workshop Owner</option>
+            <option value="mechanic">Mechanic</option>
+        </select>
+        <div class="fw-btn-con">
+            <button class="fw-btn" type="submit">Sign Up</button>
+        </div>
+        <p>Already have an account? <a data-login="loginBtn">Login</a></p>
+        <p>or</p>
+        <button class="ggl-btn" id="google-signup-btn">Sign Up with Google</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const workshopData = [
+        {% for workshop in workshops %}
+    {
+        id: { { workshop.w_id } },
+        name: { { workshop.name | tojson } },
+        address: { { workshop.address | tojson } },
+        lat: { { workshop.latitude or 'null' } },
+        lng: { { workshop.longitude or 'null' } }
+    },
+    {% endfor %}
+    ];
+</script>
+<script src="{{ url_for('static', filename='js/three-scene.js') }}"></script>
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+{% endblock %}
