@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Booking Confirmed — Getwheelz{% endblock %}
+
+{% block content %}
+<section class="confirmation-page">
+    <div class="confirmation-icon"><i class='bx bx-check-circle'></i></div>
+    <h1>Booking Requested!</h1>
+    <p>Your request has been sent to the workshop — you'll be notified once it's confirmed.</p>
+
+    <div class="confirmation-card">
+        <div class="confirmation-row">
+            <span>Workshop</span>
+            <strong>{{ booking.workshop_name }}</strong>
+        </div>
+        <div class="confirmation-row">
+            <span>Address</span>
+            <strong>{{ booking.address }}</strong>
+        </div>
+        <div class="confirmation-row">
+            <span>Service</span>
+            <strong>{{ booking.s_name }}</strong>
+        </div>
+        <div class="confirmation-row">
+            <span>Requested Time</span>
+            <strong>{{ booking.requested_time.strftime('%d %b %Y, %I:%M %p') }}</strong>
+        </div>
+        <div class="confirmation-row">
+            <span>Status</span>
+            <span class="status-badge status-{{ booking.status }}">{{ booking.status }}</span>
+        </div>
+    </div>
+
+    <a href="{{ url_for('bookings.my_bookings') }}" class="book-btn">View My Bookings</a>
+</section>
+{% endblock %}

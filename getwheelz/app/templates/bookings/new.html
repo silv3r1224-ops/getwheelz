@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Book a Service — Getwheelz{% endblock %}
+
+{% block content %}
+<section class="booking-page">
+    <div class="booking-header">
+        <h1>Book a Service</h1>
+        <p class="booking-workshop-name"><i class='bx bx-store'></i> {{ workshop.name }}</p>
+        <p class="booking-workshop-address"><i class='bx bx-map'></i> {{ workshop.address }}</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('bookings.new', w_id=workshop.w_id) }}" class="booking-form">
+        <label for="s_id">Select a Service</label>
+        <select name="s_id" id="s_id" required>
+            <option value="" disabled {% if not preselected_service %}selected{% endif %}>Choose a service</option>
+            {% for service in services %}
+            <option value="{{ service.s_id }}" {% if preselected_service == service.s_id %}selected{% endif %}>
+                {{ service.s_name }}{% if service.price_range %} — {{ service.price_range }}{% endif %}
+            </option>
+            {% endfor %}
+        </select>
+
+        <label for="requested_time">Preferred Date & Time</label>
+        <input type="datetime-local" id="requested_time" name="requested_time" required>
+
+        <button type="submit" class="fw-btn-con"><span class="fw-btn">Confirm Booking</span></button>
+    </form>
+</section>
+{% endblock %}
