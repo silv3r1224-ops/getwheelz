@@ -1,1 +1,80 @@
+{% extends "base.html" %}
 
+{% block title %}Home — Getwheelz{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <h1>Welcome back, {{ session.user_name }}</h1>
+    <p id="sub-ttl">Find a workshop and book a service in minutes.</p>
+
+    <form action="{{ url_for('workshops.search') }}" method="get" class="search-form" id="hero-search-form">
+        <input type="text" name="service" id="main-search-input" placeholder="What service do you need?">
+
+        <div class="filter-wrapper">
+            <button type="button" id="filter-toggle-btn" class="filter-btn" title="Filter by service">
+                <i class='bx bx-filter-alt'></i>
+            </button>
+            <div class="filter-popover" id="filterPopover">
+                <h4>Filter by Service</h4>
+                {% for opt in ['Engine Repair', 'Electrical', 'Tires', 'AC Service', 'General Servicing'] %}
+                <label class="filter-check">
+                    <input type="checkbox" name="services" value="{{ opt }}"> {{ opt }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <input type="hidden" id="search-lat" name="lat">
+        <input type="hidden" id="search-lng" name="lng">
+
+        <div class="fw-btn-con">
+            <button class="fw-btn" type="submit">Find Workshops</button>
+        </div>
+    </form>
+</section>
+
+<section class="recommended-section">
+    <h2>Recommended Workshops</h2>
+    <div class="carousel-wrapper">
+        <button class="carousel-btn prev" id="rec-prev"><i class='bx bx-chevron-left'></i></button>
+        <div class="carousel-track" id="rec-track">
+            {% for w in recommended %}
+            <a href="{{ url_for('workshops.selected', w_id=w.w_id) }}" class="carousel-card">
+                <div class="carousel-card-img">
+                    {% if w.photo_path %}
+                    <img src="{{ url_for('static', filename=w.photo_path) }}" alt="{{ w.name }}">
+                    {% else %}
+                    <div class="carousel-card-img-placeholder"><i class='bx bx-store'></i></div>
+                    {% endif %}
+                </div>
+                <div class="carousel-card-body">
+                    <h3>{{ w.name }}</h3>
+                    <p class="carousel-card-address"><i class='bx bx-map'></i> {{ w.address }}</p>
+                    <div class="carousel-card-tags">
+                        {% for service in (w.service_names or [])[:3] %}
+                        <span class="service-tag">{{ service }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </a>
+            {% else %}
+            <p class="no-results">No workshops to show yet.</p>
+            {% endfor %}
+        </div>
+        <button class="carousel-btn next" id="rec-next"><i class='bx bx-chevron-right'></i></button>
+    </div>
+</section>
+
+<section class="recommended-section" id="nearby-section" style="display:none;">
+    <h2>Nearby Workshops</h2>
+    <div class="carousel-wrapper">
+        <button class="carousel-btn prev" id="nearby-prev"><i class='bx bx-chevron-left'></i></button>
+        <div class="carousel-track" id="nearby-track"></div>
+        <button class="carousel-btn next" id="nearby-next"><i class='bx bx-chevron-right'></i></button>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% endblock %}
