@@ -1,1 +1,248 @@
+{% extends "base.html" %}
 
+{% block title %}Admin Dashboard — Getwheelz{% endblock %}
+
+{% block content %}
+<div class="admin-layout" id="adminLayout">
+
+    <aside class="admin-sidebar" id="sideBar">
+        <div class="sidebar-header">
+            <i class='bx bxs-shield-alt-2'></i>
+            <span>Admin Panel</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#overview" class="sidebar-link active">
+                <i class='bx bx-grid-alt'></i> Overview
+            </a>
+            <a href="#all-customers" class="sidebar-link">
+                <i class='bx bx-user'></i> Customers
+            </a>
+            <a href="#all-owners" class="sidebar-link">
+                <i class='bx bx-store'></i> Owners
+            </a>
+            <a href="#all-workshops" class="sidebar-link">
+                <i class='bx bx-wrench'></i> Workshops
+            </a>
+            <a href="#all-feedback" class="sidebar-link">
+                <i class='bx bx-message-detail'></i> Feedback
+            </a>
+            <a href="{{ url_for('dashboard.admin_services') }}" class="sidebar-link">
+                <i class='bx bx-list-ul'></i> Service Catalog
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-link">
+                <i class='bx bx-log-out'></i> Logout
+            </a>
+        </div>
+    </aside>
+    <div id="overview"></div>
+    <main class="admin-main">
+        <h1>Overview</h1>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-number">{{ total_customers }}</span>
+                <span class="stat-label">Customers</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ total_owners }}</span>
+                <span class="stat-label">Workshop Owners</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ total_mechanics }}</span>
+                <span class="stat-label">Mechanics</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ total_workshops }}</span>
+                <span class="stat-label">Workshops</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ total_bookings }}</span>
+                <span class="stat-label">Bookings</span>
+            </div>
+        </div>
+
+        <div class="admin-section">
+            <h2>Search record</h2>
+            <form class="search-admin" action="{{ url_for('dashboard.admin') }}">
+                <input type="email" name="email" placeholder="Enter Email">
+                <select name="role">
+                    <option value="customer">Customer</option>
+                    <option value="owner">Workshop Owner</option>
+                    <option value="mechanic">Mechanic</option>
+                </select>
+                <button value="search"><i class='bx bx-search'></i></button>
+            </form>
+            <div class="admin-section">
+                {% if result %}
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>U_id</th>
+                            <th>Role_id</th>
+                            <th>Role</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Joined</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+
+                            <td>{{result[1]}}</td>
+                            <td>{{result[0]}}</td>
+                            <td>{{role}}</td>
+                            <td>{{result[2]}}</td>
+                            <td>{{result[3]}}</td>
+                            <td>{{result[4].strftime('%d %b %Y')}}</td>
+                            <td>
+                                <div class="action">
+                                    <a data-delete-url="{{url_for('dashboard.admin_terminate', role=role, u_id = result[1])}}" class="deleteAcc">Delete</a>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                {% elif searched %}
+                <p class="no-results">No record found.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="admin-section" id="all-customers">
+            <h2>All Customers</h2>
+            {% if customers %}
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>S.no.</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Joined</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in customers %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ c.name }}</td>
+                        <td>{{ c.email }}</td>
+                        <td>{{ c.created_at.strftime('%d %b %Y') }}</td>
+                        <td>
+                            <a class="copy-email" data-email="{{ c.email }}">
+                                <i class='bx bx-copy'></i> Copy
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="no-results">No customers yet.</p>
+            {% endif %}
+        </div>
+
+        <div class="admin-section" id="all-owners">
+            <h2>All Workshop Owners</h2>
+            {% if owners %}
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>S.no.</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Joined</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for o in owners %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ o.name }}</td>
+                        <td>{{ o.email }}</td>
+                        <td>{{ o.created_at.strftime('%d %b %Y') }}</td>
+                        <td>
+                            <a class="copy-email" data-email="{{ o.email }}">
+                                <i class='bx bx-copy'></i> Copy
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="no-results">No owners yet.</p>
+            {% endif %}
+        </div>
+
+        <div class="admin-section" id="all-workshops">
+            <h2>All Workshops</h2>
+            {% if workshops %}
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Address</th>
+                        <th>Owner</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for w in workshops %}
+                    <tr>
+                        <td>{{ w.name }}</td>
+                        <td>{{ w.address }}</td>
+                        <td>{{ w.owner_name }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="no-results">No workshops listed yet.</p>
+            {% endif %}
+        </div>
+
+        <div class="admin-section" id="all-feedback">
+            <h1>Feedback & Messages</h1>
+
+            {% if feedback_list %}
+            <div class="feedback-list">
+                {% for f in feedback_list %}
+                <div class="feedback-card {% if not f.is_read %}unread{% endif %}">
+                    <div class="feedback-card-header">
+                        <div>
+                            <h3>{{ f.subject or 'No subject' }}</h3>
+                            <p class="feedback-meta">{{ f.name }} · {{ f.email }} · {{ f.submitted_at.strftime('%d %b
+                                %Y, %I:%M %p') }}</p>
+                        </div>
+                        {% if not f.is_read %}
+                        <form method="POST" action="{{ url_for('dashboard.mark_feedback_read', f_id=f.f_id) }}">
+                            <button type="submit" class="mini-btn confirm">Mark as read</button>
+                        </form>
+                        {% else %}
+                        <span class="status-badge status-completed">Read</span>
+                        {% endif %}
+                    </div>
+                    <p class="feedback-message">{{ f.message }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="no-results">No messages yet.</p>
+            {% endif %}
+        </div>
+    </main>
+</div>
+<div class="delete-con" id="deleteCon">
+    <h2>Are you sure?</h2>
+    <div class="action-sure">
+        <a href="#" id="confirmDel">Yes</a>
+    </div>
+    <div class="action-sure">
+        <a href="#" id="cancelDel">cancel</a>
+    </div>
+</div>
+{% endblock %}

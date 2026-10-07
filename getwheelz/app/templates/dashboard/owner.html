@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block title %}Owner Dashboard — Getwheelz{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+
+    <aside class="admin-sidebar" id="sideBar">
+        <div class="sidebar-header">
+            <i class='bx bxs-store'></i>
+            <span>Owner Panel</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('dashboard.owner') }}" class="sidebar-link">
+                <i class='bx bx-grid-alt'></i> Overview
+            </a>
+            <a href="#bookings" class="sidebar-link">
+                <i class='bx bx-calendar-check'></i> Bookings
+            </a>
+            <a href="#services" class="sidebar-link">
+                <i class='bx bx-wrench'></i> Services
+            </a>
+            <a href="#mechanics" class="sidebar-link">
+                <i class='bx bx-group'></i> Mechanics
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-link">
+                <i class='bx bx-log-out'></i> Logout
+            </a>
+        </div>
+    </aside>
+
+    <main class="admin-main">
+
+        {% if not workshop %}
+        <div class="no-workshop-notice">
+            <h1>Welcome!</h1>
+            <p>You haven't listed a workshop yet. Set one up to start receiving bookings.</p>
+            <a href="#" class="book-btn" id="create-workshop-btn">Create Workshop</a>
+        </div>
+        {% else %}
+
+        <h1>{{ workshop.name }}</h1>
+        <p class="workshop-address"><i class='bx bx-map'></i> {{ workshop.address }}</p>
+
+        <div class="workshop-photo-section">
+            <div class="workshop-photo-preview">
+                {% if workshop.photo_path %}
+                <img src="{{ url_for('static', filename=workshop.photo_path) }}" alt="{{ workshop.name }}">
+                {% else %}
+                <div class="workshop-photo-placeholder"><i class='bx bx-image-add'></i></div>
+                {% endif %}
+            </div>
+
+            <form method="POST" action="{{ url_for('dashboard.upload_workshop_photo') }}" enctype="multipart/form-data"
+                class="workshop-photo-form">
+                <label for="photo" class="mini-btn confirm">
+                    <i class='bx bx-upload'></i> {% if workshop.photo_path %}Change Photo{% else %}Add Photo{% endif %}
+                </label>
+                <input type="file" name="photo" id="photo" accept="image/*" style="display: none;"
+                    onchange="this.form.submit()">
+            </form>
+        </div>
+
+        <button id="add-service-btn" class="mini-btn confirm" style="margin-top: 16px;">
+            <i class='bx bx-plus'></i> Add Service
+        </button>
+
+        <div class="login-modal" id="addServiceModal">
+            <form method="POST" action="{{ url_for('dashboard.add_service') }}" class="login-form">
+                <h2>Add a Service</h2>
+
+                <select name="sc_id" required>
+                    <option value="" disabled selected>Select a service</option>
+                    {% for c in service_catalog %}
+                    <option value="{{ c.sc_id }}">{{ c.s_name }}</option>
+                    {% endfor %}
+                </select>
+
+                <input type="text" name="price_range" placeholder="Price Range (e.g. ₹500–800)">
+                <input type="text" name="duration" placeholder="Duration (e.g. 1–2 hours)">
+
+                <button type="submit" class="fw-btn-con"><span class="fw-btn">Add Service</span></button>
+            </form>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-number">{{ stats.total_bookings }}</span>
+                <span class="stat-label">Total Bookings</span>
+            </div>
+            <div class="stat-card highlight">
+                <span class="stat-number">{{ stats.pending_bookings }}</span>
+                <span class="stat-label">Pending Bookings</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ stats.total_services }}</span>
+                <span class="stat-label">Services Offered</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ stats.total_mechanics }}</span>
+                <span class="stat-label">Mechanics</span>
+            </div>
+        </div>
+
+        <div class="admin-section" id="bookings">
+            <h2>Bookings</h2>
+            {% if bookings %}
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Customer</th>
+                        <th>Service</th>
+                        <th>Requested Time</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in bookings %}
+                    <tr>
+                        <td>{{ b.customer_name }}</td>
+                        <td>{{ b.s_name }}</td>
+                        <td>{{ b.requested_time.strftime('%d %b %Y, %I:%M %p') }}</td>
+                        <td><span class="status-badge status-{{ b.status }}">{{ b.status }}</span></td>
+                        <td>
+                            {% if b.status == 'pending' %}
+                            <form method="POST"
+                                action="{{ url_for('dashboard.update_booking_status', booking_id=b.b_id, action='confirm') }}"
+                                class="inline-form">
+                                <button type="submit" class="mini-btn confirm">Confirm</button>
+                            </form>
+                            <form method="POST"
+                                action="{{ url_for('dashboard.update_booking_status', booking_id=b.b_id, action='cancel') }}"
+                                class="inline-form">
+                                <button type="submit" class="mini-btn cancel">Cancel</button>
+                            </form>
+                            {% elif b.status == 'confirmed' %}
+                            <form method="POST"
+                                action="{{ url_for('dashboard.update_booking_status', booking_id=b.b_id, action='complete') }}"
+                                class="inline-form">
+                                <button type="submit" class="mini-btn confirm">Mark Complete</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="no-results">No bookings yet.</p>
+            {% endif %}
+        </div>
+
+        <div class="admin-section" id="services">
+            <h2>Services Offered</h2>
+            {% if services %}
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Service</th>
+                        <th>Price Range</th>
+                        <th>Duration</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in services %}
+                    <tr>
+                        <td>{{ s.s_name }}</td>
+                        <td>{{ s.price_range or '—' }}</td>
+                        <td>{{ s.duration or '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="no-results">No services listed yet.</p>
+            {% endif %}
+        </div>
+
+        <div class="admin-section" id="mechanics">
+            <h2>Pending Mechanic Requests</h2>
+            {% if pending_requests %}
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Experience</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in pending_requests %}
+                    <tr>
+                        <td>{{ m.name }}</td>
+                        <td>{{ m.email }}</td>
+                        <td>{{ m.experience_yrs or '—' }} yrs</td>
+                        <td>
+                            <form method="POST"
+                                action="{{ url_for('dashboard.review_mechanic', mechanic_id=m.m_id, action='accept') }}"
+                                class="inline-form">
+                                <button type="submit" class="mini-btn confirm">Accept</button>
+                            </form>
+                            <form method="POST"
+                                action="{{ url_for('dashboard.review_mechanic', mechanic_id=m.m_id, action='reject') }}"
+                                class="inline-form">
+                                <button type="submit" class="mini-btn cancel">Reject</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="no-results">No pending requests.</p>
+            {% endif %}
+
+            <h2 style="margin-top: 30px;">Your Mechanics</h2>
+            {% if mechanics %}
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Experience</th>
+                        <th>Availability</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in mechanics %}
+                    <tr>
+                        <td>{{ m.name }}</td>
+                        <td>{{ m.email }}</td>
+                        <td>{{ m.experience_yrs or '—' }} yrs</td>
+                        <td>{{ m.active_stat }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="no-results">No mechanics working here yet.</p>
+            {% endif %}
+        </div>
+
+        {% endif %}
+    </main>
+
+</div>
+<div class="login-modal" id="createWorkshopModal">
+    <form method="POST" action="{{ url_for('dashboard.create_workshop') }}" class="login-form">
+        <h2>Set Up Your Workshop</h2>
+
+        <input type="text" name="name" placeholder="Workshop Name" required>
+        <input type="text" name="address" placeholder="Address" required>
+        <input type="text" name="contact_no" placeholder="Contact Number">
+
+        <p style="font-size: 13px; color: rgba(255,255,255,0.6); align-self: flex-start;">
+            Click or drag the pin to mark your workshop's exact location
+        </p>
+
+        <div class="pin-map-wrapper">
+            <div id="workshop-pin-map"></div>
+        </div>
+
+        <input type="hidden" id="latitude" name="latitude">
+        <input type="hidden" id="longitude" name="longitude">
+        <p id="location-status" style="font-size: 13px; color: rgba(255,255,255,0.5);"></p>
+
+        <button type="submit" class="fw-btn-con"><span class="fw-btn">Create Workshop</span></button>
+    </form>
+</div>
+{% endblock %}
