@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
         const start = () => {
             window.clearTimeout(timer);
-            timer = window.setTimeout(dismiss, 4000);
+            timer = window.setTimeout(dismiss, 3000);
         };
         message.addEventListener("mouseenter", () => window.clearTimeout(timer));
         message.addEventListener("mouseleave", start);

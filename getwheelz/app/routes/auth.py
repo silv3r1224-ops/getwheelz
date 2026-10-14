@@ -16,11 +16,11 @@ def signup():
 
         allowed_roles = ('customer', 'owner', 'mechanic')
         if role not in allowed_roles:
-            flash('Invalid role selected')
+            flash('Invalid role selected', 'error')
             return redirect(url_for('main.index'))
 
         if password != confirm_password:
-            flash('Passwords do not match')
+            flash('Passwords do not match', 'error')
             return redirect(url_for('main.index'))
 
         password_hash = generate_password_hash(password)
@@ -47,13 +47,13 @@ def signup():
                     (user_id,)
                 )
             conn.commit()
-            flash('Account created successfully. Please log in.')
+            flash('Account created successfully. Please log in.', 'success')
             return redirect(url_for('main.index'))
 
         except Exception:
             conn.rollback()
             logging.exception("Error creating user account")
-            flash('Something went wrong - that email may already be registered.')
+            flash('Something went wrong - that email may already be registered.', 'error')
             return redirect(url_for('main.index'))
         finally:
             cur.close()
@@ -75,7 +75,7 @@ def login():
                 user = cur.fetchone()
 
                 if user is None or not check_password_hash(user['password'], password):
-                    flash('Invalid email or password')
+                    flash('Invalid email or password', 'error')
                     return redirect(url_for('main.index'))
 
                 admin_row = None
@@ -86,7 +86,7 @@ def login():
                     )
                     admin_row = cur.fetchone()
                     if not admin_row or not admin_row['is_active']:
-                        flash('This admin account is inactive or not configured.')
+                        flash('This admin account is inactive or not configured.', 'error') 
                         return redirect(url_for('main.index'))
 
                 session.clear()
@@ -96,6 +96,8 @@ def login():
                 if admin_row:
                     session['admin_type'] = admin_row['admin_type']
                     session['is_main_admin'] = admin_row['admin_type'] == 'main'
+
+                flash(f"Welcome back, {user['name']}!", 'success') 
 
                 if user['role'] == 'admin':
                     return redirect(url_for('dashboard.admin'))
@@ -109,8 +111,11 @@ def login():
                     return redirect(url_for('main.index'))
         finally:
             conn.close()
+    return redirect(url_for('main.index'))
+    
 
 @auth_bp.route('/logout')
 def logout():
     session.clear()
+    flash('You have been logged out.', 'success')
     return redirect(url_for('main.index'))

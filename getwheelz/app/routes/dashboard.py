@@ -95,6 +95,14 @@ def admin():
     """)
     owners = cur.fetchall()
 
+    # All mechanic records
+    cur.execute("""
+        SELECT m.m_id, u.name, u.email, u.created_at
+        FROM mechanic m JOIN users u ON m.u_id = u.u_id
+        ORDER BY u.created_at DESC
+    """)
+    mechanics = cur.fetchall()
+
     # All workshop records
     cur.execute("""
         SELECT w.w_id, w.name, w.address, u.name AS owner_name
@@ -161,6 +169,7 @@ def admin():
         total_bookings=total_bookings,
         customers=customers,
         owners=owners,
+        mechanics=mechanics,
         workshops=workshops,
         feedback_list=feedback_list,
         result=result,
