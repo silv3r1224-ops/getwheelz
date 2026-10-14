@@ -1,0 +1,1218 @@
+{% extends "base.html" %}
+
+{% block title %}Owner Dashboard — Getwheelz{% endblock %}
+
+{% block head %}
+
+{{ super() }}
+
+<style>
+    /* Owner Dashboard Styles */
+    .owner-hero-card {
+        background: var(--second-bg);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        overflow: hidden;
+        margin-bottom: 28px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .owner-banner {
+        height: 160px;
+        background: linear-gradient(135deg, rgba(191, 93, 111, 0.8), rgba(30, 20, 40, 0.95)),
+            radial-gradient(circle at 80% 20%, rgba(255, 122, 155, 0.3), transparent);
+        position: relative;
+    }
+
+    .owner-hero-body {
+        padding: 0 30px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 20px;
+        margin-top: -50px;
+        position: relative;
+        z-index: 2;
+    }
+
+    .workshop-photo-box {
+        position: relative;
+        width: 110px;
+        height: 110px;
+        border-radius: 20px;
+        overflow: hidden;
+        border: 4px solid var(--second-bg);
+        background: #15101a;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+        flex-shrink: 0;
+    }
+
+    .workshop-photo-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .workshop-photo-placeholder {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        place-items: center;
+        font-size: 2.2rem;
+        color: var(--text-muted);
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .photo-upload-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 600;
+        opacity: 0;
+        cursor: pointer;
+        transition: opacity 0.2s ease;
+    }
+
+    .photo-upload-overlay i {
+        font-size: 1.4rem;
+        margin-bottom: 4px;
+    }
+
+    .workshop-photo-box:hover .photo-upload-overlay {
+        opacity: 1;
+    }
+
+    .owner-details-wrap {
+        display: flex;
+        align-items: flex-end;
+        gap: 22px;
+        flex: 1;
+    }
+
+    .owner-heading-info h1 {
+        font-size: 1.7rem;
+        margin-bottom: 6px;
+    }
+
+    .owner-address-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13.5px;
+        color: var(--text-muted);
+    }
+
+    .owner-address-badge i {
+        color: var(--main-color);
+    }
+
+    .owner-top-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    /* Enhanced Stat Cards */
+    .owner-stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 18px;
+        margin-bottom: 30px;
+    }
+
+    .owner-stat-card {
+        background: var(--second-bg);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 18px;
+        padding: 20px 22px;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .owner-stat-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .owner-stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        font-size: 1.5rem;
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--main-color);
+        flex-shrink: 0;
+    }
+
+    .owner-stat-card.accent .owner-stat-icon {
+        background: rgba(191, 93, 111, 0.18);
+        color: #ff7a9b;
+    }
+
+    .owner-stat-info span {
+        display: block;
+        font-size: 12.5px;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+        font-weight: 500;
+    }
+
+    .owner-stat-info strong {
+        font-size: 1.6rem;
+        color: #fff;
+    }
+
+    /* ==================== Capacity Control ==================== */
+    .capacity-bar-widget {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 2rem;
+        padding: 24px 26px;
+        margin-bottom: 30px;
+        background: var(--second-bg);
+        border: 1px solid var(--border-soft);
+        border-radius: 20px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .capacity-bar-widget:hover {
+        border-color: var(--main-color);
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
+    }
+
+    .capacity-desc {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .capacity-desc>i {
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+        color: var(--main-color);
+        background: var(--bg-color);
+        border: 1px solid var(--border-soft);
+        border-radius: 15px;
+    }
+
+    .capacity-desc h4 {
+        margin: 0 0 6px;
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text-color);
+    }
+
+    .capacity-desc p {
+        margin: 0;
+        max-width: 420px;
+        font-size: 0.85rem;
+        line-height: 1.6;
+        color: var(--text-muted);
+    }
+
+    .capacity-form {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-shrink: 0;
+    }
+
+    .number-stepper {
+        display: flex;
+        align-items: center;
+        width: 156px;
+        height: 48px;
+        overflow: hidden;
+        background: var(--bg-color);
+        border: 1px solid var(--border-soft);
+        border-radius: 14px;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .number-stepper:focus-within {
+        border-color: var(--main-color);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--main-color) 15%, transparent);
+    }
+
+    .number-stepper .stepper-btn {
+        display: grid;
+        place-items: center;
+        width: 42px;
+        height: 100%;
+        flex-shrink: 0;
+        padding: 0;
+        border: none;
+        border-radius: 0;
+        background: transparent;
+        color: var(--main-color);
+        font-size: 1.5rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .number-stepper .stepper-btn:hover {
+        background: var(--second-bg);
+    }
+
+    .number-stepper .stepper-btn:active {
+        background: var(--main-color);
+        color: var(--text-color);
+    }
+
+    .number-stepper .stepper-btn:focus-visible {
+        outline: 2px solid var(--main-color);
+        outline-offset: -3px;
+    }
+
+    .number-stepper input {
+        flex: 1;
+        width: 0;
+        min-width: 0;
+        height: 100%;
+        padding: 0;
+        border: none;
+        outline: none;
+        background: transparent;
+        color: var(--text-color);
+        text-align: center;
+        font: inherit;
+        font-size: 1.05rem;
+        font-weight: 700;
+        appearance: textfield;
+        -moz-appearance: textfield;
+    }
+
+    .number-stepper input::-webkit-inner-spin-button,
+    .number-stepper input::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    .capacity-form>button[type="submit"] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 48px;
+        padding: 0 20px;
+        border: 1px solid var(--main-color);
+        border-radius: 14px;
+        background: var(--main-color);
+        color: var(--text-color);
+        font: inherit;
+        font-size: 0.9rem;
+        font-weight: 700;
+        white-space: nowrap;
+        cursor: pointer;
+        box-shadow: 0 5px 14px color-mix(in srgb, var(--main-color) 20%, transparent);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+
+    .capacity-form>button[type="submit"]:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.08);
+        box-shadow: 0 8px 20px color-mix(in srgb, var(--main-color) 28%, transparent);
+    }
+
+    .capacity-form>button[type="submit"]:active {
+        transform: translateY(0);
+    }
+
+    .capacity-form>button[type="submit"]:focus-visible {
+        outline: 2px solid var(--main-color);
+        outline-offset: 4px;
+    }
+
+    /* Modernized Sections & Tables */
+
+    .admin-section {
+        background: var(--second-bg);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 20px;
+        padding: 24px;
+        margin-bottom: 26px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .section-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .section-header-row h2 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.25rem;
+    }
+
+    .admin-table-wrapper {
+        overflow-x: auto;
+    }
+
+    .admin-table th {
+        font-weight: 600;
+        color: var(--text-muted);
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 12px 16px;
+    }
+
+    .admin-table td {
+        padding: 14px 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        font-size: 14px;
+        vertical-align: middle;
+    }
+
+    .admin-table tr:hover td {
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Custom Badges */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: capitalize;
+    }
+
+    .status-pending {
+        background: rgba(241, 196, 15, 0.15);
+        color: #f1c40f;
+    }
+
+    .status-confirmed {
+        background: rgba(46, 204, 113, 0.15);
+        color: #2ecc71;
+    }
+
+    .status-completed {
+        background: rgba(52, 152, 219, 0.15);
+        color: #3498db;
+    }
+
+    .status-cancelled,
+    .status-cancel {
+        background: rgba(231, 76, 60, 0.15);
+        color: #e74c3c;
+    }
+
+    /* No-Workshop Banner */
+    .no-workshop-card {
+        background: var(--second-bg);
+        border: 2px dashed rgba(255, 255, 255, 0.12);
+        border-radius: 24px;
+        padding: 60px 30px;
+        text-align: center;
+        max-width: 580px;
+        margin: 40px auto;
+    }
+
+    .create-btn-con{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .create-btn-con.fw-btn-con {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .create-btn-con.fw-btn-con.fw-btn i {
+        color: var(--main-color);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .no-workshop-card h1 {
+        font-size: 1.8rem;
+        margin-bottom: 10px;
+    }
+
+    .no-workshop-card p {
+        color: var(--text-muted);
+        font-size: 14px;
+        max-width: 420px;
+        margin: 0 auto 24px;
+        line-height: 1.5;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+        .owner-hero-body {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin-top: -50px;
+        }
+
+        .owner-details-wrap {
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .capacity-bar-widget {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .capacity-form {
+            width: 100%;
+            justify-content: flex-end;
+        }
+    }
+
+    @media (max-width: 900px) {
+        .capacity-bar-widget {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 22px;
+        }
+
+        .capacity-form {
+            width: 100%;
+            justify-content: flex-start;
+        }
+
+        .number-stepper {
+            flex: 1;
+            width: auto;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .capacity-bar-widget {
+            padding: 18px;
+            border-radius: 16px;
+        }
+
+        .capacity-desc {
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .capacity-desc>i {
+            width: 42px;
+            height: 42px;
+            font-size: 1.25rem;
+            border-radius: 12px;
+        }
+
+        .capacity-desc h4 {
+            font-size: 0.95rem;
+        }
+
+        .capacity-desc p {
+            font-size: 0.8rem;
+        }
+
+        .capacity-form {
+            gap: 8px;
+        }
+
+        .number-stepper {
+            height: 44px;
+        }
+
+        .number-stepper .stepper-btn {
+            width: 34px;
+        }
+
+        .capacity-form>button[type="submit"] {
+            min-height: 44px;
+            padding: 0 12px;
+            font-size: 0.82rem;
+        }
+    }
+
+    /* ==================== Workshop Danger Zone ==================== */
+    .delete-workshop-section {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        border: 1px solid color-mix(in srgb, var(--main-color) 38%, var(--border-soft));
+    }
+
+    .delete-workshop-copy {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        min-width: 0;
+    }
+
+    .delete-workshop-icon {
+        display: grid;
+        place-items: center;
+        flex: 0 0 46px;
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        color: var(--main-color);
+        background: color-mix(in srgb, var(--main-color) 12%, var(--second-bg));
+        font-size: 1.4rem;
+    }
+
+    .delete-workshop-copy h2 {
+        margin: 0 0 7px;
+        font-size: 1.1rem;
+    }
+
+    .delete-workshop-copy p {
+        margin: 0;
+        max-width: 620px;
+        color: var(--text-muted);
+        font-size: .88rem;
+        line-height: 1.6;
+    }
+
+    .delete-workshop-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        flex-shrink: 0;
+        padding: 12px 18px;
+        border: 1px solid var(--main-color);
+        border-radius: 12px;
+        color: var(--text-color);
+        background: color-mix(in srgb, var(--main-color) 14%, var(--second-bg));
+        font: inherit;
+        font-size: .9rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform .2s ease, background .2s ease, box-shadow .2s ease;
+    }
+
+    .delete-workshop-btn:hover {
+        transform: translateY(-2px);
+        background: var(--main-color);
+        box-shadow: 0 7px 18px color-mix(in srgb, var(--main-color) 22%, transparent);
+    }
+
+    .delete-workshop-btn:focus-visible {
+        outline: 2px solid var(--main-color);
+        outline-offset: 4px;
+    }
+
+    .delete-workshop-dialog .confirm-box p {
+        line-height: 1.65;
+    }
+
+    .delete-workshop-warning {
+        margin: 14px 0 20px;
+        padding: 12px 14px;
+        border: 1px solid var(--border-soft);
+        border-radius: 12px;
+        background: var(--bg-color);
+        color: var(--text-muted);
+        font-size: .85rem;
+        line-height: 1.55;
+        text-align: left;
+    }
+
+    .delete-workshop-dialog .confirm-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+    }
+
+    @media (max-width: 640px) {
+        .delete-workshop-section {
+            align-items: stretch;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .delete-workshop-btn {
+            width: 100%;
+        }
+    }
+</style>
+
+{% endblock %}
+
+{% block content %}
+
+<div class="admin-layout" id="adminLayout">
+    <!-- Owner Sidebar -->
+    <aside class="admin-sidebar" id="sideBar">
+        <div class="sidebar-header">
+            <i class='bx bxs-store'></i>
+            <span>Owner Panel</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('dashboard.owner') }}" class="sidebar-link active">
+                <i class='bx bx-grid-alt'></i> Overview
+            </a>
+            <a href="#bookings" class="sidebar-link">
+                <i class='bx bx-calendar-check'></i> Bookings
+            </a>
+            <a href="#services" class="sidebar-link">
+                <i class='bx bx-wrench'></i> Services
+            </a>
+            <a href="#joiningRequests" class="sidebar-link">
+                <i class='bx bx-user-plus'></i> Joining Requests
+            </a>
+            <a href="#leaveRequests" class="sidebar-link">
+                <i class='bx bx-log-out-circle'></i> Leave Requests
+                {% if leave_requests %}<span class="count-pill">{{ leave_requests | length }}</span>{% endif %}
+            </a>
+            <a href="#mechanics" class="sidebar-link">
+                <i class='bx bx-group'></i> Mechanics
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-link">
+                <i class='bx bx-log-out'></i> Logout
+            </a>
+        </div>
+    </aside>
+    <main class="admin-main">
+        {% if not workshop %}
+        <!-- Welcome empty state when no workshop listed -->
+        <div class="no-workshop-card">
+            <i class='bx bx-store-alt'></i>
+            <h1>Welcome, Workshop Owner!</h1>
+            <p>You haven't registered your workshop yet. Set it up with location and services to start accepting
+                customer bookings.</p>
+            <div class="create-btn-con">
+                <div class="fw-btn-con">
+                    <a href="#" class="fw-btn" id="create-workshop-btn">
+                        <i class='bx bx-plus'></i> Create Workshop
+                    </a>
+                </div>
+            </div>
+
+
+        </div>
+        {% else %}
+        <!-- Workshop Hero Header -->
+        <article class="owner-hero-card">
+            <div class="owner-banner"></div>
+            <div class="owner-hero-body">
+                <div class="owner-details-wrap">
+                    <div class="workshop-photo-box">
+                        {% if workshop.photo_path %}
+                        <img src="{{ url_for('static', filename=workshop.photo_path) }}" alt="{{ workshop.name }}">
+                        {% else %}
+                        <div class="workshop-photo-placeholder"><i class='bx bx-store'></i></div>
+                        {% endif %}
+                        <form method="POST" action="{{ url_for('dashboard.upload_workshop_photo') }}"
+                            enctype="multipart/form-data" class="workshop-photo-form">
+                            <label for="photo" class="photo-upload-overlay" title="Click to upload workshop photo">
+                                <i class='bx bx-camera'></i>
+                                <span>Change</span>
+                            </label>
+                            <input type="file" name="photo" id="photo" accept="image/*" style="display: none;"
+                                onchange="this.form.submit()">
+                        </form>
+                    </div>
+                    <div class="owner-heading-info">
+                        <h1>{{ workshop.name }}</h1>
+                        <p class="owner-address-badge"><i class='bx bx-map-pin'></i> {{ workshop.address }}</p>
+                    </div>
+                </div>
+                <div class="owner-top-actions">
+                    <button id="add-service-btn" class="mini-btn confirm">
+                        <i class='bx bx-plus'></i> Add Service
+                    </button>
+                </div>
+            </div>
+        </article>
+        <!-- KPI Stats Cards -->
+        <div class="owner-stats-container">
+            <div class="owner-stat-card">
+                <div class="owner-stat-icon">
+                    <i class='bx bx-calendar-event'></i>
+                </div>
+                <div class="owner-stat-info">
+                    <span>Total Bookings</span>
+                    <strong>{{ stats.total_bookings }}</strong>
+                </div>
+            </div>
+            <div class="owner-stat-card accent">
+                <div class="owner-stat-icon">
+                    <i class='bx bx-time-five'></i>
+                </div>
+                <div class="owner-stat-info">
+                    <span>Pending Bookings</span>
+                    <strong>{{ stats.pending_bookings }}</strong>
+                </div>
+            </div>
+            <div class="owner-stat-card">
+                <div class="owner-stat-icon">
+                    <i class='bx bx-wrench'></i>
+                </div>
+                <div class="owner-stat-info">
+                    <span>Active Services</span>
+                    <strong>{{ stats.total_services }}</strong>
+                </div>
+            </div>
+            <div class="owner-stat-card">
+                <div class="owner-stat-icon">
+                    <i class='bx bx-user-check'></i>
+                </div>
+                <div class="owner-stat-info">
+                    <span>Staff Capacity</span>
+                    <strong>{{ stats.total_mechanics }} / {{ stats.capacity }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Capacity Control Widget -->
+        <div class="capacity-bar-widget">
+            <div class="capacity-desc">
+                <i class='bx bx-slider-alt' aria-hidden="true"></i>
+                <div>
+                    <h4>Mechanic Capacity Limit</h4>
+                    <p>Set the maximum number of mechanics permitted to work in your workshop.</p>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('dashboard.update_capacity') }}" class="capacity-form">
+                <div class="number-stepper">
+                    <button type="button" class="stepper-btn decrease"
+                        aria-label="Decrease mechanic capacity">−</button>
+                    <input type="number" name="capacity" id="capacity" min="{{ [stats.total_mechanics, 1] | max }}"
+                        max="100" step="1" value="{{ stats.capacity }}" aria-label="Maximum mechanic capacity" required>
+                    <button type="button" class="stepper-btn increase"
+                        aria-label="Increase mechanic capacity">+</button>
+                </div>
+
+                <button type="submit" class="mini-btn confirm">
+                    <i class='bx bx-save' aria-hidden="true"></i>
+                    <span>Update</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Delete Workshop Danger Zone -->
+        <section class="admin-section delete-workshop-section" aria-labelledby="deleteWorkshopHeading">
+            <div class="delete-workshop-copy">
+                <i class='bx bx-trash delete-workshop-icon' aria-hidden="true"></i>
+                <div>
+                    <h2 id="deleteWorkshopHeading">Delete Workshop</h2>
+                    <p>Permanently remove <strong>{{ workshop.name }}</strong>. This removes its bookings and services,
+                        clears its join requests, and unassigns its mechanics. This action cannot be undone.</p>
+                </div>
+            </div>
+            <button type="button" class="delete-workshop-btn" data-open-delete-workshop>
+                <i class='bx bx-trash' aria-hidden="true"></i> Delete Workshop
+            </button>
+        </section>
+
+        <!-- Bookings Section -->
+        <section class="admin-section" id="bookings">
+            <div class="section-header-row">
+                <h2><i class='bx bx-calendar-check'></i> Bookings</h2>
+            </div>
+            {% if bookings %}
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>S.No</th>
+                            <th>Customer</th>
+                            <th>Service</th>
+                            <th>Requested Time</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in bookings %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td><strong>{{ b.customer_name }}</strong></td>
+                            <td>{{ b.s_name }}</td>
+                            <td>{{ b.requested_time.strftime('%d %b %Y, %I:%M %p') }}</td>
+                            <td><span class="status-badge status-{{ b.status }}">{{ b.status }}</span></td>
+                            <td>
+                                {% if b.status == 'pending' %}
+                                <form method="POST"
+                                    action="{{ url_for('dashboard.update_booking_status', booking_id=b.b_id, action='confirm') }}"
+                                    class="inline-form">
+                                    <button type="submit" class="mini-btn confirm"><i class='bx bx-check'></i>
+                                        Confirm</button>
+                                </form>
+                                <form method="POST"
+                                    action="{{ url_for('dashboard.update_booking_status', booking_id=b.b_id, action='cancel') }}"
+                                    class="inline-form">
+                                    <button type="submit" class="mini-btn cancel"><i class='bx bx-x'></i>
+                                        Cancel</button>
+                                </form>
+                                {% elif b.status == 'confirmed' %}
+                                <form method="POST"
+                                    action="{{ url_for('dashboard.update_booking_status', booking_id=b.b_id, action='complete') }}"
+                                    class="inline-form">
+                                    <button type="submit" class="mini-btn confirm"><i class='bx bx-check-double'></i>
+                                        Mark Complete</button>
+                                </form>
+                                {% else %}
+                                <span style="color: var(--text-muted); font-size: 13px;">None</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="no-results">No bookings received yet.</p>
+            {% endif %}
+        </section>
+        <!-- Services Section -->
+        <section class="admin-section" id="services">
+            <div class="section-header-row">
+                <h2><i class='bx bx-wrench'></i> Services Offered</h2>
+                <button class="mini-btn confirm" onclick="document.getElementById('add-service-btn').click();">
+                    <i class='bx bx-plus'></i> New Service
+                </button>
+            </div>
+            {% if services %}
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>S.No</th>
+                            <th>Service</th>
+                            <th>Price Range</th>
+                            <th>Estimated Duration</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in services %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td><strong>{{ s.s_name }}</strong></td>
+                            <td>{{ s.price_range or '—' }}</td>
+                            <td>{{ s.duration or '—' }}</td>
+                            <td>
+                                {% if s.booking_count %}
+                                <button type="button" class="mini-btn cancel" disabled
+                                    title="This service has bookings, so it can't be removed">
+                                    <i class='bx bx-trash'></i> Remove
+                                </button>
+                                {% else %}
+                                <button type="button" class="mini-btn cancel"
+                                    data-remove-url="{{ url_for('dashboard.remove_service', s_id=s.s_id) }}"
+                                    data-name="{{ s.s_name }}">
+                                    <i class='bx bx-trash'></i> Remove
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="no-results">No services added to your workshop yet.</p>
+            {% endif %}
+        </section>
+        <!-- Joining Requests Section -->
+        <section class="admin-section" id="joiningRequests">
+            <div class="section-header-row">
+                <h2><i class='bx bx-user-plus'></i> Mechanic Joining Requests</h2>
+            </div>
+            {% if pending_requests %}
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>S.No</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Experience</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in pending_requests %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td><strong>{{ m.name }}</strong></td>
+                            <td>{{ m.email }}</td>
+                            <td>{% if m.experience_yrs %}{{ m.experience_yrs }} yrs{% else %}—{% endif %}</td>
+                            <td>
+                                <form method="POST"
+                                    action="{{ url_for('dashboard.review_mechanic', jr_id=m.jr_id, action='accept') }}"
+                                    class="inline-form">
+                                    <button type="submit" class="mini-btn confirm" {% if stats.total_mechanics>=
+                                        stats.capacity %}disabled title="Workshop is at full capacity"{% endif %}>
+                                        <i class='bx bx-check'></i> Accept
+                                    </button>
+                                </form>
+                                <form method="POST"
+                                    action="{{ url_for('dashboard.review_mechanic', jr_id=m.jr_id, action='reject') }}"
+                                    class="inline-form" onsubmit="return confirm('Reject this mechanic application?');">
+                                    <button type="submit" class="mini-btn cancel"><i class='bx bx-x'></i>
+                                        Reject</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="no-results">No pending mechanic applications at the moment.</p>
+            {% endif %}
+        </section>
+        <!-- Mechanics List Section -->
+        <section class="admin-section" id="leaveRequests">
+            <div class="section-header-row">
+                <h2><i class='bx bx-log-out-circle'></i> Mechanic Leave Requests</h2>
+            </div>
+            {% if leave_requests %}
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>S.No</th>
+                            <th>Name</th>
+                            <th>Experience</th>
+                            <th>Reason</th>
+                            <th>Requested</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in leave_requests %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td><strong>{{ r.name }}</strong></td>
+                            <td>{% if r.experience_yrs %}{{ r.experience_yrs }} yrs{% else %}—{% endif %}</td>
+                            <td>{{ r.reason or '—' }}</td>
+                            <td>{{ r.created_at.strftime('%d %b %Y') }}</td>
+                            <td>
+                                <form method="POST"
+                                    action="{{ url_for('dashboard.review_leave', lr_id=r.lr_id, action='approve') }}"
+                                    class="inline-form"
+                                    onsubmit="return confirm('Let {{ r.name }} leave your workshop?');">
+                                    <button type="submit" class="mini-btn confirm"><i class='bx bx-check'></i> Let
+                                        go</button>
+                                </form>
+                                <form method="POST"
+                                    action="{{ url_for('dashboard.review_leave', lr_id=r.lr_id, action='reject') }}"
+                                    class="inline-form">
+                                    <button type="submit" class="mini-btn cancel"><i class='bx bx-x'></i>
+                                        Decline</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="no-results">No leave requests at the moment.</p>
+            {% endif %}
+        </section>
+        <section class="admin-section" id="mechanics">
+            <div class="section-header-row">
+                <h2><i class='bx bx-group'></i> Workshop Mechanics</h2>
+            </div>
+            {% if mechanics %}
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>S.No</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Experience</th>
+                            <th>Current Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in mechanics %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td><strong>{{ m.name }}</strong></td>
+                            <td>{{ m.email }}</td>
+                            <td>{{ m.experience_yrs or '—' }} yrs</td>
+                            <td>
+                                <span
+                                    class="status-badge {% if m.active_stat == 'active' %}status-confirmed{% else %}status-pending{% endif %}">
+                                    {{ m.active_stat }}
+                                </span>
+                                {% if m.leave_pending %}<span class="status-badge status-cancelled">Leave
+                                    requested</span>{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="no-results">No mechanics are currently assigned to this workshop.</p>
+            {% endif %}
+        </section>
+        {% endif %}
+    </main>
+</div>
+<!-- Modal: Add Service -->
+<div class="login-modal" id="addServiceModal">
+    <form method="POST" action="{{ url_for('dashboard.add_service') }}" class="login-form">
+        <h2>Add a Service</h2>
+        <select name="sc_id" required>
+            <option value="" disabled selected>Select a service</option>
+            {% for c in service_catalog %}
+            <option value="{{ c.sc_id }}">{{ c.s_name }}</option>
+            {% endfor %}
+        </select>
+        <input type="text" name="price_range" placeholder="Price Range (e.g. ₹500–800)">
+        <input type="text" name="duration" placeholder="Duration (e.g. 1–2 hours)">
+        <button type="submit" class="fw-btn-con"><span class="fw-btn">Add Service</span></button>
+    </form>
+</div>
+<!-- Modal: Create Workshop -->
+<div class="login-modal" id="createWorkshopModal">
+    <form method="POST" action="{{ url_for('dashboard.create_workshop') }}" class="login-form">
+        <h2>Set Up Your Workshop</h2>
+        <input type="text" name="name" placeholder="Workshop Name" required>
+        <input type="text" name="address" placeholder="Address" required>
+        <input type="text" name="contact_no" placeholder="Contact Number">
+        <p style="font-size: 13px; color: rgba(255,255,255,0.6); align-self: flex-start;">
+            Click or drag the pin to mark your workshop's exact location
+        </p>
+        <div class="pin-map-wrapper">
+            <div id="workshop-pin-map"></div>
+        </div>
+        <input type="hidden" id="latitude" name="latitude">
+        <input type="hidden" id="longitude" name="longitude">
+        <p id="location-status" style="font-size: 13px; color: rgba(255,255,255,0.5);"></p>
+        <button type="submit" class="fw-btn-con"><span class="fw-btn">Create Workshop</span></button>
+    </form>
+</div>
+<!-- Confirm: remove service -->
+<div class="confirm-dialog" id="confirmDialog" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="confirm-box">
+        <i class='bx bx-error-circle confirm-icon'></i>
+        <h3 id="confirmTitle">Remove this service?</h3>
+        <p>Are you sure you want to remove <strong id="confirmName"></strong> from your workshop?
+            Customers will no longer be able to book it.</p>
+        <form method="POST" id="confirmForm" class="confirm-actions">
+            <button type="submit" class="mini-btn cancel">Yes, remove</button>
+            <button type="button" class="mini-btn neutral" data-cancel>Cancel</button>
+        </form>
+    </div>
+</div>
+
+{% if workshop %}
+<!-- Confirm: delete workshop -->
+<div class="confirm-dialog delete-workshop-dialog" id="deleteWorkshopDialog" role="dialog" aria-modal="true"
+    aria-labelledby="deleteWorkshopTitle" aria-describedby="deleteWorkshopDescription">
+    <div class="confirm-box">
+        <i class='bx bx-error-circle confirm-icon' aria-hidden="true"></i>
+        <h3 id="deleteWorkshopTitle">Delete {{ workshop.name }}?</h3>
+        <p id="deleteWorkshopDescription">Are you sure you want to permanently delete this workshop?</p>
+        <div class="delete-workshop-warning">
+            <strong>This will permanently remove:</strong><br>
+            Workshop services and bookings, join requests, and the workshop's saved details. Mechanics will be
+            unassigned from this workshop.
+        </div>
+        <form method="POST" action="{{ url_for('dashboard.delete_workshop') }}" class="confirm-actions">
+            <button type="submit" class="mini-btn cancel"><i class='bx bx-trash' aria-hidden="true"></i> Yes, delete
+                workshop</button>
+            <button type="button" class="mini-btn neutral" data-cancel-delete-workshop>Keep Workshop</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/workshop.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/customer-home.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/admin.js') }}" defer></script>
+<script>
+    // Remove-service confirmation dialog
+    (function () {
+        var dialog = document.getElementById('confirmDialog');
+        if (!dialog) return;
+        var form = document.getElementById('confirmForm');
+        var nameEl = document.getElementById('confirmName');
+        function close() { dialog.classList.remove('show'); }
+        document.addEventListener('click', function (e) {
+            var trigger = e.target.closest('[data-remove-url]');
+            if (trigger) {
+                e.preventDefault();
+                form.action = trigger.dataset.removeUrl;
+                nameEl.textContent = trigger.dataset.name;
+                dialog.classList.add('show');
+                dialog.querySelector('[data-cancel]').focus();
+                return;
+            }
+            // Cancel button, or a click on the dark backdrop
+            if (e.target === dialog || e.target.closest('[data-cancel]')) close();
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') close();
+        });
+    })();
+
+    // Delete-workshop confirmation dialog
+    (function () {
+        const dialog = document.getElementById('deleteWorkshopDialog');
+        const openButton = document.querySelector('[data-open-delete-workshop]');
+        if (!dialog || !openButton) return;
+
+        const cancelButton = dialog.querySelector('[data-cancel-delete-workshop]');
+        function openDialog() {
+            dialog.classList.add('show');
+            if (cancelButton) cancelButton.focus();
+        }
+
+        function closeDialog() {
+            dialog.classList.remove('show');
+            openButton.focus();
+        }
+
+        openButton.addEventListener('click', openDialog);
+        if (cancelButton) cancelButton.addEventListener('click', closeDialog);
+        dialog.addEventListener('click', function (event) {
+            if (event.target === dialog) closeDialog();
+        });
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && dialog.classList.contains('show')) closeDialog();
+        });
+    })();
+</script>
+{% endblock %}

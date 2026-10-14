@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+
+{% block title %}Home — Getwheelz (Enhanced){% endblock %}
+
+{% block head %}
+<style>
+    /* Section Headers */
+    .section-header {
+        margin-bottom: 25px;
+        text-align: left;
+    }
+
+    .section-subtitle {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        margin-top: 5px;
+    }
+
+    .carousel-controls-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+
+    .workshop-count {
+        background: var(--second-bg);
+        padding: 4px 12px;
+        border-radius: 20px;
+        border: 1px solid var(--border-soft);
+    }
+
+    .carousel-status {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        background: var(--main-color);
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+    }
+
+    .status-dot.paused {
+        background: var(--text-muted);
+        animation: none;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    /* Recommended Section Enhancements */
+    .recommended-section {
+        padding: 40px 30px;
+        position: relative;
+    }
+
+    .workshop-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: rgba(199, 69, 92, 0.1);
+        color: var(--main-color);
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    /* Nearby Section Grid (Requested List Section) */
+    .nearby-section {
+        padding: 40px 30px;
+        border-top: 1px solid var(--border-soft);
+    }
+
+    .nearby-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+
+    .nearby-card {
+        display: flex;
+        background-color: var(--second-bg);
+        border-radius: 12px;
+        overflow: hidden;
+        text-decoration: none;
+        color: var(--text-color);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border: 1px solid var(--border-soft);
+    }
+
+    .nearby-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        border-color: var(--main-color);
+    }
+
+    .nearby-card-img {
+        width: 100px;
+        height: 100px;
+        flex-shrink: 0;
+    }
+
+    .nearby-card-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .nearby-card-body {
+        padding: 12px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .nearby-card-body h3 {
+        font-size: 1rem;
+        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .nearby-card-distance {
+        font-size: 0.8rem;
+        color: var(--main-color);
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .nearby-card-address {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+
+    /* ---- Boxed sections (whole carousel / whole list sit in one panel) ---- */
+    .recommended-section,
+    .nearby-section {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 30px;
+        background-color: var(--second-bg);
+        border: 1px solid var(--border-soft);
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .nearby-section {
+        border-top: 1px solid var(--border-soft);
+    }
+
+    /* inner cards use the page bg so they stand out against the panel */
+    .recommended-section .carousel-card,
+    .nearby-section .nearby-card {
+        background-color: var(--bg-color);
+    }
+
+    .recommended-section .carousel-card-img,
+    .nearby-section .nearby-card-img {
+        background-color: rgba(255, 255, 255, 0.04);
+    }
+
+    .recommended-section .workshop-count {
+        background: var(--bg-color);
+    }
+
+    /* keep the arrow buttons visible inside the panel */
+    .recommended-section .carousel-btn {
+        background-color: var(--bg-color);
+    }
+    .recommended-section .carousel-btn.prev { left: 0; }
+    .recommended-section .carousel-btn.next { right: 0; }
+
+    body.light .recommended-section,
+    body.light .nearby-section {
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    }
+
+    @media (max-width: 600px) {
+        .recommended-section,
+        .nearby-section {
+            margin: 24px 12px;
+            padding: 20px 16px;
+            border-radius: 16px;
+        }
+    }
+
+    /* Carousel Smooth Transition */
+    .carousel-track {
+        scroll-behavior: smooth;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <h1>Welcome back, {{ session.user_name }}</h1>
+    <p id="sub-ttl">Find a workshop and book a service in minutes.</p>
+
+    <form action="{{ url_for('workshops.search') }}" method="get" class="search-form" id="hero-search-form">
+        <input type="text" name="service" id="main-search-input" placeholder="What service do you need?">
+
+        <div class="filter-wrapper">
+            <button type="button" id="filter-toggle-btn" class="filter-btn" title="Filter by service">
+                <i class='bx bx-filter-alt'></i>
+            </button>
+            <div class="filter-popover" id="filterPopover">
+                <h4>Filter by Service</h4>
+                {% for opt in ['Engine Repair', 'Electrical', 'Tires', 'AC Service', 'General Servicing'] %}
+                <label class="filter-check">
+                    <input type="checkbox" name="services" value="{{ opt }}"> {{ opt }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <input type="hidden" id="search-lat" name="lat">
+        <input type="hidden" id="search-lng" name="lng">
+
+        <div class="fw-btn-con">
+            <button class="fw-btn" type="submit">Find Workshops</button>
+        </div>
+    </form>
+</section>
+
+<!-- Recommended Section with Auto-sliding Carousel -->
+<section class="recommended-section">
+    <div class="section-header">
+        <h2>Recommended Workshops</h2>
+        <p class="section-subtitle">Auto-sliding for your convenience</p>
+    </div>
+
+    {% if recommended %}
+    <div class="carousel-controls-info">
+        <span class="workshop-count">
+            <i class='bx bx-store'></i> {{ recommended|length }} workshop{{ '' if recommended|length == 1 else 's' }}
+        </span>
+        <span class="carousel-status">
+            <span class="status-dot" id="rec-status-dot"></span>
+            <span id="rec-status-text">Auto-sliding</span>
+        </span>
+    </div>
+    {% endif %}
+
+    <div class="carousel-wrapper">
+        <button class="carousel-btn prev" id="rec-prev">
+            <i class='bx bx-chevron-left'></i>
+        </button>
+
+        <div class="carousel-track" id="rec-track">
+            {% for w in recommended %}
+            <a href="{{ url_for('workshops.selected', w_id=w.w_id) }}" class="carousel-card">
+                <div class="carousel-card-img">
+                    {% if w.photo_path %}
+                    <img src="{{ url_for('static', filename=w.photo_path) }}" alt="{{ w.name }}">
+                    {% else %}
+                    <div class="carousel-card-img-placeholder"><i class='bx bx-store'></i></div>
+                    {% endif %}
+                </div>
+
+                <div class="carousel-card-body">
+                    <div class="workshop-badge">
+                        <i class='bx bx-star'></i> Recommended
+                    </div>
+                    <h3>{{ w.name }}</h3>
+                    <p class="carousel-card-address"><i class='bx bx-map'></i> {{ w.address }}</p>
+                    <div class="carousel-card-tags">
+                        {% for service in (w.service_names or [])[:3] %}
+                        <span class="service-tag">{{ service }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </a>
+            {% else %}
+            <p class="no-results">No workshops to show yet.</p>
+            {% endfor %}
+        </div>
+
+        <button class="carousel-btn next" id="rec-next">
+            <i class='bx bx-chevron-right'></i>
+        </button>
+    </div>
+</section>
+
+<!-- Nearby Workshops Section (Requested List Format) -->
+<section class="nearby-section" id="nearby-section" style="display:none;"
+        data-url="{{ url_for('workshops.nearby') }}"
+        data-profile-url="{{ url_for('workshops.selected', w_id=0) }}"
+        data-static-url="{{ url_for('static', filename='') }}">
+    <div class="section-header">
+        <h2>Nearby Workshops</h2>
+        <p class="section-subtitle">Quickly access workshops closest to you</p>
+    </div>
+
+    <div class="nearby-list" id="nearby-list">
+        <!-- Will be populated by JS -->
+    </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/workshop.js') }}" defer></script>
+{% endblock %}

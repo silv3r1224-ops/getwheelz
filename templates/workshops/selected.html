@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}{{ workshop.name }} — Getwheelz{% endblock %}
+
+{% block content %}
+<div class="index-con" id="mainCon">
+    <section class="workshop-profile">
+
+        <div class="profile-header">
+            <div class="profile-header-info">
+                <h1>{{ workshop.name }}</h1>
+                <p class="profile-address"><i class='bx bx-map'></i> {{ workshop.address }}</p>
+                {% if workshop.contact_no %}
+                <p class="profile-contact"><i class='bx bx-phone'></i> {{ workshop.contact_no }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="profile-body">
+            <div class="profile-main">
+                <h2>{% if mech %}Services this workshop offers{% else %}Services Offered{% endif %}</h2>
+                <div class="service-list">
+                    {% for service in services %}
+                    <div class="service-item">
+                        <div class="service-info">
+                            <h3>{{ service.s_name }}</h3>
+                            <p>
+                                {% if service.duration %}<span><i class='bx bx-time'></i> {{ service.duration
+                                    }}</span>{% endif %}
+                                {% if service.price_range %}<span><i class='bx bx-rupee'></i> {{ service.price_range
+                                    }}</span>{% endif %}
+                            </p>
+                        </div>
+                        {% if not mech %}
+                        <a href="{{ url_for('bookings.new', w_id=workshop.w_id, s_id=service.s_id) }}"
+                            class="book-btn">Book</a>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <p class="no-results">This workshop hasn't listed any services yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="profile-sidebar">
+                <div id="profile-map"></div>
+                {% if mech %}
+                <div class="mech-preview-card">
+                    <span class="preview-badge"><i class='bx bx-show'></i> Mechanic preview</span>
+
+                    <div class="team-stat">
+                        <i class='bx bx-group'></i>
+                        <div>
+                            <strong>{{ mech.total }}/{{ mech.capacity }} mechanics</strong>
+                            <small>
+                                {% if mech.open_slots > 0 %}{{ mech.open_slots }} opening{{ '' if mech.open_slots == 1
+                                else 's' }}
+                                {% else %}No openings right now{% endif %}
+                            </small>
+                        </div>
+                    </div>
+
+                    {% if mech.my_workshop == workshop.w_id %}
+                    <p class="preview-note"><i class='bx bx-check-circle'></i> You work at this workshop.</p>
+                    {% elif mech.my_workshop %}
+                    <p class="preview-note">You already belong to another workshop. Leave it first to join this one.</p>
+                    {% elif mech.pending %}
+                    <form method="POST" action="{{ url_for('mechanics.cancel_join_request', w_id=workshop.w_id) }}">
+                        <button type="submit" class="join-btn requested full-width">Request sent (cancel)</button>
+                    </form>
+                    {% elif mech.open_slots <= 0 %} <button type="button" class="join-btn full-width" disabled>Workshop
+                        full</button>
+                        {% else %}
+                        <form method="POST" action="{{ url_for('mechanics.send_join_request', w_id=workshop.w_id) }}">
+                            <button type="submit" class="join-btn full-width">Request to join</button>
+                        </form>
+                        {% endif %}
+
+                        <a href="{{ url_for('mechanics.home') }}" class="back-link"><i class='bx bx-arrow-back'></i>
+                            Back to workshops</a>
+                </div>
+                {% else %}
+                <a href="{{ url_for('bookings.new', w_id=workshop.w_id) }}" class="book-btn full-width">Book a
+                    Service</a>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+</div>
+<div class="login-modal" id="loginModal">
+    <form action="{{ url_for('auth.login') }}" method="post" class="login-form">
+        <h2>Welcome back</h2>
+        <p>Sign in to manage your bookings and workshop activity.</p>
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <div class="fw-btn-con">
+            <button class="fw-btn" type="submit">Login</button>
+        </div>
+        <p>New to Getwheelz? <a data-signup="signupBtn">Sign Up</a></p>
+        <p>or</p>
+        <button class="ggl-btn" id="google-login-btn">Login with Google</button>
+    </form>
+</div>
+<div class="signup-modal" id="signUpModal">
+    <form action="{{ url_for('auth.signup') }}" method="post" class="signup-form">
+        <h2>Create your account</h2>
+        <p>Join as a customer, workshop owner, or mechanic.</p>
+        <input type="text" name="name" placeholder="Username" required>
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <input type="password" name="confirm_password" placeholder="Confirm Password" required>
+        <select name="role">
+            <option value="customer">Customer</option>
+            <option value="owner">Workshop Owner</option>
+            <option value="mechanic">Mechanic</option>
+        </select>
+        <div class="fw-btn-con">
+            <button class="fw-btn" type="submit">Sign Up</button>
+        </div>
+        <p>Already have an account? <a data-login="loginBtn">Login</a></p>
+        <p>or</p>
+        <button class="ggl-btn" id="google-signup-btn">Sign Up with Google</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const workshopLat = {{ workshop.latitude | float if workshop.latitude is not none else 'null' }};
+    const workshopLng = {{ workshop.longitude | float if workshop.longitude is not none else 'null' }};
+    const workshopName = {{ workshop.name | tojson }};
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (workshopLat && workshopLng) {
+            const map = L.map('profile-map').setView([workshopLat, workshopLng], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+            L.marker([workshopLat, workshopLng]).addTo(map).bindPopup(workshopName);
+        }
+    });
+</script>
+{% endblock %}

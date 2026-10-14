@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}{{ workshop.name }} — Getwheelz{% endblock %}
+
+{# the apply / status controls, used in the hero and again beside the team #}
+{% macro apply_controls() %}
+{% if my_workshop == workshop.w_id %}
+<p class="preview-note"><i class='bx bx-check-circle'></i> You work at this workshop.</p>
+<a href="{{ url_for('mechanics.home') }}" class="join-btn">Go to my dashboard</a>
+{% elif my_workshop %}
+<p class="preview-note"><i class='bx bx-info-circle'></i> You already belong to another workshop. Leave it first to
+    apply here.</p>
+{% elif pending %}
+<form method="POST" action="{{ url_for('mechanics.cancel_join_request', w_id=workshop.w_id) }}">
+    <button type="submit" class="join-btn requested">Request sent (cancel)</button>
+</form>
+{% elif open_slots <= 0 %} <button type="button" class="join-btn" disabled>Workshop full</button>
+    {% else %}
+    <form method="POST" action="{{ url_for('mechanics.send_join_request', w_id=workshop.w_id) }}">
+        <button type="submit" class="join-btn">Apply to work here</button>
+    </form>
+    {% endif %}
+    {% endmacro %}
+
+    {% block content %}
+    <div class="admin-layout">
+
+        <aside class="admin-sidebar" id="sideBar">
+            <div class="sidebar-header">
+                <i class='bx bxs-wrench'></i>
+                <span>Mechanic Panel</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('mechanics.home') }}" class="sidebar-link"><i class='bx bx-arrow-back'></i> All
+                    workshops</a>
+                <a href="#overview" class="sidebar-link active"><i class='bx bx-grid-alt'></i> Overview</a>
+                <a href="#wpServices" class="sidebar-link"><i class='bx bx-wrench'></i> Services</a>
+                <a href="#wpTeam" class="sidebar-link"><i class='bx bx-group'></i> Team</a>
+                <a href="#wpLocation" class="sidebar-link"><i class='bx bx-map'></i> Location</a>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="{{ url_for('auth.logout') }}" class="sidebar-link"><i class='bx bx-log-out'></i> Logout</a>
+            </div>
+        </aside>
+
+        <main class="admin-main wp-main">
+
+            {# ---------------- hero ---------------- #}
+            <header class="wp-hero" id="overview">
+                <div class="wp-hero-photo">
+                    {% if workshop.photo_path %}
+                    <img src="{{ url_for('static', filename=workshop.photo_path) }}" alt="{{ workshop.name }}">
+                    {% else %}
+                    <div class="workshop-join-photo-placeholder"><i class='bx bx-store'></i></div>
+                    {% endif %}
+                </div>
+
+                <div class="wp-hero-info">
+                    <span class="preview-badge"><i class='bx bx-show'></i> Preview</span>
+                    <h1>{{ workshop.name }}</h1>
+                    <p class="wp-line"><i class='bx bx-map'></i> {{ workshop.address or 'Address not listed' }}</p>
+                    {% if workshop.contact_no %}
+                    <p class="wp-line"><i class='bx bx-phone'></i> {{ workshop.contact_no }}</p>
+                    {% endif %}
+                    <p class="wp-line"><i class='bx bx-user-circle'></i> Owner: {{ workshop.owner_name }}</p>
+                </div>
+
+                <div class="wp-apply">
+                    {{ apply_controls() }}
+                </div>
+            </header>
+
+            {# ---------------- at a glance ---------------- #}
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number">{{ team | length }}/{{ workshop.capacity }}</span>
+                    <span class="stat-label">Mechanics</span>
+                </div>
+                <div class="stat-card {% if open_slots > 0 %}highlight{% endif %}">
+                    <span class="stat-number">{{ [open_slots, 0] | max }}</span>
+                    <span class="stat-label">Open Spots</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">{{ services | length }}</span>
+                    <span class="stat-label">Services Offered</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">{{ jobs.completed }}</span>
+                    <span class="stat-label">Jobs Completed</span>
+                </div>
+            </div>
+
+            {# ---------------- services ---------------- #}
+            <section class="admin-section wp-panel" id="wpServices">
+                <h2>Services Offered</h2>
+                {% if services %}
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>S.no</th>
+                            <th>Service</th>
+                            <th>Price Range</th>
+                            <th>Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in services %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ s.s_name }}</td>
+                            <td>{{ s.price_range or '—' }}</td>
+                            <td>{{ s.duration or '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="no-results">No services listed yet.</p>
+                {% endif %}
+            </section>
+
+            {# ---------------- owner ---------------- #}
+            <section class="admin-section wp-panel" id="wpOwner">
+                <h2>Workshop Owner</h2>
+                <div class="team-grid">
+                    <div class="team-card owner-card profile-trigger" role="button" tabindex="0"
+                        data-role="Workshop Owner" data-name="{{ workshop.owner_name }}"
+                        data-picture="{{ url_for('static', filename=workshop.owner_picture) if workshop.owner_picture else '' }}"
+                        data-since="{{ workshop.owner_since.strftime('%b %Y') if workshop.owner_since else '' }}"
+                        data-workshops="{{ workshop.owner_workshops }}"
+                        data-contact="{{ workshop.contact_no or '' }}"
+                        data-url="{{ url_for('mechanics.user_profile', token=workshop.owner_uid | utoken) }}">
+                        <div class="team-avatar">
+                            {% if workshop.owner_picture %}
+                            <img src="{{ url_for('static', filename=workshop.owner_picture) }}"
+                                alt="{{ workshop.owner_name }}">
+                            {% else %}
+                            <span>{{ workshop.owner_name[:1] | upper }}</span>
+                            {% endif %}
+                        </div>
+                        <h3>{{ workshop.owner_name }}</h3>
+                        <span class="owner-badge"><i class='bx bxs-crown'></i> Owner</span>
+                        <small class="view-profile-hint">View profile</small>
+                    </div>
+                </div>
+            </section>
+            {# ---------------- team ---------------- #}
+            <section class="admin-section wp-panel" id="wpTeam">
+                <h2>Meet the Team <span class="count-pill">{{ team | length }}</span></h2>
+                {% if team %}
+                <div class="team-grid">
+                    {% for m in team %}
+                    <div class="team-card profile-trigger {% if m.m_id == my_m_id %}is-me{% endif %}" role="button"
+                        tabindex="0" data-role="Mechanic" data-name="{{ m.name }}"
+                        data-picture="{{ url_for('static', filename=m.profile_picture) if m.profile_picture else '' }}"
+                        data-experience="{{ (m.experience_yrs ~ ' yrs') if m.experience_yrs else '' }}"
+                        data-status="{{ m.active_stat or '' }}"
+                        data-url="{{ url_for('mechanics.user_profile', token=m.u_id | utoken) }}">
+                        <div class="team-avatar">
+                            {% if m.profile_picture %}
+                            <img src="{{ url_for('static', filename=m.profile_picture) }}" alt="{{ m.name }}">
+                            {% else %}
+                            <span>{{ m.name[:1] | upper }}</span>
+                            {% endif %}
+                        </div>
+                        <h3>{{ m.name }}{% if m.m_id == my_m_id %} <small>(you)</small>{% endif %}</h3>
+                        <p class="team-exp"><i class='bx bx-medal'></i>
+                            {% if m.experience_yrs %}{{ m.experience_yrs }} yr{{ '' if m.experience_yrs == 1 else 's' }}
+                            experience{% else %}Experience not listed{% endif %}
+                        </p>
+                        {% if m.active_stat %}
+                        <span
+                            class="status-badge {% if m.active_stat | lower in ['active', 'available'] %}status-completed{% else %}status-pending{% endif %}">{{
+                            m.active_stat }}</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="no-results">No mechanics here yet. You could be the first.</p>
+                {% endif %}
+            </section>
+
+            {# ---------------- location + how joining works ---------------- #}
+            <section class="admin-section wp-panel" id="wpLocation">
+                <h2>Location</h2>
+                {% if workshop.latitude is not none and workshop.longitude is not none %}
+                <div id="preview-map"></div>
+                {% else %}
+                <p class="no-results">The owner hasn't pinned this workshop on the map.</p>
+                {% endif %}
+            </section>
+
+            <section class="admin-section wp-panel">
+                <h2>How joining works</h2>
+                <ol class="join-steps">
+                    <li><strong>Apply.</strong> Send a request. The owner is notified in their dashboard.</li>
+                    <li><strong>Owner reviews.</strong> They can accept or reject, and can only accept while there is an
+                        open spot.</li>
+                    <li><strong>You're in.</strong> Once accepted you see the workshop's bookings on your dashboard.
+                    </li>
+                </ol>
+                <div class="wp-apply-bottom">{{ apply_controls() }}</div>
+            </section>
+
+            {# ---------------- profile popup (owner and mechanics) ---------------- #}
+            <div class="confirm-dialog" id="profilePop" role="dialog" aria-modal="true" aria-labelledby="ppName">
+                <div class="confirm-box profile-pop-box">
+                    <button type="button" class="pp-close" data-close aria-label="Close">&times;</button>
+                    <div class="team-avatar pp-avatar" id="ppAvatar"></div>
+                    <h3 id="ppName"></h3>
+                    <span class="owner-badge" id="ppRole"></span>
+                    <ul class="pp-details" id="ppDetails"></ul>
+                    <a href="#" class="join-btn" id="ppLink">View full profile</a>
+                </div>
+            </div>
+
+        </main>
+    </div>
+    {% endblock %}
+
+    {% block scripts %}
+    <script src="{{ url_for('static', filename='js/profile.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/admin.js') }}" defer></script>
+    {% if workshop.latitude is not none and workshop.longitude is not none %}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const lat = {{ workshop.latitude | float
+        }};
+        const lng = {{ workshop.longitude | float }};
+        const map = L.map('preview-map', { scrollWheelZoom: false }).setView([lat, lng], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+        L.marker([lat, lng]).addTo(map).bindPopup({{ workshop.name | tojson }});
+    });
+    </script>
+    {% endif %}
+    {% endblock %}

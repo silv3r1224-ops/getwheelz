@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile — Getwheelz{% endblock %}
+
+{% block content %}
+<div class="admin-layout" id="adminLayout">
+
+    <!-- Admin Sidebar directly integrated -->
+    <aside class="admin-sidebar" id="sideBar">
+        <div class="sidebar-header">
+            <i class='bx bxs-user-badge'></i>
+            <span>My Account</span>
+        </div>
+        <nav class="sidebar-nav">
+            {% if user.role == 'admin' %}
+            <a href="{{ url_for('dashboard.admin') }}" class="sidebar-link">
+                <i class='bx bx-grid-alt'></i> Back to Dashboard
+            </a>
+            {% elif user.role == 'owner' %}
+            <a href="{{ url_for('dashboard.owner') }}" class="sidebar-link">
+                <i class='bx bx-grid-alt'></i> Back to Dashboard
+            </a>
+            {% endif %}
+
+            <a href="#profile" class="sidebar-link active" data-tab-btn="profileTab">
+                <i class='bx bx-user-circle'></i> Profile
+            </a>
+
+            <a href="#settings" class="sidebar-link" data-tab-btn="settingsTab">
+                <i class='bx bx-cog'></i> Settings
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-link">
+                <i class='bx bx-log-out'></i> Logout
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content Area with .admin-main class to match layout offset -->
+    <main class="admin-main profile-page-main">
+
+        <!-- PROFILE TAB -->
+        <section class="profile-tab-content active" id="profileTab">
+            <article class="ig-profile-card" id="profileCard">
+                <div class="ig-cover-photo"></div>
+
+                <div class="ig-profile-header">
+                    <div class="ig-avatar-wrapper">
+                        <div class="ig-avatar-ring">
+                            <div class="ig-avatar-inner" id="avatarPreview">
+                                {% if user.profile_picture %}
+                                <img src="{{ url_for('static', filename=user.profile_picture) }}" alt="{{ user.name }}"
+                                    class="profile-picture-clickable" onclick="openProfilePicture()">
+                                {% else %}
+                                <i class='bx bx-user'></i>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <form method="POST" action="{{ url_for('dashboard.upload_profile_picture') }}"
+                            enctype="multipart/form-data" class="ig-avatar-upload-form">
+
+                            <label class="ig-avatar-change-btn" title="Change profile picture">
+                                <i class='bx bx-camera'></i>
+
+                                <input type="file" name="photo" id="avatarUpload" accept="image/*"
+                                    style="display: none;" onchange="this.form.submit()">
+                            </label>
+
+                        </form>
+                    </div>
+
+                    <div class="ig-user-meta">
+                        <h1>{{ user.name }}</h1>
+                        <div class="ig-badges">
+                            <span class="ig-pill"><i class='bx bx-shield-quarter'></i>{{ user.role }}</span>
+                            <span class="ig-pill"><i class='bx bx-envelope'></i>{{ user.email }}</span>
+                            <span class="ig-pill"><i class='bx bx-calendar'></i>Joined {{ user.created_at.strftime('%d
+                                %b %Y') }}</span>
+                        </div>
+                    </div>
+
+                    <button type="button" class="ig-action-btn ig-btn-primary" id="editToggleBtn">
+                        <i class='bx bx-edit'></i> Edit Profile
+                    </button>
+                </div>
+
+                <div class="ig-stats-strip">
+                    <div class="ig-stat-col">
+                        <strong>{{ user.role|capitalize }}</strong>
+                        <span>Role</span>
+                    </div>
+                    <div class="ig-stat-col">
+                        {% if user.role == 'mechanic' %}
+                        <strong>{{ role_info.experience_yrs or 0 }} yrs</strong>
+                        <span>Experience</span>
+                        {% else %}
+                        <strong>Active</strong>
+                        <span>Account</span>
+                        {% endif %}
+                    </div>
+                    <div class="ig-stat-col">
+                        <strong>{{ user.created_at.strftime('%Y') }}</strong>
+                        <span>Member Since</span>
+                    </div>
+                </div>
+
+                <div class="ig-details-container">
+                    <div class="ig-card-section">
+                        <h2>Account Details</h2>
+                        <div class="ig-info-row">
+                            <span>Name</span>
+                            <strong>{{ user.name }}</strong>
+                        </div>
+                        <div class="ig-info-row">
+                            <span>Email</span>
+                            <strong>{{ user.email }}</strong>
+                        </div>
+
+                        {% if user.role == 'customer' %}
+                        <div class="ig-info-row">
+                            <span>Phone Number</span>
+                            <strong>{{ role_info.phone_no or role_info.phone_number or 'Not provided' }}</strong>
+                        </div>
+                        {% endif %}
+
+                        {% if user.role == 'mechanic' %}
+                        <div class="ig-info-row">
+                            <span>Workshop</span>
+                            <strong>{{ role_info.workshop_name or 'Not assigned yet' }}</strong>
+                        </div>
+                        <div class="ig-info-row">
+                            <span>Experience</span>
+                            <strong>{{ role_info.experience_yrs or '—' }} yrs</strong>
+                        </div>
+                        {% endif %}
+
+                        {% if user.role == 'owner' and role_info %}
+                        <div class="ig-info-row">
+                            <span>Workshop Name</span>
+                            <strong>{{ role_info.name }}</strong>
+                        </div>
+                        {% endif %}
+
+                        <!-- Form that toggles on "Edit Profile" click -->
+                        <form class="ig-profile-form" id="profileEditForm" method="POST"
+                            action="{{ url_for('dashboard.profile') }}">
+                            <div class="ig-form-group">
+                                <label for="name">Name</label>
+                                <input type="text" id="name" name="name" value="{{ user.name }}" required>
+                            </div>
+
+                            <div class="ig-form-group">
+                                <label for="email">Email</label>
+                                <input type="email" id="email" value="{{ user.email }}" disabled>
+                            </div>
+
+                            {% if user.role == 'customer' %}
+                            <div class="ig-form-group">
+                                <label for="phone_number">Phone Number</label>
+                                <input type="text" id="phone_number" name="phone_no"
+                                    value="{{ role_info.phone_no or role_info.phone_number or '' }}">
+                            </div>
+                            {% endif %}
+
+                            {% if user.role == 'mechanic' %}
+                            <div class="ig-form-group">
+                                <label for="experience_yrs">Years of Experience</label>
+                                <input type="number" id="experience_yrs" name="experience_yrs" min="0" max="50"
+                                    value="{{ role_info.experience_yrs or '' }}">
+                            </div>
+                            {% endif %}
+
+                            <div class="ig-form-button-group">
+                                <button type="submit" class="ig-action-btn ig-btn-primary"><i class='bx bx-save'></i>
+                                    Save Changes</button>
+                                <button type="button" class="ig-action-btn ig-btn-secondary" id="cancelEditBtn"><i
+                                        class='bx bx-x'></i> Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                    {% if session.role != 'admin' %}
+                    <div class="ig-card-section">
+                        <h3>Quick Links</h3>
+                        <div class="ig-quick-links-list">
+                            {% if user.role == 'mechanic' %}
+                            <a href="{{ url_for('mechanics.home') }}" class="ig-quick-item">
+                                <span><i class='bx bx-wrench'></i> Manage Workshop</span>
+                                <i class='bx bx-chevron-right'></i>
+                            </a>
+                            {% endif %}
+                            {% if user.role == 'owner' and role_info %}
+                            <a href="{{ url_for('dashboard.owner') }}" class="ig-quick-item">
+                                <span><i class='bx bx-store'></i> Owner Dashboard</span>
+                                <i class='bx bx-chevron-right'></i>
+                            </a>
+                            {% endif %}
+                            {% if user.role == 'customer' %}
+                            <a href="{{ url_for('bookings.my_bookings') }}" class="ig-quick-item">
+                                <span><i class='bx bx-calendar-check'></i> My Bookings</span>
+                                <i class='bx bx-chevron-right'></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </article>
+        </section>
+
+        <!-- SETTINGS TAB -->
+        <section class="profile-tab-content" id="settingsTab">
+            <div class="settings-wrapper">
+                <article class="settings-card">
+                    <h2><i class='bx bx-lock-alt'></i> Change Password</h2>
+                    <p>Update your password to ensure your account remains safe and secure.</p>
+                    <form method="POST" action="{{ url_for('dashboard.change_password') }}">
+                        <div class="ig-form-group">
+                            <label for="old_pass">Current Password</label>
+                            <input type="password" id="old_pass" name="old_pass" autocomplete="current-password"
+                                required>
+                        </div>
+
+                        <div class="ig-form-group">
+                            <label for="new_pass">New Password</label>
+                            <input type="password" id="new_pass" name="new_pass" autocomplete="new-password"
+                                minlength="8" required>
+                        </div>
+
+                        <div class="ig-form-group">
+                            <label for="confirm_pass">Confirm Password</label>
+                            <input type="password" id="confirm_pass" name="confirm_pass" autocomplete="new-password"
+                                minlength="8" required>
+                        </div>
+
+                        <button type="submit" class="ig-action-btn ig-btn-primary">
+                            <i class='bx bx-key'></i>
+                            Update Password
+                        </button>
+                    </form>
+                </article>
+
+                <article class="settings-card danger-zone">
+                    <h2><i class='bx bx-trash'></i> Delete Account</h2>
+                    <p>Permanently remove your account and erase all your personal data.</p>
+
+                    <!-- Initially displayed -->
+                    <a href="#" class="btn-danger" id="deleteAccountBtn">
+                        <i class='bx bx-user-x'></i> Delete Account
+                    </a>
+
+                    <!-- Initially hidden -->
+                    <form class="delete-acc-form" method="POST" id="deleteAccountForm">
+                        <div class="ig-form-group">
+                            <label for="del_pass">Enter your password to confirm</label>
+                            <input type="password" id="del_pass" name="password" required>
+                        </div>
+
+                        <button type="submit" class="btn-danger">
+                            <i class='bx bx-user-x'></i> Confirm Delete
+                        </button>
+
+                        <button type="button" class="btn-danger" id="cancelDeleteBtn">
+                            <i class='bx bx-x'></i> Cancel
+                        </button>
+                    </form>
+                </article>
+
+                </article>
+            </div>
+        </section>
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="flash-container">
+            {% for message in messages %}
+            <div class="flash-message">
+                <i class='bx bx-check-circle'></i>
+                <span>{{ message }}</span>
+                <button type="button" onclick="this.parentElement.remove()">
+                    &times;
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+    </main>
+</div>
+<!-- Profile Picture Popup -->
+<div class="profile-picture-modal" id="profilePictureModal">
+
+    <div class="profile-picture-modal-content">
+
+        <button class="profile-picture-close" onclick="closeProfilePicture()">
+            &times;
+        </button>
+
+        {% if user.profile_picture %}
+        <img src="{{ url_for('static', filename=user.profile_picture) }}" alt="{{ user.name }}"
+            class="profile-picture-large">
+
+        <form method="POST" action="{{ url_for('dashboard.remove_profile_picture') }}"
+            onsubmit="return confirm('Remove your profile picture?');">
+            <button type="submit" class="remove-profile-picture">
+                <i class='bx bx-trash'></i>
+                Remove Picture
+            </button>
+        </form>
+        {% endif %}
+
+    </div>
+
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/profile.js') }}" defer></script>
+{% endblock %}

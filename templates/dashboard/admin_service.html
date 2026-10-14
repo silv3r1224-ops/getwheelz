@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Service Catalog — Admin{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+
+    <aside class="admin-sidebar" id="sideBar">
+        <div class="sidebar-header">
+            <i class='bx bxs-shield-alt-2'></i>
+            <span>Admin Panel</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('dashboard.admin') }}" class="sidebar-link">
+                <i class='bx bx-grid-alt'></i> Back to Dashboard
+            </a>
+            <a href="{{ url_for('dashboard.admin_services') }}" class="sidebar-link active">
+                <i class='bx bx-list-ul'></i> Service Catalog
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-link">
+                <i class='bx bx-log-out'></i> Logout
+            </a>
+        </div>
+    </aside>
+
+    <main class="admin-main">
+        <h1>Service Catalog</h1>
+        <p class="page-subtitle">
+            These are the services workshop owners can choose from when listing what they offer.
+        </p>
+
+        <form method="POST" action="{{ url_for('dashboard.admin_services') }}" class="catalog-add-form">
+            <input type="text" name="s_name" placeholder="New service name (e.g. Brake Repair)" required>
+            <button type="submit" class="fw-btn-con"><span class="fw-btn">Add Service</span></button>
+        </form>
+
+        <div class="catalog-list">
+            {% for c in catalog %}
+            <div class="catalog-item">
+                <span>{{ c.s_name }}</span>
+                <a class="mini-btn cancel deleteAcc" data-delete-url="{{ url_for('dashboard.delete_catalog_service', sc_id=c.sc_id) }}">
+                    Remove
+                </a>
+            </div>
+            {% else %}
+            <p class="no-results">No services in the catalog yet.</p>
+            {% endfor %}
+        </div>
+    </main>
+
+</div>
+<div class="delete-con" id="deleteCon">
+    <h2>Are you sure?</h2>
+        <div class="action-sure">
+            <a href="#" id="confirmDel">Yes</a>
+        </div>
+        <div class="action-sure">
+            <a href="#" id="cancelDel">cancel</a>
+        </div>
+</div>
+{% endblock %}
