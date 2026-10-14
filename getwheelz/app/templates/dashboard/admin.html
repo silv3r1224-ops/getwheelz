@@ -20,6 +20,9 @@
             <a href="#all-owners" class="sidebar-link">
                 <i class='bx bx-store'></i> Owners
             </a>
+            <a href="#all-mechanics" class="sidebar-link">
+                <i class='bx bx-wrench'></i> Mechanics
+            </a>
             <a href="#all-workshops" class="sidebar-link">
                 <i class='bx bx-wrench'></i> Workshops
             </a>
@@ -50,7 +53,8 @@
                 <span class="admin-eyebrow"><i class='bx bxs-dashboard'></i> Control Center</span>
                 <h1>Platform <span class="accent">Overview</span></h1>
                 <p>Welcome back{% if session.user_name %}, {{ session.user_name }}{% endif %}.
-                    <span id="adminDate"></span></p>
+                    <span id="adminDate"></span>
+                </p>
             </div>
 
             <div class="admin-hero-actions">
@@ -129,9 +133,10 @@
                             <td>{{result[3]}}</td>
                             <td>{{result[4].strftime('%d %b %Y')}}</td>
                             <td>
-                                <div class="action">
-                                    <a data-delete-url="{{url_for('dashboard.admin_terminate', role=role, u_id = result[1])}}" class="deleteAcc">Delete</a>
-                                </div>
+                                <button type="button" class="deleteAcc"
+                                    data-delete-url="{{ url_for('dashboard.admin_terminate', role=role, u_id=result[1]) }}">
+                                    <i class='bx bx-trash'></i> Delete
+                                </button>
                             </td>
                         </tr>
                     </tbody>
@@ -210,6 +215,40 @@
             {% endif %}
         </div>
 
+        <div class="admin-section" id="all-mechanics">
+            <h2>All Mechanics</h2>
+            {% if mechanics %}
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>S.no.</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Joined</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in mechanics %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ m.name }}</td>
+                        <td>{{ m.email }}</td>
+                        <td>{{ m.created_at.strftime('%d %b %Y') }}</td>
+                        <td>
+                            <a class="copy-email" data-email="{{ m.email }}">
+                                <i class='bx bx-copy'></i> Copy
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="no-results">No mechanics yet.</p>
+            {% endif %}
+        </div>
+
         <div class="admin-section" id="all-workshops">
             <h2>All Workshops</h2>
             {% if workshops %}
@@ -269,15 +308,14 @@
         </div>
     </main>
 </div>
-<div class="delete-con" id="deleteCon">
-    <h2>Are you sure?</h2>
-    <div class="action-sure">
+<div class="delete-con" id="deleteCon" role="dialog" aria-modal="true" aria-labelledby="deleteTitle">
+    <h2 id="deleteTitle">Are you sure?</h2>
+    <p>This account will be permanently deleted.</p>
+    <div class="delete-actions">
         <form id="deleteForm" method="post" action="">
-            <button id="confirmDel" type="submit">Yes</button>
+            <button id="confirmDel" type="submit" class="sure-btn danger">Yes, delete</button>
         </form>
-    </div>
-    <div class="action-sure">
-        <a id="cancelDel">cancel</a>
+        <button type="button" id="cancelDel" class="sure-btn cancel">Cancel</button>
     </div>
 </div>
 {% endblock %}

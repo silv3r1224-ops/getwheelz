@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Getwheelz{% endblock %}</title>
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='logo/getwheelz.png') }}?v=3">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link rel="icon" href="{{ url_for('static', filename='logo/getwheelz.png')}}">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     {% block head %}{% endblock %}
 </head>
@@ -15,6 +15,19 @@
 <body>
     {% include 'partials/navbar.html' %}
     <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-container">
+            {% for category, message in messages %}
+            <div class="flash-message flash-{{ category }}">
+                <i class="bx {{ 'bx-check-circle' if category == 'success' else 'bx-error-circle' }}"></i>
+                <span>{{ message }}</span>
+                <button type="button" class="flash-close" aria-label="Close message">&times;</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
         {% block content %}
         {% endblock %}
     </main>
@@ -30,18 +43,29 @@
     {% block scripts %}{% endblock %}
     <script>
         /* Flash messages: fade out after 4s (pauses while hovered). Self-contained, so an error
-           elsewhere in main.js can never stop it. */
+        elsewhere in main.js can never stop it. */
         (function () {
             document.querySelectorAll('.flash-message').forEach(function (message) {
                 var timer;
                 function dismiss() {
                     message.style.opacity = '0';
                     message.style.transform = 'translateX(40px)';
-                    setTimeout(function () { message.remove(); }, 300);
+                    setTimeout(function () {
+                        message.remove();
+                    }, 300);
                 }
-                function start() { timer = setTimeout(dismiss, 4000); }
-                message.addEventListener('mouseenter', function () { clearTimeout(timer); });
+                function start() {
+                    clearTimeout(timer);
+                    timer = setTimeout(dismiss, 4000);
+                }
+                message.addEventListener('mouseenter', function () {
+                    clearTimeout(timer);
+                });
                 message.addEventListener('mouseleave', start);
+                var closeButton = message.querySelector('.flash-close');
+                if (closeButton) {
+                    closeButton.addEventListener('click', dismiss);
+                }
                 start();
             });
         })();
