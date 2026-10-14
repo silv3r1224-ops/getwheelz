@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+
+{% block title %}Find a Workshop — Getwheelz{% endblock %}
+
+{# One workshop card, reused in every section #}
+{% macro workshop_card(w) %}
+{% set is_full = w.open_slots <= 0 %}
+<div class="workshop-join-card" data-wid="{{ w.w_id }}"
+    data-href="{{ url_for('mechanics.workshop_preview', token=w.w_id | wtoken) }}"
+    data-name="{{ w.name | lower }}"
+    data-address="{{ (w.address or '') | lower }}"
+    data-services="{{ ((w.service_names or []) | join('|')) | lower }}"
+    data-lat="{{ w.latitude | float if w.latitude is not none else '' }}"
+    data-lng="{{ w.longitude | float if w.longitude is not none else '' }}">
+    <div class="workshop-join-card-photo">
+        {% if w.photo_path %}
+        <img src="{{ url_for('static', filename=w.photo_path) }}" alt="{{ w.name }}">
+        {% else %}
+        <div class="workshop-join-photo-placeholder"><i class='bx bx-store'></i></div>
+        {% endif %}
+    </div>
+
+    <div class="workshop-join-card-info">
+        <h3><a href="{{ url_for('mechanics.workshop_preview', token=w.w_id | wtoken) }}" class="card-title-link">{{ w.name }}</a></h3>
+        <p><i class='bx bx-map'></i> {{ w.address or 'Address not listed' }}</p>
+        <div class="carousel-card-tags">
+            {% for service in (w.service_names or [])[:4] %}
+            <span class="service-tag">{{ service }}</span>
+            {% endfor %}
+            {% if (w.service_names or []) | length > 4 %}
+            <span class="service-tag more">+{{ w.service_names | length - 4 }}</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="workshop-card-side">
+        <div class="workshop-capacity {% if is_full %}full{% endif %}" title="Mechanics / capacity">
+            <i class='bx bx-group'></i>
+            <span>{{ w.total_mechanics }}/{{ w.capacity }}</span>
+            {% if is_full %}<span class="full-badge">Full</span>{% endif %}
+        </div>
+        {% if not is_full %}
+        <span class="openings-text">{{ w.open_slots }} opening{{ '' if w.open_slots == 1 else 's' }}</span>
+        {% endif %}
+        <span class="distance-badge" hidden></span>
+    </div>
+
+    {% if w.w_id in requested_ids %}
+    <form method="POST" action="{{ url_for('mechanics.cancel_join_request', w_id=w.w_id) }}">
+        <button type="submit" class="join-btn requested">Request sent (cancel)</button>
+    </form>
+    {% elif is_full %}
+    <button type="button" class="join-btn" disabled>Workshop full</button>
+    {% else %}
+    <form method="POST" action="{{ url_for('mechanics.send_join_request', w_id=w.w_id) }}">
+        <button type="submit" class="join-btn">Request to join</button>
+    </form>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% block content %}
+<div class="admin-layout">
+
+    <aside class="admin-sidebar" id="sideBar">
+        <div class="sidebar-header">
+            <i class='bx bxs-wrench'></i>
+            <span>Mechanic Panel</span>
+        </div>
+        <div class="sidebar-warning">
+            <i class='bx bx-error'></i>
+            <p>You're not at a workshop yet. Send a joining request to start receiving bookings.</p>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#top" class="sidebar-link active"><i class='bx bx-search-alt'></i> Find workshops</a>
+            {% if requested %}
+            <a href="#yourRequests" class="sidebar-link"><i class='bx bx-time-five'></i> Your requests</a>
+            {% endif %}
+            <a href="#nearbyWorkshops" class="sidebar-link" id="nearbyLink" hidden><i class='bx bx-current-location'></i> Nearby</a>
+            <a href="#hiringNow" class="sidebar-link"><i class='bx bx-user-plus'></i> Hiring now</a>
+            {% if full %}
+            <a href="#fullWorkshops" class="sidebar-link"><i class='bx bx-lock-alt'></i> Currently full</a>
+            {% endif %}
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-link">
+                <i class='bx bx-log-out'></i> Logout
+            </a>
+        </div>
+    </aside>
+
+    <main class="admin-main mechanic-browse-page" id="top">
+        <header class="garage-header">
+            <div class="garage-header-icons" aria-hidden="true">
+                <i class='bx bx-cog gear gear-big'></i>
+                <i class='bx bx-cog gear gear-small'></i>
+            </div>
+            <div class="garage-header-text">
+                <span class="garage-eyebrow"><i class='bx bxs-wrench'></i> Mechanic Hub</span>
+                <h1>Find Your <span class="accent">Workshop</span></h1>
+                <p>Pick a garage, send a joining request, and get on the job. The owner reviews it and you're in once
+                    accepted.</p>
+            </div>
+            <div class="hazard-stripe" aria-hidden="true"></div>
+        </header>
+
+        {% if workshops %}
+
+        {# ---- search + service filter ---- #}
+        <div class="browse-toolbar">
+            <div class="browse-search">
+                <i class='bx bx-search'></i>
+                <input type="text" id="browseSearch" placeholder="Search by workshop name or area" autocomplete="off">
+            </div>
+            {% if all_services %}
+            <div class="chip-row" id="serviceChips">
+                <button type="button" class="chip active" data-service="">All</button>
+                {% for s in all_services %}
+                <button type="button" class="chip" data-service="{{ s | lower }}">{{ s }}</button>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        {# ---- your pending requests ---- #}
+        {% if requested %}
+        <section class="browse-section" id="yourRequests">
+            <div class="browse-section-head">
+                <h2><i class='bx bx-time-five'></i> Your requests <span class="count-pill">{{ requested | length }}</span></h2>
+                <p>Waiting for the owner to respond.</p>
+            </div>
+            <div class="workshop-join-list">
+                {% for w in requested %}{{ workshop_card(w) }}{% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        {# ---- nearby (filled in by JS once location is known) ---- #}
+        <section class="browse-section" id="nearbyWorkshops" hidden>
+            <div class="browse-section-head">
+                <h2><i class='bx bx-current-location'></i> Near you <span class="count-pill" id="nearbyCount"></span></h2>
+                <p>Closest workshops to your current location.</p>
+            </div>
+            <div class="workshop-join-list" id="nearbyList"></div>
+        </section>
+
+        {# ---- hiring now ---- #}
+        <section class="browse-section" id="hiringNow">
+            <div class="browse-section-head">
+                <h2><i class='bx bx-user-plus'></i> Hiring now <span class="count-pill">{{ hiring | length }}</span></h2>
+                <p>Workshops with open spots, most openings first.</p>
+            </div>
+            {% if hiring %}
+            <div class="workshop-join-list">
+                {% for w in hiring %}{{ workshop_card(w) }}{% endfor %}
+            </div>
+            {% else %}
+            <p class="no-results">No workshops have openings right now.</p>
+            {% endif %}
+        </section>
+
+        {# ---- full ---- #}
+        {% if full %}
+        <section class="browse-section browse-section-muted" id="fullWorkshops">
+            <div class="browse-section-head">
+                <h2><i class='bx bx-lock-alt'></i> Currently full <span class="count-pill">{{ full | length }}</span></h2>
+                <p>No openings right now. Check back later.</p>
+            </div>
+            <div class="workshop-join-list">
+                {% for w in full %}{{ workshop_card(w) }}{% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <p class="no-results" id="noMatches" hidden>No workshops match your search.</p>
+
+        {% else %}
+        <p class="no-results">No workshops available yet.</p>
+        {% endif %}
+    </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    const page = document.querySelector('.mechanic-browse-page');
+    if (!page || !document.getElementById('browseSearch')) return;
+
+    const search = document.getElementById('browseSearch');
+    const chips = document.querySelectorAll('#serviceChips .chip');
+    const sections = page.querySelectorAll('.browse-section');
+    const noMatches = document.getElementById('noMatches');
+    let activeService = '';
+
+    // ---------- filtering (search box + service chips) ----------
+    function applyFilters() {
+        const q = search.value.trim().toLowerCase();
+        let anyVisible = false;
+
+        sections.forEach(sec => {
+            if (sec.id === 'nearbyWorkshops' && !sec.dataset.ready) return;   // not populated yet
+            const cards = sec.querySelectorAll('.workshop-join-card');
+            let shown = 0;
+            cards.forEach(card => {
+                const d = card.dataset;
+                const matchText = !q || d.name.includes(q) || d.address.includes(q);
+                const matchService = !activeService || d.services.split('|').includes(activeService);
+                const show = matchText && matchService;
+                card.hidden = !show;
+                if (show) shown++;
+            });
+            // sections with cards hide when nothing matches; the "hiring" empty message stays
+            if (cards.length) sec.hidden = shown === 0;
+            if (shown) anyVisible = true;
+        });
+
+        if (noMatches) noMatches.hidden = anyVisible;
+    }
+
+    search.addEventListener('input', applyFilters);
+    chips.forEach(chip => chip.addEventListener('click', () => {
+        chips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        activeService = chip.dataset.service;
+        applyFilters();
+    }));
+
+    // ---------- click a card to open the workshop profile ----------
+    page.addEventListener('click', (e) => {
+        const card = e.target.closest('.workshop-join-card[data-href]');
+        if (!card) return;
+        if (e.target.closest('form, button, a')) return;   // buttons and links keep their own behaviour
+        window.location.href = card.dataset.href;
+    });
+
+    // ---------- nearby: distance computed in the browser ----------
+    const nearbySection = document.getElementById('nearbyWorkshops');
+    const nearbyList = document.getElementById('nearbyList');
+    const nearbyCount = document.getElementById('nearbyCount');
+    const nearbyLink = document.getElementById('nearbyLink');
+
+    const toRad = (d) => d * Math.PI / 180;
+    function km(lat1, lng1, lat2, lng2) {
+        const a = Math.sin(toRad(lat2 - lat1) / 2) ** 2 +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(toRad(lng2 - lng1) / 2) ** 2;
+        return 6371 * 2 * Math.asin(Math.sqrt(a));
+    }
+
+    if (nearbySection && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((pos) => {
+            const { latitude, longitude } = pos.coords;
+            const seen = new Set();
+            const found = [];
+
+            // collect each workshop once, from the server-rendered sections
+            page.querySelectorAll('.browse-section:not(#nearbyWorkshops) .workshop-join-card').forEach(card => {
+                const lat = parseFloat(card.dataset.lat);
+                const lng = parseFloat(card.dataset.lng);
+                if (isNaN(lat) || isNaN(lng) || seen.has(card.dataset.wid)) return;
+                seen.add(card.dataset.wid);
+                found.push({ card, dist: km(latitude, longitude, lat, lng) });
+            });
+
+            if (!found.length) return;
+            found.sort((a, b) => a.dist - b.dist);
+
+            found.slice(0, 6).forEach(({ card, dist }) => {
+                const clone = card.cloneNode(true);
+                clone.hidden = false;
+                const badge = clone.querySelector('.distance-badge');
+                badge.textContent = (dist < 10 ? dist.toFixed(1) : Math.round(dist)) + ' km away';
+                badge.hidden = false;
+                nearbyList.appendChild(clone);
+            });
+
+            nearbyCount.textContent = Math.min(6, found.length);
+            nearbySection.dataset.ready = '1';
+            nearbySection.hidden = false;
+            if (nearbyLink) nearbyLink.hidden = false;
+            applyFilters();
+        }, () => { /* permission denied: the Nearby section simply stays hidden */ },
+        { timeout: 10000, maximumAge: 300000 });
+    }
+})();
+</script>
+{% endblock %}

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,19 +10,41 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     {% block head %}{% endblock %}
 </head>
+
 <body>
     {% include 'partials/navbar.html' %}
     <main>
         {% block content %}
         {% endblock %}
     </main>
-    {% if session.role != 'admin' and session.role != 'owner' %}
+    {% if session.role != 'admin' and session.role != 'owner' and session.role != 'customer' and session.role !=
+    'mechanic' %}
     {% include 'partials/footer.html' %}
     {% endif %}
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
-    {% block scripts %}{% endblock %}
 
+    <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/header.js') }}" defer></script>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    {% block scripts %}{% endblock %}
+    <script>
+        /* Flash messages: fade out after 4s (pauses while hovered). Self-contained, so an error
+           elsewhere in main.js can never stop it. */
+        (function () {
+            document.querySelectorAll('.flash-message').forEach(function (message) {
+                var timer;
+                function dismiss() {
+                    message.style.opacity = '0';
+                    message.style.transform = 'translateX(40px)';
+                    setTimeout(function () { message.remove(); }, 300);
+                }
+                function start() { timer = setTimeout(dismiss, 4000); }
+                message.addEventListener('mouseenter', function () { clearTimeout(timer); });
+                message.addEventListener('mouseleave', start);
+                start();
+            });
+        })();
+    </script>
 </body>
+
 </html>

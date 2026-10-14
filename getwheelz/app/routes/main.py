@@ -8,11 +8,25 @@ def index():
 
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT w_id, name, address, latitude, longitude FROM workshop LIMIT 10")
+    cur.execute("""
+        SELECT w_id, name, address, latitude, longitude
+        FROM workshop
+        WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+        ORDER BY w_id DESC
+        LIMIT 50
+    """)
     workshops = cur.fetchall()
+
+    cur.execute("""
+        SELECT (SELECT COUNT(*) FROM workshop) AS workshops,
+            (SELECT COUNT(*) FROM mechanic WHERE w_id IS NOT NULL) AS mechanics,
+            (SELECT COUNT(*) FROM service) AS services,
+            (SELECT COUNT(*) FROM booking WHERE status = 'completed') AS jobs
+    """)
+    stats = cur.fetchone()
     cur.close()
     conn.close()
-    return render_template('index.html', workshops=workshops)
+    return render_template('index.html', workshops=workshops, stats=stats)
 
 @main_bp.route('/about')
 def about():

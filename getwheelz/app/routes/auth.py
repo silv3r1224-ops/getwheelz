@@ -71,21 +71,31 @@ def login():
         conn = get_db_connection()
         try:
             with conn.cursor() as cur:
-                cur.execute("SELECT u_id, name, password, role FROM users WHERE email = %s",
-                        (email,)
-                )
+                cur.execute("SELECT u_id, name, password, role FROM users WHERE email = %s", (email,))
                 user = cur.fetchone()
 
                 if user is None or not check_password_hash(user['password'], password):
                     flash('Invalid email or password')
                     return redirect(url_for('main.index'))
 
+                admin_row = None
+                if user['role'] == 'admin':
+                    cur.execute(
+                        "SELECT admin_type, is_active FROM admin WHERE u_id = %s",
+                        (user['u_id'],)
+                    )
+                    admin_row = cur.fetchone()
+                    if not admin_row or not admin_row['is_active']:
+                        flash('This admin account is inactive or not configured.')
+                        return redirect(url_for('main.index'))
+
                 session.clear()
                 session['user_id'] = user['u_id']
                 session['user_name'] = user['name']
                 session['role'] = user['role']
-                print("DEBUG — about to set session, user dict:", dict(user))
-                print("DEBUG — session right after setting:", dict(session))
+                if admin_row:
+                    session['admin_type'] = admin_row['admin_type']
+                    session['is_main_admin'] = admin_row['admin_type'] == 'main'
 
                 if user['role'] == 'admin':
                     return redirect(url_for('dashboard.admin'))
@@ -94,20 +104,11 @@ def login():
                 elif user['role'] == 'owner':
                     return redirect(url_for('dashboard.owner'))
                 elif user['role'] == 'mechanic':
-                    cur.execute("SELECT w_id FROM mechanic WHERE u_id = %s", (user['u_id'],))
-                    mechanic = cur.fetchone()
-
-                    if mechanic and mechanic['w_id']:
-                        return redirect(url_for('dashboard.mechanic'))
-                    else:
-                        return redirect(url_for('mechanic.browse_workshops'))
-
+                    return redirect(url_for('mechanics.home'))
                 else:
                     return redirect(url_for('main.index'))
         finally:
             conn.close()
-
-
 
 @auth_bp.route('/logout')
 def logout():

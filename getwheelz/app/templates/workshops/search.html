@@ -3,6 +3,7 @@
 {% block title %}Find Workshops — Getwheelz{% endblock %}
 
 {% block content %}
+<div class="index-con" id="mainCon">
 <section class="search-results-page">
     <div class="search-header">
         <h1>Find a Workshop</h1>
@@ -22,7 +23,7 @@
     <div id="workshop-list" class="workshop-list hidden">
         {% if workshops %}
         {% for workshop in workshops %}
-        <a href="{{ url_for('workshops.profile', w_id=workshop.w_id) }}" class="workshop-card">
+        <a href="{{ url_for('workshops.selected', w_id=workshop.w_id) }}" class="workshop-card">
             <div class="workshop-card-info">
                 <h3>{{ workshop.name }}</h3>
                 <p><i class='bx bx-map'></i> {{ workshop.address }}</p>
@@ -35,6 +36,7 @@
         {% endif %}
     </div>
 </section>
+</div>
 <div class="login-modal" id="loginModal">
     <form action="{{ url_for('auth.login') }}" method="post" class="login-form">
         <h2>Login</h2>

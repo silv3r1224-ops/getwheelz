@@ -29,6 +29,11 @@
             <a href="{{ url_for('dashboard.admin_services') }}" class="sidebar-link">
                 <i class='bx bx-list-ul'></i> Service Catalog
             </a>
+            {% if session.get('is_main_admin') %}
+            <a href="{{ url_for('dashboard.admin_subadmins') }}" class="sidebar-link">
+                <i class='bx bx-user-plus'></i> Sub-admin Management
+            </a>
+            {% endif %}
         </nav>
         <div class="sidebar-footer">
             <a href="{{ url_for('auth.logout') }}" class="sidebar-link">
@@ -38,7 +43,33 @@
     </aside>
     <div id="overview"></div>
     <main class="admin-main">
-        <h1>Overview</h1>
+        <header class="admin-hero">
+            <div class="admin-hero-icon" aria-hidden="true"><i class='bx bxs-shield-alt-2'></i></div>
+
+            <div class="admin-hero-text">
+                <span class="admin-eyebrow"><i class='bx bxs-dashboard'></i> Control Center</span>
+                <h1>Platform <span class="accent">Overview</span></h1>
+                <p>Welcome back{% if session.user_name %}, {{ session.user_name }}{% endif %}.
+                    <span id="adminDate"></span></p>
+            </div>
+
+            <div class="admin-hero-actions">
+                {% set unread = (feedback_list or []) | rejectattr('is_read') | list | length %}
+                <a href="#all-feedback" class="hero-chip {% if unread %}hot{% endif %}">
+                    <i class='bx bx-message-detail'></i> {{ unread }} unread feedback
+                </a>
+                <a href="{{ url_for('dashboard.admin_services') }}" class="hero-chip">
+                    <i class='bx bx-list-ul'></i> Service catalog
+                </a>
+            </div>
+        </header>
+        <script>
+            (function () {
+                var el = document.getElementById('adminDate');
+                if (el) el.textContent = new Date().toLocaleDateString(undefined,
+                    { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            })();
+        </script>
 
         <div class="stats-grid">
             <div class="stat-card">
@@ -185,6 +216,7 @@
             <table class="admin-table">
                 <thead>
                     <tr>
+                        <th>S.no.</th>
                         <th>Name</th>
                         <th>Address</th>
                         <th>Owner</th>
@@ -193,6 +225,7 @@
                 <tbody>
                     {% for w in workshops %}
                     <tr>
+                        <td>{{ loop.index }}</td>
                         <td>{{ w.name }}</td>
                         <td>{{ w.address }}</td>
                         <td>{{ w.owner_name }}</td>
@@ -206,7 +239,7 @@
         </div>
 
         <div class="admin-section" id="all-feedback">
-            <h1>Feedback & Messages</h1>
+            <h2>Feedback & Messages</h2>
 
             {% if feedback_list %}
             <div class="feedback-list">
@@ -239,10 +272,16 @@
 <div class="delete-con" id="deleteCon">
     <h2>Are you sure?</h2>
     <div class="action-sure">
-        <a href="#" id="confirmDel">Yes</a>
+        <form id="deleteForm" method="post" action="">
+            <button id="confirmDel" type="submit">Yes</button>
+        </form>
     </div>
     <div class="action-sure">
-        <a href="#" id="cancelDel">cancel</a>
+        <a id="cancelDel">cancel</a>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin.js') }}" defer></script>
 {% endblock %}

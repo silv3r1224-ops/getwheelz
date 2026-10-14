@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Sub-admin Management — Getwheelz{% endblock %}
+{% block content %}
+<section class="admin-main" style="max-width:1200px;margin:2rem auto;padding:1.5rem;">
+    <header class="admin-hero">
+        <div class="admin-hero-icon"><i class="bx bxs-shield-alt-2"></i></div>
+        <div class="admin-hero-text"><span class="admin-eyebrow">Main Admin Only</span><h1>Sub-admin Management</h1><p>Create scoped admin accounts and control whether they can sign in.</p></div>
+        <a class="hero-chip" href="{{ url_for('dashboard.admin') }}">Back to dashboard</a>
+    </header>
+
+    <section class="admin-section">
+        <h2>Create a sub-admin</h2>
+        <form method="post" class="subadmin-create-form" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
+            <input name="name" type="text" placeholder="Full name" required maxlength="100">
+            <input name="email" type="email" placeholder="Email address" required maxlength="100">
+            <input name="password" type="password" placeholder="Password (8+ characters)" required minlength="8" autocomplete="new-password">
+            <input name="confirm_password" type="password" placeholder="Confirm password" required minlength="8" autocomplete="new-password">
+            <select name="admin_type" required>
+                <option value="">Choose manager type</option>
+                <option value="customer_manager">Customer Manager</option>
+                <option value="owner_workshop_manager">Owner / Workshop Manager</option>
+                <option value="mechanic_manager">Mechanic Manager</option>
+            </select>
+            <button type="submit">Create sub-admin</button>
+        </form>
+    </section>
+
+    <section class="admin-section">
+        <h2>Existing admin accounts</h2>
+        <div style="overflow-x:auto;"><table class="admin-table">
+            <thead><tr><th>Name</th><th>Email</th><th>Type</th><th>Status</th><th>Created</th><th>Action</th></tr></thead>
+            <tbody>{% for item in subadmins %}
+                <tr><td>{{ item.name }}</td><td>{{ item.email }}</td>
+                    <td>{% if item.admin_type == 'main' %}Main Admin{% else %}{{ item.admin_type.replace('_',' ').title() }}{% endif %}</td>
+                    <td>{{ 'Active' if item.is_active else 'Inactive' }}</td><td>{{ item.created_at }}</td>
+                    <td>{% if item.admin_type != 'main' and item.u_id != session.user_id %}
+                        <form method="post" action="{{ url_for('dashboard.toggle_subadmin', a_id=item.a_id) }}"><button type="submit">{{ 'Deactivate' if item.is_active else 'Activate' }}</button></form>
+                    {% else %}—{% endif %}</td></tr>
+            {% else %}<tr><td colspan="6">No admin accounts found.</td></tr>{% endfor %}</tbody>
+        </table></div>
+    </section>
+</section>
+{% endblock %}

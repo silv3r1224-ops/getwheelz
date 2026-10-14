@@ -41,7 +41,7 @@
                     {% if session.role == 'owner' %}
                     <li><a href="{{ url_for('dashboard.owner') }}">Owner Dashboard</a></li>
                     {% elif session.role == 'mechanic' %}
-                    <li><a href="{{ url_for('mechanics.browse_workshops') }}">Browse Workshops</a></li>
+                    <li><a href="{{ url_for('mechanics.home') }}">Browse Workshops</a></li>
                     {% elif session.role == 'admin' %}
                     <li><a href="{{ url_for('dashboard.admin') }}">Admin Panel</a></li>
                     {% endif %}

@@ -19,11 +19,11 @@
                 <span class="status-badge status-{{ b.status }}">{{ b.status }}</span>
                 {% if b.status == 'pending' %}
                 <form method="POST" action="{{ url_for('bookings.cancel', b_id=b.b_id) }}"
-                      onsubmit="return confirm('Cancel this booking?');">
+                    onsubmit="return confirm('Cancel this booking?');">
                     <button type="submit" class="mini-btn cancel">Cancel</button>
                 </form>
                 {% endif %}
-                <a href="{{ url_for('workshops.profile', w_id=b.w_id) }}" class="mini-btn confirm">View Workshop</a>
+                <a href="{{ url_for('workshops.selected', w_id=b.w_id) }}" class="mini-btn confirm">View Workshop</a>
             </div>
         </div>
         {% endfor %}
