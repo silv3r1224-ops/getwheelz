@@ -2,4 +2,6 @@ Flask
 Flask-Limiter
 Flask-WTF
 gunicorn
+itsdangerous
+psycopg2-binary
 python-dotenv
