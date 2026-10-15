@@ -315,6 +315,61 @@ body.light .hero p {
     display: block;
 }
 
+/* ===== SIDEBAR + MENU: identical alignment open and collapsed ===== */
+@media (min-width: 901px) {
+    html body .admin-sidebar .sidebar-header,
+    html body .admin-sidebar.collapsed .sidebar-header {
+        height: 60px;
+        padding: 0;
+        gap: 0;
+        justify-content: flex-start;
+        white-space: nowrap;
+    }
+
+    html body .admin-sidebar .sidebar-header i {
+        flex: 0 0 72px;
+        text-align: center;
+    }
+
+    html body .admin-sidebar .sidebar-link,
+    html body .admin-sidebar.collapsed .sidebar-link {
+        gap: 0;
+        padding: 14px 12px 14px 0;
+        justify-content: flex-start;
+        white-space: nowrap;
+    }
+
+    html body .admin-sidebar .sidebar-link i,
+    html body .admin-sidebar.collapsed .sidebar-link i {
+        flex: 0 0 66px;
+        margin-right: 3px;
+        text-align: center;
+        font-size: 22px;
+    }
+
+    html body .admin-sidebar.collapsed .sidebar-link {
+        padding-right: 0;
+        font-size: 0;
+    }
+
+    html body .menu {
+        width: 48px;
+        height: 48px;
+        margin-left: 12px;
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+}
+
+html body .admin-sidebar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+html body .admin-sidebar::-webkit-scrollbar {
+    display: none;
+}
+
 /* ==========================================================================
    4. SHARED COMPONENTS: BUTTONS, TAGS, BADGES, FLASH MESSAGES
    ========================================================================== */
@@ -5283,5 +5338,125 @@ a.workshop-join-card {
 @keyframes gearSpin {
     to {
         transform: rotate(360deg);
+    }
+}
+
+/* ===== SIDEBAR on phones and tablets: slide-in drawer ===== */
+.sidebar-backdrop {
+    position: fixed;
+    inset: var(--nav-h, 80px) 0 0 0;
+    background: rgba(0, 0, 0, 0.55);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0s linear 0.25s;
+    z-index: 1040;
+}
+
+.sidebar-backdrop.show {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.25s ease;
+}
+
+@media (min-width: 901px) {
+    .sidebar-backdrop { display: none; }
+}
+
+@media (max-width: 900px) {
+    body.sidebar-open { overflow: hidden; }
+
+    html body .admin-layout { display: block; min-height: 0; }
+
+    html body .admin-sidebar {
+        position: fixed;
+        top: var(--nav-h, 80px);
+        bottom: 0;
+        left: 0;
+        width: min(280px, 82vw);
+        height: auto;
+        flex-direction: column;
+        padding: 16px 0 24px;
+        overflow-x: hidden;
+        overflow-y: auto;
+        transform: translateX(-100%);
+        visibility: hidden;
+        transition: transform 0.28s ease, visibility 0s linear 0.28s;
+        z-index: 1050;
+    }
+
+    html body .admin-sidebar.mobile-open {
+        transform: translateX(0);
+        visibility: visible;
+        transition: transform 0.28s ease;
+        box-shadow: 8px 0 30px rgba(0, 0, 0, 0.45);
+    }
+
+    html body .admin-sidebar .sidebar-header,
+    html body .admin-sidebar .sidebar-footer { display: flex; }
+
+    html body .admin-sidebar .sidebar-header {
+        height: 60px;
+        padding: 0;
+        gap: 0;
+        white-space: nowrap;
+    }
+
+    html body .admin-sidebar .sidebar-header i {
+        flex: 0 0 72px;
+        text-align: center;
+    }
+
+    html body .admin-sidebar .sidebar-nav {
+        flex-direction: column;
+        gap: 4px;
+        padding: 0;
+    }
+
+    html body .admin-sidebar .sidebar-link {
+        gap: 0;
+        padding: 14px 12px 14px 0;
+        font-size: 15px;
+        white-space: nowrap;
+        border-left: 3px solid transparent;
+        border-bottom: 0;
+    }
+
+    html body .admin-sidebar .sidebar-link.active {
+        border-left-color: var(--main-color);
+        border-bottom-color: transparent;
+    }
+
+    html body .admin-sidebar .sidebar-link i {
+        flex: 0 0 66px;
+        margin-right: 3px;
+        text-align: center;
+        font-size: 22px;
+    }
+
+    html body .admin-main,
+    html body .admin-main.mechanic-browse-page {
+        margin-left: 0;
+        max-width: 100%;
+        padding: 20px 16px;
+    }
+}
+
+/* ===== NAVBAR on small phones: keep the logo and icons on screen ===== */
+@media (max-width: 600px) {
+    html body .navbar { gap: 8px; }
+    html body .menu { margin-left: 10px; width: 44px; height: 44px; font-size: 200%; }
+    html body .navbar-left { padding-left: 4px; }
+    html body .navbar-left a { font-size: 1.25rem; letter-spacing: 1px; white-space: nowrap; }
+    html body .navbar-right { margin-left: auto; padding-right: 10px; }
+}
+
+/* ===== CONTENT: stretch to fill the space beside the sidebar ===== */
+@media (min-width: 901px) {
+    html body .admin-main,
+    html body .admin-main.mechanic-browse-page,
+    html body .admin-main.profile-page-main {
+        max-width: none;
+        min-width: 0;
+        width: auto;
     }
 }

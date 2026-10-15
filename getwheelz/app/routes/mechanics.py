@@ -264,11 +264,11 @@ def send_join_request(w_id):
     mechanic = cur.fetchone()
 
     if mechanic['w_id']:
-        flash('You already belong to a workshop.')
+        flash('You already belong to a workshop.', 'error')
     else:
         cur.execute("SELECT 1 FROM workshop WHERE w_id = %s", (w_id,))
         if not cur.fetchone():
-            flash('Workshop not found.')
+            flash('Workshop not found.', 'error')
         else:
             cur.execute("""
                 INSERT INTO join_request (m_id, w_id)
@@ -276,7 +276,7 @@ def send_join_request(w_id):
                 ON CONFLICT (m_id, w_id) WHERE status = 'pending' DO NOTHING
             """, (mechanic['m_id'], w_id))
             conn.commit()
-            flash('Join request sent. Waiting for the owner to respond.')
+            flash('Join request sent. Waiting for the owner to respond.', 'success')
 
     cur.close()
     conn.close()
@@ -297,7 +297,7 @@ def cancel_join_request(w_id):
     cur.close()
     conn.close()
 
-    flash('Request cancelled.')
+    flash('Request cancelled.', 'success')
     return redirect(url_for('mechanics.home'))
 
 
@@ -320,7 +320,7 @@ def request_leave():
     conn.close()
 
     flash('Leave request sent. You stay in the workshop until the owner approves it.'
-        if sent else 'You already have a pending leave request.')
+        if sent else 'You already have a pending leave request.', 'success' if sent else 'error')
     return redirect(url_for('mechanics.home'))
 
 
@@ -337,5 +337,5 @@ def cancel_leave_request():
     cur.close()
     conn.close()
 
-    flash('Leave request cancelled.')
+    flash('Leave request cancelled.', 'success')
     return redirect(url_for('mechanics.home'))

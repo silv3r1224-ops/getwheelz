@@ -3,8 +3,10 @@
 (() => {
     const sideBar = document.getElementById("sideBar");
     const menuBar = document.getElementById("menuBar");
+    const mobileQuery = window.matchMedia("(max-width: 900px)");
 
     if (sideBar && menuBar) {
+        // Desktop: remember the collapsed / open state.
         try {
             if (localStorage.getItem("sidebar") === "collapsed") {
                 sideBar.classList.add("collapsed");
@@ -17,8 +19,45 @@
             link.title = link.textContent.trim().replace(/\s+/g, " ");
         });
 
+        // Mobile: the sidebar becomes a slide-in drawer with a dark backdrop.
+        const navbar = document.querySelector(".navbar");
+        const backdrop = document.createElement("div");
+        backdrop.className = "sidebar-backdrop";
+        document.body.appendChild(backdrop);
+
+        const setNavHeight = () => {
+            const height = navbar ? navbar.offsetHeight : 80;
+            document.documentElement.style.setProperty("--nav-h", height + "px");
+        };
+
+        const closeDrawer = () => {
+            sideBar.classList.remove("mobile-open");
+            backdrop.classList.remove("show");
+            document.body.classList.remove("sidebar-open");
+            menuBar.setAttribute("aria-expanded", "false");
+        };
+
+        const openDrawer = () => {
+            setNavHeight();
+            sideBar.classList.add("mobile-open");
+            backdrop.classList.add("show");
+            document.body.classList.add("sidebar-open");
+            menuBar.setAttribute("aria-expanded", "true");
+        };
+
+        menuBar.setAttribute("aria-expanded", "false");
         menuBar.addEventListener("click", (event) => {
             event.preventDefault();
+
+            if (mobileQuery.matches) {
+                if (sideBar.classList.contains("mobile-open")) {
+                    closeDrawer();
+                } else {
+                    openDrawer();
+                }
+                return;
+            }
+
             const collapsed = sideBar.classList.toggle("collapsed");
             try {
                 localStorage.setItem("sidebar", collapsed ? "collapsed" : "open");
@@ -26,6 +65,20 @@
                 // Ignore unavailable storage.
             }
         });
+
+        backdrop.addEventListener("click", closeDrawer);
+
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") closeDrawer();
+        });
+
+        sideBar.addEventListener("click", (event) => {
+            if (mobileQuery.matches && event.target.closest(".sidebar-link")) closeDrawer();
+        });
+
+        mobileQuery.addEventListener("change", closeDrawer);
+        window.addEventListener("resize", setNavHeight);
+        setNavHeight();
     }
 
     document.querySelectorAll(".sidebar-link").forEach((sidebarLink) => {

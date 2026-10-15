@@ -292,6 +292,7 @@
                         </div>
                         {% if not f.is_read %}
                         <form method="POST" action="{{ url_for('dashboard.mark_feedback_read', f_id=f.f_id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit" class="mini-btn confirm">Mark as read</button>
                         </form>
                         {% else %}
@@ -313,6 +314,7 @@
     <p>This account will be permanently deleted.</p>
     <div class="delete-actions">
         <form id="deleteForm" method="post" action="">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button id="confirmDel" type="submit" class="sure-btn danger">Yes, delete</button>
         </form>
         <button type="button" id="cancelDel" class="sure-btn cancel">Cancel</button>

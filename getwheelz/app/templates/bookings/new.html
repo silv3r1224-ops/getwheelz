@@ -11,18 +11,20 @@
     </div>
 
     <form method="POST" action="{{ url_for('bookings.new', w_id=workshop.w_id) }}" class="booking-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label for="s_id">Select a Service</label>
         <select name="s_id" id="s_id" required>
             <option value="" disabled {% if not preselected_service %}selected{% endif %}>Choose a service</option>
             {% for service in services %}
-            <option value="{{ service.s_id }}" {% if preselected_service == service.s_id %}selected{% endif %}>
+            <option value="{{ service.s_id }}" {% if preselected_service==service.s_id %}selected{% endif %}>
                 {{ service.s_name }}{% if service.price_range %} — {{ service.price_range }}{% endif %}
             </option>
             {% endfor %}
         </select>
 
         <label for="requested_time">Preferred Date & Time</label>
-        <input type="datetime-local" id="requested_time" name="requested_time" required>
+        <input type="datetime-local" id="requested_time" name="requested_time"
+            value="{{ time_value }}" min="{{ min_time }}" required>
 
         <button type="submit" class="fw-btn-con"><span class="fw-btn">Confirm Booking</span></button>
     </form>

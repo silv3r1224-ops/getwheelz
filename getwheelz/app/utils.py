@@ -1,5 +1,5 @@
 from functools import wraps
-from flask import session, redirect, url_for, abort, current_app
+from flask import session, redirect, url_for, abort, current_app, flash
 from itsdangerous import URLSafeSerializer, BadSignature
 
 def login_required(f):
@@ -14,14 +14,14 @@ def role_required(*allowed_roles):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            print("DEBUG — session role:", session.get('role'), "| allowed:", allowed_roles)
+            if 'user_id' not in session:
+                flash('Please log in to continue.', 'error')
+                return redirect(url_for('main.index'))
             if session.get('role') not in allowed_roles:
                 abort(403)
             return f(*args, **kwargs)
         return decorated_function
     return decorator
-
-
 
 def _wid_serializer():
     return URLSafeSerializer(current_app.secret_key, salt='workshop-preview')

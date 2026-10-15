@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.db import get_db_connection
 import logging
+from app import limiter
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -21,6 +22,10 @@ def signup():
 
         if password != confirm_password:
             flash('Passwords do not match', 'error')
+            return redirect(url_for('main.index'))
+
+        if len(password) < 8:
+            flash('Password must be at least 8 characters.', 'error')
             return redirect(url_for('main.index'))
 
         password_hash = generate_password_hash(password)
@@ -56,13 +61,13 @@ def signup():
             flash('Something went wrong - that email may already be registered.', 'error')
             return redirect(url_for('main.index'))
         finally:
-            cur.close()
             conn.close()
 
     return redirect(url_for('main.index'))
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit("10 per minute; 50 per hour", methods=["POST"])
 def login():
     if request.method == 'POST':
         email = request.form['email'].strip().lower()

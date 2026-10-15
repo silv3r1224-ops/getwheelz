@@ -50,11 +50,7 @@ def contact():
         cur.close()
         conn.close()
 
-        flash('Message sent — thank you for reaching out!')
+        flash('Message sent — thank you for reaching out!', 'success')
         return redirect(url_for('main.contact'))
 
     return render_template('contact.html')
-
-@main_bp.route('/services')
-def services():
-    return render_template('services.html')

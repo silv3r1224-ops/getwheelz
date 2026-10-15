@@ -59,6 +59,7 @@
                         </div>
                         <form method="POST" action="{{ url_for('dashboard.upload_profile_picture') }}"
                             enctype="multipart/form-data" class="ig-avatar-upload-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                             <label class="ig-avatar-change-btn" title="Change profile picture">
                                 <i class='bx bx-camera'></i>
@@ -145,6 +146,7 @@
                         <!-- Form that toggles on "Edit Profile" click -->
                         <form class="ig-profile-form" id="profileEditForm" method="POST"
                             action="{{ url_for('dashboard.profile') }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <div class="ig-form-group">
                                 <label for="name">Name</label>
                                 <input type="text" id="name" name="name" value="{{ user.name }}" required>
@@ -215,6 +217,7 @@
                     <h2><i class='bx bx-lock-alt'></i> Change Password</h2>
                     <p>Update your password to ensure your account remains safe and secure.</p>
                     <form method="POST" action="{{ url_for('dashboard.change_password') }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="ig-form-group">
                             <label for="old_pass">Current Password</label>
                             <input type="password" id="old_pass" name="old_pass" autocomplete="current-password"
@@ -251,6 +254,7 @@
 
                     <!-- Initially hidden -->
                     <form class="delete-acc-form" method="POST" id="deleteAccountForm">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="ig-form-group">
                             <label for="del_pass">Enter your password to confirm</label>
                             <input type="password" id="del_pass" name="password" required>
@@ -302,6 +306,7 @@
 
         <form method="POST" action="{{ url_for('dashboard.remove_profile_picture') }}"
             onsubmit="return confirm('Remove your profile picture?');">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="remove-profile-picture">
                 <i class='bx bx-trash'></i>
                 Remove Picture

@@ -181,6 +181,7 @@
             <p class="leave-reason"><i class='bx bx-message-detail'></i> Your reason: {{ leave_pending.reason }}</p>
             {% endif %}
             <form method="POST" action="{{ url_for('mechanics.cancel_leave_request') }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="join-btn requested">Cancel leave request</button>
             </form>
 
@@ -191,6 +192,7 @@
             </p>
             <form method="POST" action="{{ url_for('mechanics.request_leave') }}" class="leave-form"
                 onsubmit="return confirm('Send a request to leave this workshop?');">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <label for="leaveReason">Reason (optional)</label>
                 <textarea id="leaveReason" name="reason" maxlength="300" rows="3"
                     placeholder="e.g. Relocating to another city"></textarea>

@@ -209,7 +209,7 @@ def admin_terminate(role, u_id):
     finally:
         conn.close()
 
-    flash("Account terminated.")
+    flash("Account terminated.", 'success')
     return redirect(url_for('dashboard.admin'))
 
 #feedback
@@ -237,10 +237,10 @@ def admin_services():
             try:
                 cur.execute("INSERT INTO service_catalog (s_name) VALUES (%s)", (s_name,))
                 conn.commit()
-                flash(f'"{s_name}" added to the service catalog.')
+                flash(f'"{s_name}" added to the service catalog.', 'success')
             except Exception:
                 conn.rollback()
-                flash('That service already exists.')
+                flash('That service already exists.', 'error')
         return redirect(url_for('dashboard.admin_services'))
 
     cur.execute("SELECT * FROM service_catalog ORDER BY s_name")
@@ -260,7 +260,7 @@ def delete_catalog_service(sc_id):
     conn.commit()
     cur.close()
     conn.close()
-    flash('Service removed from catalog.')
+    flash('Service removed from catalog.', 'success')
     return redirect(url_for('dashboard.admin_services'))
 
 # =================================================SUB-ADMIN MANAGEMENT=================================================#
@@ -279,11 +279,11 @@ def admin_subadmins():
                 valid_types = ('customer_manager', 'owner_workshop_manager', 'mechanic_manager')
 
                 if not name or not email or len(password) < 8:
-                    flash('Enter a name, email, and password of at least 8 characters.')
+                    flash('Enter a name, email, and password of at least 8 characters.', 'error')
                 elif password != confirm_password:
-                    flash('Passwords do not match.')
+                    flash('Passwords do not match.', 'error')
                 elif admin_type not in valid_types:
-                    flash('Choose a valid sub-admin type.')
+                    flash('Choose a valid sub-admin type.', 'error')
                 else:
                     try:
                         cur.execute(
@@ -296,12 +296,12 @@ def admin_subadmins():
                             (new_uid, admin_type)
                         )
                         conn.commit()
-                        flash('Sub-admin created successfully.')
+                        flash('Sub-admin created successfully.', 'success')
                         return redirect(url_for('dashboard.admin_subadmins'))
                     except Exception:
                         conn.rollback()
                         logging.exception('Could not create sub-admin')
-                        flash('Could not create account. Check whether the email is already registered.')
+                        flash('Could not create account. Check whether the email is already registered.', 'error')
 
             cur.execute("""
                 SELECT a.a_id, a.u_id, a.admin_type, a.is_active,
@@ -326,11 +326,11 @@ def toggle_subadmin(a_id):
             if not target:
                 abort(404)
             if target['admin_type'] == 'main' or target['u_id'] == session['user_id']:
-                flash('The main admin account cannot be deactivated here.')
+                flash('The main admin account cannot be deactivated here.', 'error')
             else:
                 cur.execute("UPDATE admin SET is_active = NOT is_active WHERE a_id = %s", (a_id,))
                 conn.commit()
-                flash('Sub-admin status updated.')
+                flash('Sub-admin status updated.', 'success')
     finally:
         conn.close()
     return redirect(url_for('dashboard.admin_subadmins'))
@@ -450,20 +450,20 @@ def remove_service(s_id):
     """, (s_id, session['user_id']))
 
     if not cur.fetchone():
-        flash('Service not found.')
+        flash('Service not found.', 'error')
     else:
         # never delete a service that customers have booked: it would wipe their booking history
         cur.execute("SELECT 1 FROM booking WHERE s_id = %s LIMIT 1", (s_id,))
         if cur.fetchone():
-            flash("This service has bookings, so it can't be removed.")
+            flash("This service has bookings, so it can't be removed.", 'error')
         else:
             try:
                 cur.execute("DELETE FROM service WHERE s_id = %s", (s_id,))
                 conn.commit()
-                flash('Service removed.')
+                flash('Service removed.', 'success')
             except Exception:
                 conn.rollback()
-                flash('Could not remove this service.')
+                flash('Could not remove this service.', 'error')
 
     cur.close()
     conn.close()
@@ -498,7 +498,7 @@ def review_leave(lr_id, action):
     req = cur.fetchone()
 
     if not req:
-        flash('Leave request not found.')
+        flash('Leave request not found.', 'error')
     elif action == 'reject':
         cur.execute("""
             UPDATE mechanic
@@ -506,7 +506,7 @@ def review_leave(lr_id, action):
             WHERE m_id = %s
         """, (lr_id,))
         conn.commit()
-        flash('Leave request declined. The mechanic stays in your workshop.')
+        flash('Leave request declined. The mechanic stays in your workshop.', 'success')
     else:
         cur.execute("""
             UPDATE mechanic
@@ -514,7 +514,7 @@ def review_leave(lr_id, action):
             WHERE m_id = %s
         """, (lr_id,))
         conn.commit()
-        flash('Leave approved. The mechanic has been released from your workshop.')
+        flash('Leave approved. The mechanic has been released from your workshop.', 'success')
 
     cur.close()
     conn.close()
@@ -549,17 +549,17 @@ def review_mechanic(jr_id, action):
     req = cur.fetchone()
 
     if not req:
-        flash('Request not found.')
+        flash('Request not found.', 'error')
     elif action == 'reject':
         cur.execute("UPDATE join_request SET status = 'rejected' WHERE jr_id = %s", (jr_id,))
         conn.commit()
-        flash('Request rejected.')
+        flash('Request rejected.', 'success')
     else:  # action == 'accept'
         cur.execute("SELECT COUNT(*) AS n FROM mechanic WHERE w_id = %s", (ws['w_id'],))
         current = cur.fetchone()['n']
 
         if current >= ws['capacity']:
-            flash('Your workshop is full. Increase capacity to accept more mechanics.')
+            flash('Your workshop is full. Increase capacity to accept more mechanics.', 'error')
         else:
             cur.execute("UPDATE mechanic SET w_id = %s WHERE m_id = %s AND w_id IS NULL",
                         (ws['w_id'], req['m_id']))
@@ -569,10 +569,10 @@ def review_mechanic(jr_id, action):
                     UPDATE join_request SET status = 'rejected'
                     WHERE m_id = %s AND status = 'pending'
                 """, (req['m_id'],))
-                flash('Mechanic added to your workshop.')
+                flash('Mechanic added to your workshop.', 'success')
             else:
                 cur.execute("UPDATE join_request SET status = 'rejected' WHERE jr_id = %s", (jr_id,))
-                flash('That mechanic already joined another workshop.')
+                flash('That mechanic already joined another workshop.', 'error')
             conn.commit()
 
     cur.close()
@@ -606,7 +606,7 @@ def update_booking_status(booking_id, action):
     cur.close()
     conn.close()
 
-    flash(f'Booking {new_status}.' if changed else 'Booking not found or cannot be changed.')
+    flash(f'Booking {new_status}.' if changed else 'Booking not found or cannot be changed.', 'success' if changed else 'error')
     return redirect(url_for('dashboard.owner'))
 
 #add service for owner
@@ -636,10 +636,10 @@ def add_service():
             (workshop['w_id'], sc_id, price_range, duration)
         )
         conn.commit()
-        flash('Service added.')
+        flash('Service added.', 'success')
     except Exception:
         conn.rollback()
-        flash('You already offer this service.')
+        flash('You already offer this service.', 'error')
 
     cur.close()
     conn.close()
@@ -675,7 +675,7 @@ def create_workshop():
     cur.close()
     conn.close()
 
-    flash('Workshop created!')
+    flash('Workshop created!', 'success')
     return redirect(url_for('dashboard.owner'))
 
 #upload workshop photo for owner
@@ -693,7 +693,7 @@ def upload_workshop_photo():
     if not workshop:
         cur.close()
         conn.close()
-        flash('Create your workshop first.')
+        flash('Create your workshop first.', 'error')
         return redirect(url_for('dashboard.owner'))
 
     photo = request.files.get('photo')
@@ -705,9 +705,9 @@ def upload_workshop_photo():
 
         cur.execute("UPDATE workshop SET photo_path = %s WHERE w_id = %s", (photo_path, workshop['w_id']))
         conn.commit()
-        flash('Workshop photo updated.')
+        flash('Workshop photo updated.', 'success')
     else:
-        flash('Please upload a valid image (png, jpg, jpeg, webp).')
+        flash('Please upload a valid image (png, jpg, jpeg, webp).', 'error')
 
     cur.close()
     conn.close()
@@ -733,7 +733,7 @@ def delete_workshop():
         workshop = cur.fetchone()
 
         if not workshop:
-            flash('You do not have a workshop to delete.')
+            flash('You do not have a workshop to delete.', 'error')
         else:
             workshop_id = workshop['w_id']
             photo_path = workshop['photo_path']
@@ -754,11 +754,11 @@ def delete_workshop():
             # and service records when the workshop is removed.
             cur.execute("DELETE FROM workshop WHERE w_id = %s", (workshop_id,))
             conn.commit()
-            flash('Workshop deleted. Its mechanics are now unassigned.')
+            flash('Workshop deleted. Its mechanics are now unassigned.', 'success')
     except Exception:
         conn.rollback()
         logging.exception('Failed to delete workshop for user_id=%s', session.get('user_id'))
-        flash('Could not delete the workshop. No changes were saved.')
+        flash('Could not delete the workshop. No changes were saved.', 'error')
         photo_path = None
     finally:
         cur.close()
@@ -782,11 +782,11 @@ def update_capacity():
     try:
         capacity = int(request.form.get('capacity', ''))
     except ValueError:
-        flash('Capacity must be a number.')
+        flash('Capacity must be a number.', 'error')
         return redirect(url_for('dashboard.owner'))
 
     if capacity < 1 or capacity > 100:
-        flash('Capacity must be between 1 and 100.')
+        flash('Capacity must be between 1 and 100.', 'error')
         return redirect(url_for('dashboard.owner'))
 
     conn = get_db_connection()
@@ -808,11 +808,11 @@ def update_capacity():
     current = cur.fetchone()['n']
 
     if capacity < current:
-        flash(f'You already have {current} mechanics, so capacity can\'t be lower than that.')
+        flash(f'You already have {current} mechanics, so capacity can\'t be lower than that.', 'error')
     else:
         cur.execute("UPDATE workshop SET capacity = %s WHERE w_id = %s", (capacity, ws['w_id']))
         conn.commit()
-        flash('Capacity updated.')
+        flash('Capacity updated.', 'success')
 
     cur.close()
     conn.close()
@@ -856,7 +856,7 @@ def profile():
 
         conn.commit()
         session['user_name'] = name
-        flash('Profile updated.')
+        flash('Profile updated.', 'success')
         cur.close()
         conn.close()
         return redirect(url_for('dashboard.profile'))
@@ -875,15 +875,15 @@ def change_password():
 
     # Basic validation
     if not current_password or not new_password or not confirm_password:
-        flash('Please fill in all password fields.')
+        flash('Please fill in all password fields.', 'error')
         return redirect(url_for('dashboard.profile'))
 
     if new_password != confirm_password:
-        flash('New passwords do not match.')
+        flash('New passwords do not match.', 'error')
         return redirect(url_for('dashboard.profile'))
 
     if len(new_password) < 8:
-        flash('New password must be at least 8 characters long.')
+        flash('New password must be at least 8 characters long.', 'error')
         return redirect(url_for('dashboard.profile'))
 
     conn = get_db_connection()
@@ -898,17 +898,17 @@ def change_password():
         user = cur.fetchone()
 
         if not user:
-            flash('User account not found.')
+            flash('User account not found.', 'error')
             return redirect(url_for('dashboard.profile'))
 
         # Check current password
         if not check_password_hash(user['password'], current_password):
-            flash('Current password is incorrect.')
+            flash('Current password is incorrect.', 'error')
             return redirect(url_for('dashboard.profile'))
 
         # Prevent using the same password
         if check_password_hash(user['password'], new_password):
-            flash('New password must be different from your current password.')
+            flash('New password must be different from your current password.', 'error')
             return redirect(url_for('dashboard.profile'))
 
         # Hash the new password using the same method as signup
@@ -921,12 +921,12 @@ def change_password():
 
         conn.commit()
 
-        flash('Password changed successfully.')
+        flash('Password changed successfully.', 'success')
 
     except Exception:
         conn.rollback()
         logging.exception("Error changing password")
-        flash('Something went wrong while changing your password.')
+        flash('Something went wrong while changing your password.', 'error')
 
     finally:
         cur.close()
@@ -961,9 +961,9 @@ def upload_profile_picture():
         )
 
         conn.commit()
-        flash('Profile picture updated.')
+        flash('Profile picture updated.', 'success')
     else:
-        flash('Please upload a valid image (png, jpg, jpeg, webp).')
+        flash('Please upload a valid image (png, jpg, jpeg, webp).', 'error')
 
     cur.close()
     conn.close()
@@ -1002,7 +1002,7 @@ def remove_profile_picture():
         )
 
         conn.commit()
-        flash('Profile picture removed.')
+        flash('Profile picture removed.', 'success')
 
     cur.close()
     conn.close()

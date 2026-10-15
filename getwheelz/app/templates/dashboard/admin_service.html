@@ -32,6 +32,7 @@
         </p>
 
         <form method="POST" action="{{ url_for('dashboard.admin_services') }}" class="catalog-add-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="text" name="s_name" placeholder="New service name (e.g. Brake Repair)" required>
             <button type="submit" class="fw-btn-con"><span class="fw-btn">Add Service</span></button>
         </form>

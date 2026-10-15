@@ -33,11 +33,14 @@
                         {% if manager_type == 'mechanic_manager' %}<td>{{ record.workshop_name or 'Not assigned' }}</td><td>{{ record.experience_yrs or 0 }} years</td><td>{{ record.active_stat or 'active' }}</td>{% endif %}
                         <td>
                             {% if manager_type == 'customer_manager' %}
-                                <form method="post" action="{{ url_for('dashboard.admin_terminate', role='customer', u_id=record.u_id) }}" onsubmit="return confirm('Permanently delete this customer account?')"><button type="submit" class="btn-danger">Delete</button></form>
+                                <form method="post" action="{{ url_for('dashboard.admin_terminate', role='customer', u_id=record.u_id) }}" onsubmit="return confirm('Permanently delete this customer account?')">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn-danger">Delete</button></form>
                             {% elif manager_type == 'owner_workshop_manager' %}
-                                <form method="post" action="{{ url_for('dashboard.admin_terminate', role='owner', u_id=record.u_id) }}" onsubmit="return confirm('Permanently delete this owner account and related records?')"><button type="submit" class="btn-danger">Delete owner</button></form>
+                                <form method="post" action="{{ url_for('dashboard.admin_terminate', role='owner', u_id=record.u_id) }}" onsubmit="return confirm('Permanently delete this owner account and related records?')">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn-danger">Delete owner</button></form>
                             {% else %}
-                                <form method="post" action="{{ url_for('dashboard.admin_terminate', role='mechanic', u_id=record.u_id) }}" onsubmit="return confirm('Permanently delete this mechanic account?')"><button type="submit" class="btn-danger">Delete</button></form>
+                                <form method="post" action="{{ url_for('dashboard.admin_terminate', role='mechanic', u_id=record.u_id) }}" onsubmit="return confirm('Permanently delete this mechanic account?')">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn-danger">Delete</button></form>
                             {% endif %}
                         </td>
                     </tr>

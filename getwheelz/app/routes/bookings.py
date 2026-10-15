@@ -1,4 +1,5 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from datetime import datetime, timedelta
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, abort
 from app.db import get_db_connection
 from app.utils import role_required
 
@@ -8,39 +9,79 @@ bookings_bp = Blueprint('bookings', __name__)
 @role_required('customer')
 def new(w_id):
     conn = get_db_connection()
-    cur = conn.cursor()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT w_id, name, address FROM workshop WHERE w_id = %s", (w_id,))
+            workshop = cur.fetchone()
+            if workshop is None:
+                abort(404)
 
-    cur.execute("SELECT w_id, name, address FROM workshop WHERE w_id = %s", (w_id,))
-    workshop = cur.fetchone()
+            cur.execute("""
+                SELECT s.s_id, sc.s_name, s.price_range, s.duration
+                FROM service s
+                JOIN service_catalog sc ON sc.sc_id = s.sc_id
+                WHERE s.w_id = %s
+            """, (w_id,))
+            services = cur.fetchall()
 
-    cur.execute("SELECT s.s_id, sc.s_name, s.price_range, s.duration FROM service s JOIN service_catalog sc ON sc.sc_id = s.sc_id WHERE s.w_id = %s", (w_id,))
-    services = cur.fetchall()
+            selected_service = request.args.get('s_id', type=int)
+            time_value = ''
 
-    if request.method == 'POST':
-        s_id = request.form['s_id']
-        requested_time = request.form['requested_time']
+            if request.method == 'POST':
+                selected_service = request.form.get('s_id', type=int)
+                time_value = request.form.get('requested_time', '').strip()
 
-        cur.execute("SELECT c_id FROM customer WHERE u_id = %s", (session['user_id'],))
-        customer = cur.fetchone()
+                valid_ids = {s['s_id'] for s in services}
+                error = None
+                requested_time = None
 
-        cur.execute("""
-            INSERT INTO booking (c_id, w_id, s_id, requested_time, status)
-            VALUES (%s, %s, %s, %s, 'pending')
-            RETURNING b_id
-        """, (customer['c_id'], w_id, s_id, requested_time))
-        b_id = cur.fetchone()['b_id']
-        conn.commit()
-        cur.close()
+                if selected_service not in valid_ids:
+                    error = 'Please choose a valid service for this workshop.'
+                else:
+                    try:
+                        requested_time = datetime.fromisoformat(time_value)
+                    except ValueError:
+                        error = 'Please enter a valid date and time.'
+
+                if not error:
+                    now = datetime.now()
+                    if requested_time <= now:
+                        error = 'Please choose a time in the future.'
+                    elif requested_time > now + timedelta(days=365):
+                        error = 'Bookings can be made up to one year ahead.'
+
+                if not error:
+                    cur.execute("SELECT c_id FROM customer WHERE u_id = %s", (session['user_id'],))
+                    customer = cur.fetchone()
+                    if customer is None:
+                        error = 'Customer account not found.'
+
+                if error:
+                    flash(error, 'error')
+                else:
+                    cur.execute("""
+                        INSERT INTO booking (c_id, w_id, s_id, requested_time, status)
+                        VALUES (%s, %s, %s, %s, 'pending')
+                        RETURNING b_id
+                    """, (customer['c_id'], w_id, selected_service, requested_time))
+                    b_id = cur.fetchone()['b_id']
+                    conn.commit()
+                    flash('Booking request sent.', 'success')
+                    return redirect(url_for('bookings.confirmation', b_id=b_id))
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
         conn.close()
 
-        return redirect(url_for('bookings.confirmation', b_id=b_id))
-
-    cur.close()
-    conn.close()
-
-    preselected_service = request.args.get('s_id', type=int)
-    return render_template('bookings/new.html', workshop=workshop, services=services, preselected_service=preselected_service)
-
+    return render_template(
+        'bookings/new.html',
+        workshop=workshop,
+        services=services,
+        preselected_service=selected_service,
+        time_value=time_value,
+        min_time=datetime.now().strftime('%Y-%m-%dT%H:%M'),
+    )
 @bookings_bp.route('/confirmation/<int:b_id>')
 @role_required('customer')
 def confirmation(b_id):
@@ -90,11 +131,24 @@ def my_bookings():
 @role_required('customer')
 def cancel(b_id):
     conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("UPDATE booking SET status = 'cancelled' WHERE b_id = %s", (b_id,))
-    conn.commit()
-    cur.close()
-    conn.close()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE booking SET status = 'cancelled'
+                WHERE b_id = %s
+                AND status IN ('pending', 'confirmed')
+                AND c_id = (SELECT c_id FROM customer WHERE u_id = %s)
+            """, (b_id, session['user_id']))
+            changed = cur.rowcount
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
-    flash('Booking cancelled.')
+    if changed:
+        flash('Booking cancelled.', 'success')
+    else:
+        flash('Booking not found or can no longer be cancelled.', 'error')
     return redirect(url_for('bookings.my_bookings'))

@@ -732,6 +732,7 @@
                         {% endif %}
                         <form method="POST" action="{{ url_for('dashboard.upload_workshop_photo') }}"
                             enctype="multipart/form-data" class="workshop-photo-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <label for="photo" class="photo-upload-overlay" title="Click to upload workshop photo">
                                 <i class='bx bx-camera'></i>
                                 <span>Change</span>
@@ -803,6 +804,7 @@
             </div>
 
             <form method="POST" action="{{ url_for('dashboard.update_capacity') }}" class="capacity-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="number-stepper">
                     <button type="button" class="stepper-btn decrease"
                         aria-label="Decrease mechanic capacity">−</button>
@@ -865,12 +867,14 @@
                                 <form method="POST"
                                     action="{{ url_for('dashboard.update_booking_status', booking_id=b.b_id, action='confirm') }}"
                                     class="inline-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="mini-btn confirm"><i class='bx bx-check'></i>
                                         Confirm</button>
                                 </form>
                                 <form method="POST"
                                     action="{{ url_for('dashboard.update_booking_status', booking_id=b.b_id, action='cancel') }}"
                                     class="inline-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="mini-btn cancel"><i class='bx bx-x'></i>
                                         Cancel</button>
                                 </form>
@@ -878,6 +882,7 @@
                                 <form method="POST"
                                     action="{{ url_for('dashboard.update_booking_status', booking_id=b.b_id, action='complete') }}"
                                     class="inline-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="mini-btn confirm"><i class='bx bx-check-double'></i>
                                         Mark Complete</button>
                                 </form>
@@ -972,6 +977,7 @@
                                 <form method="POST"
                                     action="{{ url_for('dashboard.review_mechanic', jr_id=m.jr_id, action='accept') }}"
                                     class="inline-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="mini-btn confirm" {% if stats.total_mechanics>=
                                         stats.capacity %}disabled title="Workshop is at full capacity"{% endif %}>
                                         <i class='bx bx-check'></i> Accept
@@ -980,6 +986,7 @@
                                 <form method="POST"
                                     action="{{ url_for('dashboard.review_mechanic', jr_id=m.jr_id, action='reject') }}"
                                     class="inline-form" onsubmit="return confirm('Reject this mechanic application?');">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="mini-btn cancel"><i class='bx bx-x'></i>
                                         Reject</button>
                                 </form>
@@ -1024,12 +1031,14 @@
                                     action="{{ url_for('dashboard.review_leave', lr_id=r.lr_id, action='approve') }}"
                                     class="inline-form"
                                     onsubmit="return confirm('Let {{ r.name }} leave your workshop?');">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="mini-btn confirm"><i class='bx bx-check'></i> Let
                                         go</button>
                                 </form>
                                 <form method="POST"
                                     action="{{ url_for('dashboard.review_leave', lr_id=r.lr_id, action='reject') }}"
                                     class="inline-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="mini-btn cancel"><i class='bx bx-x'></i>
                                         Decline</button>
                                 </form>
@@ -1089,6 +1098,7 @@
 <!-- Modal: Add Service -->
 <div class="login-modal" id="addServiceModal">
     <form method="POST" action="{{ url_for('dashboard.add_service') }}" class="login-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <h2>Add a Service</h2>
         <select name="sc_id" required>
             <option value="" disabled selected>Select a service</option>
@@ -1104,6 +1114,7 @@
 <!-- Modal: Create Workshop -->
 <div class="login-modal" id="createWorkshopModal">
     <form method="POST" action="{{ url_for('dashboard.create_workshop') }}" class="login-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <h2>Set Up Your Workshop</h2>
         <input type="text" name="name" placeholder="Workshop Name" required>
         <input type="text" name="address" placeholder="Address" required>
@@ -1128,6 +1139,7 @@
         <p>Are you sure you want to remove <strong id="confirmName"></strong> from your workshop?
             Customers will no longer be able to book it.</p>
         <form method="POST" id="confirmForm" class="confirm-actions">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="mini-btn cancel">Yes, remove</button>
             <button type="button" class="mini-btn neutral" data-cancel>Cancel</button>
         </form>
@@ -1148,6 +1160,7 @@
             unassigned from this workshop.
         </div>
         <form method="POST" action="{{ url_for('dashboard.delete_workshop') }}" class="confirm-actions">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="mini-btn cancel"><i class='bx bx-trash' aria-hidden="true"></i> Yes, delete
                 workshop</button>
             <button type="button" class="mini-btn neutral" data-cancel-delete-workshop>Keep Workshop</button>

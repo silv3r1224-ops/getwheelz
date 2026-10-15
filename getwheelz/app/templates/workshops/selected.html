@@ -66,12 +66,14 @@
                     <p class="preview-note">You already belong to another workshop. Leave it first to join this one.</p>
                     {% elif mech.pending %}
                     <form method="POST" action="{{ url_for('mechanics.cancel_join_request', w_id=workshop.w_id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="join-btn requested full-width">Request sent (cancel)</button>
                     </form>
                     {% elif mech.open_slots <= 0 %} <button type="button" class="join-btn full-width" disabled>Workshop
                         full</button>
                         {% else %}
                         <form method="POST" action="{{ url_for('mechanics.send_join_request', w_id=workshop.w_id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit" class="join-btn full-width">Request to join</button>
                         </form>
                         {% endif %}
@@ -89,6 +91,7 @@
 </div>
 <div class="login-modal" id="loginModal">
     <form action="{{ url_for('auth.login') }}" method="post" class="login-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <h2>Welcome back</h2>
         <p>Sign in to manage your bookings and workshop activity.</p>
         <input type="email" name="email" placeholder="Email" required>
@@ -103,6 +106,7 @@
 </div>
 <div class="signup-modal" id="signUpModal">
     <form action="{{ url_for('auth.signup') }}" method="post" class="signup-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <h2>Create your account</h2>
         <p>Join as a customer, workshop owner, or mechanic.</p>
         <input type="text" name="name" placeholder="Username" required>

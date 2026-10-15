@@ -47,12 +47,14 @@
 
     {% if w.w_id in requested_ids %}
     <form method="POST" action="{{ url_for('mechanics.cancel_join_request', w_id=w.w_id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="join-btn requested">Request sent (cancel)</button>
     </form>
     {% elif is_full %}
     <button type="button" class="join-btn" disabled>Workshop full</button>
     {% else %}
     <form method="POST" action="{{ url_for('mechanics.send_join_request', w_id=w.w_id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="join-btn">Request to join</button>
     </form>
     {% endif %}

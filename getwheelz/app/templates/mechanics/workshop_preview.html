@@ -12,11 +12,13 @@
     apply here.</p>
 {% elif pending %}
 <form method="POST" action="{{ url_for('mechanics.cancel_join_request', w_id=workshop.w_id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button type="submit" class="join-btn requested">Request sent (cancel)</button>
 </form>
 {% elif open_slots <= 0 %} <button type="button" class="join-btn" disabled>Workshop full</button>
     {% else %}
     <form method="POST" action="{{ url_for('mechanics.send_join_request', w_id=workshop.w_id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="join-btn">Apply to work here</button>
     </form>
     {% endif %}
