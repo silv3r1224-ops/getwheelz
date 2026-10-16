@@ -1,10 +1,11 @@
 import logging
+from datetime import datetime, timedelta
 from flask import Blueprint, render_template, request, session, abort, flash, redirect, url_for
 import os
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.db import get_db_connection
-from app.utils import login_required, role_required, admin_access_required
+from app.utils import login_required, role_required, admin_access_required, decode_uid, decode_wid
 
 dashboard_bp = Blueprint("dashboard", __name__)
 
@@ -30,21 +31,24 @@ def admin():
         managed_workshops = []
         if manager_type == 'customer_manager':
             cur.execute("""
-                SELECT c.c_id AS record_id, u.u_id, u.name, u.email, u.created_at
+                SELECT c.c_id AS record_id, u.u_id, u.name, u.email, u.created_at, u.profile_picture,
+                       c.phone_no,
+                       (SELECT COUNT(*) FROM booking b WHERE b.c_id = c.c_id) AS booking_count
                 FROM customer c JOIN users u ON c.u_id = u.u_id
                 ORDER BY u.created_at DESC
             """)
             records = cur.fetchall()
         elif manager_type == 'owner_workshop_manager':
             cur.execute("""
-                SELECT o.o_id AS record_id, u.u_id, u.name, u.email, u.created_at,
+                SELECT o.o_id AS record_id, u.u_id, u.name, u.email, u.created_at, u.profile_picture,
                 (SELECT COUNT(*) FROM workshop w WHERE w.o_id = o.o_id) AS workshop_count
                 FROM owner o JOIN users u ON o.u_id = u.u_id
                 ORDER BY u.created_at DESC
             """)
             records = cur.fetchall()
             cur.execute("""
-                SELECT w.w_id, w.name AS workshop_name, w.address, u.name AS owner_name, u.email AS owner_email
+                SELECT w.w_id, w.name AS workshop_name, w.address, u.name AS owner_name, u.email AS owner_email,
+                       (SELECT COUNT(*) FROM mechanic m WHERE m.w_id = w.w_id) AS team_size, w.capacity
                 FROM workshop w JOIN owner o ON w.o_id = o.o_id
                 JOIN users u ON o.u_id = u.u_id
                 ORDER BY w.name
@@ -52,7 +56,7 @@ def admin():
             managed_workshops = cur.fetchall()
         elif manager_type == 'mechanic_manager':
             cur.execute("""
-                SELECT m.m_id AS record_id, u.u_id, u.name, u.email, u.created_at,
+                SELECT m.m_id AS record_id, u.u_id, u.name, u.email, u.created_at, u.profile_picture,
                 m.experience_yrs, m.active_stat, w.name AS workshop_name
                 FROM mechanic m JOIN users u ON m.u_id = u.u_id
                 LEFT JOIN workshop w ON m.w_id = w.w_id
@@ -61,7 +65,24 @@ def admin():
             records = cur.fetchall()
         cur.close()
         conn.close()
-        return render_template('dashboard/subadmin.html', manager_type=manager_type, records=records, managed_workshops=managed_workshops)
+
+        # numbers for the summary cards
+        cutoff = datetime.now() - timedelta(days=30)
+        stats = {
+            'total': len(records),
+            'new_30d': sum(1 for r in records if r['created_at'] and r['created_at'] >= cutoff),
+        }
+        if manager_type == 'owner_workshop_manager':
+            stats['workshops'] = len(managed_workshops)
+            stats['no_workshop'] = sum(1 for r in records if r['workshop_count'] == 0)
+        elif manager_type == 'mechanic_manager':
+            stats['assigned'] = sum(1 for r in records if r['workshop_name'])
+            stats['unassigned'] = len(records) - stats['assigned']
+        elif manager_type == 'customer_manager':
+            stats['with_bookings'] = sum(1 for r in records if r['booking_count'] > 0)
+
+        return render_template('dashboard/subadmin.html', manager_type=manager_type, records=records,
+                               managed_workshops=managed_workshops, stats=stats)
 
     # Stats
     cur.execute("SELECT COUNT(*) AS count FROM customer")
@@ -81,7 +102,7 @@ def admin():
 
     # All customer records
     cur.execute("""
-        SELECT c.c_id, u.name, u.email, u.created_at
+        SELECT c.c_id, u.u_id, u.name, u.email, u.created_at
         FROM customer c JOIN users u ON c.u_id = u.u_id
         ORDER BY u.created_at DESC
     """)
@@ -89,7 +110,7 @@ def admin():
 
     # All owner records
     cur.execute("""
-        SELECT o.o_id, u.name, u.email, u.created_at
+        SELECT o.o_id, u.u_id, u.name, u.email, u.created_at
         FROM owner o JOIN users u ON o.u_id = u.u_id
         ORDER BY u.created_at DESC
     """)
@@ -97,7 +118,7 @@ def admin():
 
     # All mechanic records
     cur.execute("""
-        SELECT m.m_id, u.name, u.email, u.created_at
+        SELECT m.m_id, u.u_id, u.name, u.email, u.created_at
         FROM mechanic m JOIN users u ON m.u_id = u.u_id
         ORDER BY u.created_at DESC
     """)
@@ -117,7 +138,7 @@ def admin():
     cur.execute("SELECT * FROM feedback ORDER BY submitted_at DESC")
     feedback_list = cur.fetchall()
 
-    email = request.args.get("email", "").strip()
+    email = request.args.get("email", "").strip().lower()
     role = request.args.get("role", "")
     result = None
     searched = False
@@ -178,6 +199,162 @@ def admin():
         searched = searched
     )
 #Terminate
+# =================================================ADMIN: VIEW A USER'S PROFILE=================================================#
+@dashboard_bp.route('/admin/profile/<token>')
+@admin_access_required()
+def admin_user_profile(token):
+    u_id = decode_uid(token)
+    if u_id is None:
+        abort(404)
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT u_id, name, email, role, profile_picture, created_at
+                FROM users
+                WHERE u_id = %s AND role IN ('customer', 'owner', 'mechanic')
+            """, (u_id,))
+            person = cur.fetchone()
+            if not person:
+                abort(404)
+
+            # Sub-admins may only view accounts inside their own domain.
+            manager_type = session.get('admin_type')
+            allowed_roles = {
+                'customer_manager': 'customer',
+                'owner_workshop_manager': 'owner',
+                'mechanic_manager': 'mechanic',
+            }
+            if manager_type != 'main' and allowed_roles.get(manager_type) != person['role']:
+                abort(403)
+
+            details, workshops, bookings, jobs = None, [], [], 0
+
+            if person['role'] == 'customer':
+                cur.execute("""
+                    SELECT c.c_id, c.phone_no FROM customer c WHERE c.u_id = %s
+                """, (u_id,))
+                details = cur.fetchone()
+                if details:
+                    cur.execute("""
+                        SELECT b.b_id, b.requested_time, b.status,
+                               w.name AS workshop_name, sc.s_name
+                        FROM booking b
+                        JOIN workshop w ON b.w_id = w.w_id
+                        JOIN service s ON b.s_id = s.s_id
+                        JOIN service_catalog sc ON sc.sc_id = s.sc_id
+                        WHERE b.c_id = %s
+                        ORDER BY b.requested_time DESC
+                        LIMIT 15
+                    """, (details['c_id'],))
+                    bookings = cur.fetchall()
+                    cur.execute("""
+                        SELECT COUNT(*) AS total,
+                               COUNT(*) FILTER (WHERE status = 'pending') AS pending,
+                               COUNT(*) FILTER (WHERE status = 'completed') AS completed
+                        FROM booking WHERE c_id = %s
+                    """, (details['c_id'],))
+                    jobs = cur.fetchone()
+
+            elif person['role'] == 'owner':
+                cur.execute("""
+                    SELECT w.w_id, w.name, w.address, w.contact_no, w.photo_path, w.capacity,
+                           (SELECT COUNT(*) FROM mechanic m WHERE m.w_id = w.w_id) AS team_size
+                    FROM workshop w JOIN owner o ON w.o_id = o.o_id
+                    WHERE o.u_id = %s
+                    ORDER BY w.name
+                """, (u_id,))
+                workshops = cur.fetchall()
+                cur.execute("""
+                    SELECT COUNT(*) FILTER (WHERE b.status = 'completed') AS completed
+                    FROM booking b
+                    JOIN workshop w ON b.w_id = w.w_id
+                    JOIN owner o ON w.o_id = o.o_id
+                    WHERE o.u_id = %s
+                """, (u_id,))
+                jobs = cur.fetchone()['completed']
+
+            else:  # mechanic (may not have joined a workshop yet)
+                cur.execute("""
+                    SELECT m.experience_yrs, m.active_stat, w.w_id, w.name AS workshop_name,
+                           w.address, w.photo_path
+                    FROM mechanic m LEFT JOIN workshop w ON m.w_id = w.w_id
+                    WHERE m.u_id = %s
+                """, (u_id,))
+                details = cur.fetchone()
+    finally:
+        conn.close()
+
+    return render_template('dashboard/admin_user_profile.html',
+                           person=person, details=details, workshops=workshops,
+                           bookings=bookings, jobs=jobs)
+
+# =================================================ADMIN: VIEW A WORKSHOP=================================================#
+@dashboard_bp.route('/admin/workshop/<token>')
+@admin_access_required()
+def admin_workshop_preview(token):
+    w_id = decode_wid(token)
+    if w_id is None:
+        abort(404)
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT w.w_id, w.name, w.address, w.contact_no, w.photo_path,
+                       w.latitude, w.longitude, w.capacity,
+                       u.name AS owner_name, u.u_id AS owner_uid,
+                       u.email AS owner_email, u.profile_picture AS owner_picture,
+                       u.created_at AS owner_since
+                FROM workshop w
+                JOIN owner o ON w.o_id = o.o_id
+                JOIN users u ON o.u_id = u.u_id
+                WHERE w.w_id = %s
+            """, (w_id,))
+            workshop = cur.fetchone()
+            if not workshop:
+                abort(404)
+
+            cur.execute("""
+                SELECT sc.s_name, s.price_range, s.duration
+                FROM service s
+                JOIN service_catalog sc ON sc.sc_id = s.sc_id
+                WHERE s.w_id = %s
+                ORDER BY sc.s_name
+            """, (w_id,))
+            services = cur.fetchall()
+
+            cur.execute("""
+                SELECT m.m_id, u.u_id, u.name, u.profile_picture, m.experience_yrs, m.active_stat
+                FROM mechanic m
+                JOIN users u ON m.u_id = u.u_id
+                WHERE m.w_id = %s
+                ORDER BY m.experience_yrs DESC NULLS LAST, u.name
+            """, (w_id,))
+            team = cur.fetchall()
+
+            cur.execute("""
+                SELECT COUNT(*) AS total,
+                       COUNT(*) FILTER (WHERE status = 'pending') AS pending,
+                       COUNT(*) FILTER (WHERE status = 'completed') AS completed
+                FROM booking WHERE w_id = %s
+            """, (w_id,))
+            jobs = cur.fetchone()
+    finally:
+        conn.close()
+
+    # which profiles this admin is allowed to open from the workshop page
+    admin_type = session.get('admin_type')
+    can_view_owner = admin_type in ('main', 'owner_workshop_manager')
+    can_view_mechanics = admin_type in ('main', 'mechanic_manager')
+
+    return render_template('dashboard/admin_workshop_preview.html',
+                           workshop=workshop, services=services, team=team, jobs=jobs,
+                           open_slots=workshop['capacity'] - len(team),
+                           can_view_owner=can_view_owner,
+                           can_view_mechanics=can_view_mechanics)
+
 @dashboard_bp.route('/admin/terminate/<role>/<int:u_id>', methods=['POST'])
 @admin_access_required('customer_manager', 'owner_workshop_manager', 'mechanic_manager')
 def admin_terminate(role, u_id):
@@ -224,43 +401,126 @@ def mark_feedback_read(f_id):
     conn.close()
     return redirect(url_for('dashboard.admin'))
 
-#add service
+# =================================================SERVICE CATALOG=================================================#
+def _clean_service_name(raw):
+    """Collapse extra spaces so ' Brake   Repair ' becomes 'Brake Repair'."""
+    return ' '.join((raw or '').split())
+
+
 @dashboard_bp.route('/admin/services', methods=['GET', 'POST'])
 @admin_access_required(main_only=True)
 def admin_services():
     conn = get_db_connection()
-    cur = conn.cursor()
+    try:
+        with conn.cursor() as cur:
+            if request.method == 'POST':
+                s_name = _clean_service_name(request.form.get('s_name'))
+                if not s_name:
+                    flash('Please enter a service name.', 'error')
+                elif len(s_name) > 100:
+                    flash('Service names can be at most 100 characters.', 'error')
+                else:
+                    # the UNIQUE constraint is case-sensitive, so check "tires" vs "Tires" ourselves
+                    cur.execute("SELECT 1 FROM service_catalog WHERE LOWER(s_name) = LOWER(%s)", (s_name,))
+                    if cur.fetchone():
+                        flash('That service already exists.', 'error')
+                    else:
+                        try:
+                            cur.execute("INSERT INTO service_catalog (s_name) VALUES (%s)", (s_name,))
+                            conn.commit()
+                            flash(f'"{s_name}" added to the service catalog.', 'success')
+                        except Exception:
+                            conn.rollback()
+                            logging.exception('Could not add catalog service')
+                            flash('Could not add that service.', 'error')
+                return redirect(url_for('dashboard.admin_services'))
 
-    if request.method == 'POST':
-        s_name = request.form['s_name'].strip()
-        if s_name:
-            try:
-                cur.execute("INSERT INTO service_catalog (s_name) VALUES (%s)", (s_name,))
-                conn.commit()
-                flash(f'"{s_name}" added to the service catalog.', 'success')
-            except Exception:
-                conn.rollback()
-                flash('That service already exists.', 'error')
-        return redirect(url_for('dashboard.admin_services'))
+            cur.execute("""
+                SELECT sc.sc_id, sc.s_name,
+                       COUNT(DISTINCT s.s_id) AS workshop_count,
+                       COUNT(b.b_id)          AS booking_count
+                FROM service_catalog sc
+                LEFT JOIN service s ON s.sc_id = sc.sc_id
+                LEFT JOIN booking b ON b.s_id = s.s_id
+                GROUP BY sc.sc_id, sc.s_name
+                ORDER BY sc.s_name
+            """)
+            catalog = cur.fetchall()
+    finally:
+        conn.close()
 
-    cur.execute("SELECT * FROM service_catalog ORDER BY s_name")
-    catalog = cur.fetchall()
-    cur.close()
-    conn.close()
+    in_use = sum(1 for c in catalog if c['workshop_count'] > 0)
+    stats = {'total': len(catalog), 'in_use': in_use, 'unused': len(catalog) - in_use}
+    return render_template('dashboard/admin_service.html', catalog=catalog, stats=stats)
 
-    return render_template('dashboard/admin_service.html', catalog=catalog)
 
-#delete service
+@dashboard_bp.route('/admin/services/<int:sc_id>/rename', methods=['POST'])
+@admin_access_required(main_only=True)
+def rename_catalog_service(sc_id):
+    new_name = _clean_service_name(request.form.get('s_name'))
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT s_name FROM service_catalog WHERE sc_id = %s", (sc_id,))
+            row = cur.fetchone()
+            if not row:
+                abort(404)
+
+            if not new_name:
+                flash('Please enter a service name.', 'error')
+            elif len(new_name) > 100:
+                flash('Service names can be at most 100 characters.', 'error')
+            elif new_name == row['s_name']:
+                pass  # nothing changed
+            else:
+                cur.execute(
+                    "SELECT 1 FROM service_catalog WHERE LOWER(s_name) = LOWER(%s) AND sc_id <> %s",
+                    (new_name, sc_id))
+                if cur.fetchone():
+                    flash('Another service already has that name.', 'error')
+                else:
+                    try:
+                        cur.execute("UPDATE service_catalog SET s_name = %s WHERE sc_id = %s", (new_name, sc_id))
+                        conn.commit()
+                        flash(f'Renamed to "{new_name}".', 'success')
+                    except Exception:
+                        conn.rollback()
+                        logging.exception('Could not rename catalog service')
+                        flash('Could not rename that service.', 'error')
+    finally:
+        conn.close()
+    return redirect(url_for('dashboard.admin_services'))
+
+
 @dashboard_bp.route('/admin/services/<int:sc_id>/delete', methods=['POST'])
 @admin_access_required(main_only=True)
 def delete_catalog_service(sc_id):
     conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("DELETE FROM service_catalog WHERE sc_id = %s", (sc_id,))
-    conn.commit()
-    cur.close()
-    conn.close()
-    flash('Service removed from catalog.', 'success')
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT s_name,
+                       (SELECT COUNT(*) FROM service WHERE sc_id = %s) AS in_use
+                FROM service_catalog WHERE sc_id = %s
+            """, (sc_id, sc_id))
+            row = cur.fetchone()
+            if not row:
+                flash('That service no longer exists.', 'error')
+            elif row['in_use']:
+                n = row['in_use']
+                flash(f'"{row["s_name"]}" is offered by {n} workshop{"" if n == 1 else "s"}, so it can\'t be removed.', 'error')
+            else:
+                try:
+                    cur.execute("DELETE FROM service_catalog WHERE sc_id = %s", (sc_id,))
+                    conn.commit()
+                    flash(f'"{row["s_name"]}" removed from the catalog.', 'success')
+                except Exception:
+                    conn.rollback()
+                    logging.exception('Could not delete catalog service')
+                    flash('Could not remove that service.', 'error')
+    finally:
+        conn.close()
     return redirect(url_for('dashboard.admin_services'))
 
 # =================================================SUB-ADMIN MANAGEMENT=================================================#
@@ -305,7 +565,7 @@ def admin_subadmins():
 
             cur.execute("""
                 SELECT a.a_id, a.u_id, a.admin_type, a.is_active,
-                u.name, u.email, u.created_at
+                u.name, u.email, u.created_at, u.profile_picture
                 FROM admin a JOIN users u ON a.u_id = u.u_id
                 ORDER BY (a.admin_type = 'main') DESC, u.created_at DESC
             """)
@@ -313,6 +573,40 @@ def admin_subadmins():
     finally:
         conn.close()
     return render_template('dashboard/subadmins.html', subadmins=subadmins)
+
+
+@dashboard_bp.route('/admin/subadmins/profile/<token>')
+@admin_access_required(main_only=True)
+def admin_team_profile(token):
+    u_id = decode_uid(token)
+    if u_id is None:
+        abort(404)
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT a.a_id, a.admin_type, a.is_active,
+                       u.u_id, u.name, u.email, u.profile_picture, u.created_at
+                FROM admin a JOIN users u ON a.u_id = u.u_id
+                WHERE u.u_id = %s
+            """, (u_id,))
+            member = cur.fetchone()
+            if not member:
+                abort(404)
+
+            # size of the area this admin looks after
+            cur.execute("""
+                SELECT (SELECT COUNT(*) FROM customer) AS customers,
+                       (SELECT COUNT(*) FROM owner)    AS owners,
+                       (SELECT COUNT(*) FROM mechanic) AS mechanics,
+                       (SELECT COUNT(*) FROM workshop) AS workshops
+            """)
+            scope = cur.fetchone()
+    finally:
+        conn.close()
+
+    return render_template('dashboard/admin_team_profile.html', member=member, scope=scope)
 
 
 @dashboard_bp.route('/admin/subadmins/<int:a_id>/toggle', methods=['POST'])
