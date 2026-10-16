@@ -109,6 +109,7 @@
                 </select>
                 <button value="search"><i class='bx bx-search'></i></button>
             </form>
+            {% if result or searched %}
             <div class="admin-section">
                 {% if result %}
                 <table class="admin-table">
@@ -129,10 +130,14 @@
                             <td>{{result[1]}}</td>
                             <td>{{result[0]}}</td>
                             <td>{{role}}</td>
-                            <td>{{result[2]}}</td>
+                            <td><a class="profile-link" href="{{ url_for('dashboard.admin_user_profile', token=result[1] | utoken) }}">{{ result[2] }}</a></td>
                             <td>{{result[3]}}</td>
                             <td>{{result[4].strftime('%d %b %Y')}}</td>
                             <td>
+                                <a class="view-profile-btn" title="View profile"
+                                    href="{{ url_for('dashboard.admin_user_profile', token=result[1] | utoken) }}">
+                                    <i class='bx bx-user-circle'></i> View profile
+                                </a>
                                 <button type="button" class="deleteAcc"
                                     data-delete-url="{{ url_for('dashboard.admin_terminate', role=role, u_id=result[1]) }}">
                                     <i class='bx bx-trash'></i> Delete
@@ -145,6 +150,7 @@
                 <p class="no-results">No record found.</p>
                 {% endif %}
             </div>
+            {% endif %}
         </div>
 
         <div class="admin-section" id="all-customers">
@@ -164,10 +170,14 @@
                     {% for c in customers %}
                     <tr>
                         <td>{{ loop.index }}</td>
-                        <td>{{ c.name }}</td>
+                        <td><a class="profile-link" href="{{ url_for('dashboard.admin_user_profile', token=c.u_id | utoken) }}">{{ c.name }}</a></td>
                         <td>{{ c.email }}</td>
                         <td>{{ c.created_at.strftime('%d %b %Y') }}</td>
                         <td>
+                            <a class="view-profile-btn" title="View profile"
+                                href="{{ url_for('dashboard.admin_user_profile', token=c.u_id | utoken) }}">
+                                <i class='bx bx-user-circle'></i> View
+                            </a>
                             <a class="copy-email" data-email="{{ c.email }}">
                                 <i class='bx bx-copy'></i> Copy
                             </a>
@@ -198,10 +208,14 @@
                     {% for o in owners %}
                     <tr>
                         <td>{{ loop.index }}</td>
-                        <td>{{ o.name }}</td>
+                        <td><a class="profile-link" href="{{ url_for('dashboard.admin_user_profile', token=o.u_id | utoken) }}">{{ o.name }}</a></td>
                         <td>{{ o.email }}</td>
                         <td>{{ o.created_at.strftime('%d %b %Y') }}</td>
                         <td>
+                            <a class="view-profile-btn" title="View profile"
+                                href="{{ url_for('dashboard.admin_user_profile', token=o.u_id | utoken) }}">
+                                <i class='bx bx-user-circle'></i> View
+                            </a>
                             <a class="copy-email" data-email="{{ o.email }}">
                                 <i class='bx bx-copy'></i> Copy
                             </a>
@@ -232,10 +246,14 @@
                     {% for m in mechanics %}
                     <tr>
                         <td>{{ loop.index }}</td>
-                        <td>{{ m.name }}</td>
+                        <td><a class="profile-link" href="{{ url_for('dashboard.admin_user_profile', token=m.u_id | utoken) }}">{{ m.name }}</a></td>
                         <td>{{ m.email }}</td>
                         <td>{{ m.created_at.strftime('%d %b %Y') }}</td>
                         <td>
+                            <a class="view-profile-btn" title="View profile"
+                                href="{{ url_for('dashboard.admin_user_profile', token=m.u_id | utoken) }}">
+                                <i class='bx bx-user-circle'></i> View
+                            </a>
                             <a class="copy-email" data-email="{{ m.email }}">
                                 <i class='bx bx-copy'></i> Copy
                             </a>
@@ -259,15 +277,22 @@
                         <th>Name</th>
                         <th>Address</th>
                         <th>Owner</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for w in workshops %}
                     <tr>
                         <td>{{ loop.index }}</td>
-                        <td>{{ w.name }}</td>
+                        <td><a class="profile-link" href="{{ url_for('dashboard.admin_workshop_preview', token=w.w_id | wtoken) }}">{{ w.name }}</a></td>
                         <td>{{ w.address }}</td>
                         <td>{{ w.owner_name }}</td>
+                        <td>
+                            <a class="view-profile-btn" title="View workshop"
+                                href="{{ url_for('dashboard.admin_workshop_preview', token=w.w_id | wtoken) }}">
+                                <i class='bx bx-store'></i> View
+                            </a>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -292,7 +317,7 @@
                         </div>
                         {% if not f.is_read %}
                         <form method="POST" action="{{ url_for('dashboard.mark_feedback_read', f_id=f.f_id) }}">
-<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit" class="mini-btn confirm">Mark as read</button>
                         </form>
                         {% else %}
@@ -314,7 +339,7 @@
     <p>This account will be permanently deleted.</p>
     <div class="delete-actions">
         <form id="deleteForm" method="post" action="">
-<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button id="confirmDel" type="submit" class="sure-btn danger">Yes, delete</button>
         </form>
         <button type="button" id="cancelDel" class="sure-btn cancel">Cancel</button>

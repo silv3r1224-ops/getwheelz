@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}{{ workshop.name }} — Admin — Getwheelz{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+
+    <aside class="admin-sidebar" id="sideBar">
+        <div class="sidebar-header">
+            <i class='bx bxs-shield-alt-2'></i>
+            <span>Admin Panel</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('dashboard.admin') }}" class="sidebar-link"><i class='bx bx-arrow-back'></i> Back to dashboard</a>
+            <a href="#overview" class="sidebar-link active"><i class='bx bx-grid-alt'></i> Overview</a>
+            <a href="#wpServices" class="sidebar-link"><i class='bx bx-wrench'></i> Services</a>
+            <a href="#wpTeam" class="sidebar-link"><i class='bx bx-group'></i> Team</a>
+            <a href="#wpLocation" class="sidebar-link"><i class='bx bx-map'></i> Location</a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-link"><i class='bx bx-log-out'></i> Logout</a>
+        </div>
+    </aside>
+
+    <main class="admin-main wp-main">
+
+        {# ---------------- hero ---------------- #}
+        <header class="wp-hero" id="overview">
+            <div class="wp-hero-photo">
+                {% if workshop.photo_path %}
+                <img src="{{ url_for('static', filename=workshop.photo_path) }}" alt="{{ workshop.name }}">
+                {% else %}
+                <div class="workshop-join-photo-placeholder"><i class='bx bx-store'></i></div>
+                {% endif %}
+            </div>
+
+            <div class="wp-hero-info">
+                <span class="preview-badge"><i class='bx bx-show'></i> Admin view (read-only)</span>
+                <h1>{{ workshop.name }}</h1>
+                <p class="wp-line"><i class='bx bx-map'></i> {{ workshop.address or 'Address not listed' }}</p>
+                {% if workshop.contact_no %}
+                <p class="wp-line"><i class='bx bx-phone'></i> {{ workshop.contact_no }}</p>
+                {% endif %}
+                <p class="wp-line"><i class='bx bx-user-circle'></i> Owner: {{ workshop.owner_name }}</p>
+                <p class="wp-line"><i class='bx bx-envelope'></i> {{ workshop.owner_email }}</p>
+            </div>
+
+            <div class="wp-apply">
+                <a href="javascript:history.back()" class="back-link"><i class='bx bx-arrow-back'></i> Go back</a>
+            </div>
+        </header>
+
+        {# ---------------- at a glance ---------------- #}
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-number">{{ team | length }}/{{ workshop.capacity }}</span>
+                <span class="stat-label">Mechanics</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ [open_slots, 0] | max }}</span>
+                <span class="stat-label">Open Spots</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ services | length }}</span>
+                <span class="stat-label">Services Offered</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ jobs.total }}</span>
+                <span class="stat-label">Total Bookings</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ jobs.pending }}</span>
+                <span class="stat-label">Pending</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ jobs.completed }}</span>
+                <span class="stat-label">Jobs Completed</span>
+            </div>
+        </div>
+
+        {# ---------------- services ---------------- #}
+        <section class="admin-section wp-panel" id="wpServices">
+            <h2>Services Offered</h2>
+            {% if services %}
+            <table class="admin-table">
+                <thead>
+                    <tr><th>S.no</th><th>Service</th><th>Price Range</th><th>Duration</th></tr>
+                </thead>
+                <tbody>
+                    {% for s in services %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ s.s_name }}</td>
+                        <td>{{ s.price_range or '—' }}</td>
+                        <td>{{ s.duration or '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="no-results">No services listed yet.</p>
+            {% endif %}
+        </section>
+
+        {# ---------------- owner ---------------- #}
+        <section class="admin-section wp-panel" id="wpOwner">
+            <h2>Workshop Owner</h2>
+            <div class="team-grid">
+                {% if can_view_owner %}
+                <a class="team-card owner-card" style="text-decoration:none; color:inherit;"
+                    href="{{ url_for('dashboard.admin_user_profile', token=workshop.owner_uid | utoken) }}">
+                {% else %}
+                <div class="team-card owner-card">
+                {% endif %}
+                    <div class="team-avatar">
+                        {% if workshop.owner_picture %}
+                        <img src="{{ url_for('static', filename=workshop.owner_picture) }}" alt="{{ workshop.owner_name }}">
+                        {% else %}
+                        <span>{{ workshop.owner_name[:1] | upper }}</span>
+                        {% endif %}
+                    </div>
+                    <h3>{{ workshop.owner_name }}</h3>
+                    <span class="owner-badge"><i class='bx bxs-crown'></i> Owner</span>
+                    {% if can_view_owner %}<small class="view-profile-hint">View profile</small>{% endif %}
+                {% if can_view_owner %}</a>{% else %}</div>{% endif %}
+            </div>
+        </section>
+
+        {# ---------------- team ---------------- #}
+        <section class="admin-section wp-panel" id="wpTeam">
+            <h2>Meet the Team <span class="count-pill">{{ team | length }}</span></h2>
+            {% if team %}
+            <div class="team-grid">
+                {% for m in team %}
+                {% if can_view_mechanics %}
+                <a class="team-card" style="text-decoration:none; color:inherit;"
+                    href="{{ url_for('dashboard.admin_user_profile', token=m.u_id | utoken) }}">
+                {% else %}
+                <div class="team-card">
+                {% endif %}
+                    <div class="team-avatar">
+                        {% if m.profile_picture %}
+                        <img src="{{ url_for('static', filename=m.profile_picture) }}" alt="{{ m.name }}">
+                        {% else %}
+                        <span>{{ m.name[:1] | upper }}</span>
+                        {% endif %}
+                    </div>
+                    <h3>{{ m.name }}</h3>
+                    <p class="team-exp"><i class='bx bx-medal'></i>
+                        {% if m.experience_yrs %}{{ m.experience_yrs }} yr{{ '' if m.experience_yrs == 1 else 's' }} experience{% else %}Experience not listed{% endif %}
+                    </p>
+                    {% if m.active_stat %}
+                    <span class="status-badge {% if m.active_stat | lower in ['active', 'available'] %}status-completed{% else %}status-pending{% endif %}">{{ m.active_stat }}</span>
+                    {% endif %}
+                    {% if can_view_mechanics %}<small class="view-profile-hint">View profile</small>{% endif %}
+                {% if can_view_mechanics %}</a>{% else %}</div>{% endif %}
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="no-results">No mechanics in this workshop yet.</p>
+            {% endif %}
+        </section>
+
+        {# ---------------- location ---------------- #}
+        <section class="admin-section wp-panel" id="wpLocation">
+            <h2>Location</h2>
+            {% if workshop.latitude is not none and workshop.longitude is not none %}
+            <div id="preview-map"></div>
+            {% else %}
+            <p class="no-results">The owner hasn't pinned this workshop on the map.</p>
+            {% endif %}
+        </section>
+
+    </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin.js') }}" defer></script>
+{% if workshop.latitude is not none and workshop.longitude is not none %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const lat = {{ workshop.latitude | float }};
+        const lng = {{ workshop.longitude | float }};
+        const map = L.map('preview-map', { scrollWheelZoom: false }).setView([lat, lng], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+        L.marker([lat, lng]).addTo(map).bindPopup({{ workshop.name | tojson }});
+    });
+</script>
+{% endif %}
+{% endblock %}

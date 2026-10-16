@@ -1,65 +1,386 @@
 {% extends "base.html" %}
-{% block title %}{{ manager_type.replace('_', ' ').title() }} — Getwheelz{% endblock %}
+
+{% set mt = manager_type %}
+{% set title_text = mt.replace('_', ' ').title() %}
+
+{% block title %}{{ title_text }} — Getwheelz{% endblock %}
+
+{% block head %}
+<style>
+    /* ---------- Sub-admin dashboard (uses the app's theme variables, so dark/light both work) ---------- */
+    .sa-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 14px; }
+
+    .sa-field, .sa-select {
+        padding: 11px 14px;
+        border-radius: 10px;
+        border: 1px solid color-mix(in srgb, var(--text-color) 16%, transparent);
+        background: var(--bg-color);
+        color: var(--text-color);
+        font: inherit;
+        font-size: 14px;
+        transition: border-color .15s, box-shadow .15s;
+    }
+    .sa-field::placeholder { color: var(--text-muted); }
+    .sa-field:focus, .sa-select:focus {
+        outline: none;
+        border-color: var(--main-color);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--main-color) 22%, transparent);
+    }
+
+    .sa-search { position: relative; flex: 1 1 240px; max-width: 380px; }
+    .sa-search i {
+        position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+        font-size: 18px; color: var(--text-muted); pointer-events: none;
+    }
+    .sa-search .sa-field { width: 100%; padding-left: 40px; box-sizing: border-box; }
+
+    .sa-count { margin-left: auto; font-size: 13px; color: var(--text-muted); }
+
+    .sa-table-wrap { overflow-x: auto; }
+    .sa-table { width: 100%; }
+    .sa-table th.num, .sa-table td.num { text-align: center; }
+    .sa-table th.actions, .sa-table td.actions { text-align: right; white-space: nowrap; width: 1%; }
+
+    /* person cell: small avatar + name link + email */
+    .sa-person { display: flex; align-items: center; gap: 12px; min-width: 200px; }
+    .sa-avatar {
+        flex: 0 0 38px; width: 38px; height: 38px; border-radius: 50%;
+        overflow: hidden; display: grid; place-items: center;
+        background: color-mix(in srgb, var(--main-color) 22%, transparent);
+        color: var(--main-color); font-weight: 700; font-size: 15px;
+    }
+    .sa-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .sa-person-name { font-weight: 600; text-decoration: none; color: inherit; }
+    .sa-person-name:hover { text-decoration: underline; }
+    .sa-person-email { display: block; font-size: 12.5px; color: var(--text-muted); }
+
+    .sa-muted { color: var(--text-muted); }
+    .sa-date { white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+    .sa-pill {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 3px 11px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap;
+    }
+    .sa-pill.is-on { background: color-mix(in srgb, var(--main-color) 18%, transparent); color: var(--main-color); }
+    .sa-pill.is-off { background: color-mix(in srgb, var(--text-color) 9%, transparent); color: var(--text-muted); }
+
+    .sa-icon-btn {
+        display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+        height: 34px; padding: 0 12px; margin-left: 4px; border: 0; border-radius: 8px;
+        background: transparent; color: var(--text-muted);
+        font: inherit; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer;
+        transition: background .15s, color .15s;
+    }
+    .sa-icon-btn i { font-size: 18px; }
+    .sa-icon-btn:hover { background: color-mix(in srgb, var(--text-color) 10%, transparent); color: var(--text-color); }
+    .sa-icon-btn.primary { color: #42a5f5; background: rgba(33, 150, 243, .14); }
+    .sa-icon-btn.primary:hover { background: rgba(33, 150, 243, .28); color: #42a5f5; }
+    .sa-icon-btn.danger:hover { background: rgba(239, 68, 68, .16); color: #ef4444; }
+    .sa-icon-btn:focus-visible { outline: 2px solid var(--main-color); outline-offset: 1px; }
+
+    .sa-empty { padding: 28px 8px; text-align: center; color: var(--text-muted); }
+    .sa-empty i { display: block; font-size: 34px; margin-bottom: 6px; opacity: .6; }
+    [hidden] { display: none !important; }
+
+    @media (max-width: 640px) {
+        .sa-count { margin-left: 0; width: 100%; }
+        .sa-search { max-width: none; }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<section class="admin-main" style="max-width:1200px;margin:2rem auto;padding:1.5rem;">
-    <header class="admin-hero">
-        <div class="admin-hero-icon"><i class="bx bxs-shield-alt-2"></i></div>
-        <div class="admin-hero-text">
-            <span class="admin-eyebrow">Restricted Admin Workspace</span>
-            <h1>{{ manager_type.replace('_', ' ').title() }}</h1>
-            <p>Signed in as {{ session.get('user_name', 'Admin') }}. Your access is limited to this management area.</p>
-        </div>
-        <a class="hero-chip" href="{{ url_for('auth.logout') }}"><i class="bx bx-log-out"></i> Logout</a>
-    </header>
+{% if mt == 'customer_manager' %}
+    {% set noun = 'customer' %}{% set nouns = 'customers' %}{% set role_name = 'customer' %}
+{% elif mt == 'owner_workshop_manager' %}
+    {% set noun = 'owner' %}{% set nouns = 'owners' %}{% set role_name = 'owner' %}
+{% else %}
+    {% set noun = 'mechanic' %}{% set nouns = 'mechanics' %}{% set role_name = 'mechanic' %}
+{% endif %}
 
-    <section class="admin-section">
-        <h2>
-            {% if manager_type == 'customer_manager' %}Customer accounts
-            {% elif manager_type == 'owner_workshop_manager' %}Workshop owners
-            {% else %}Mechanic accounts{% endif %}
-        </h2>
-        <p>{{ records|length }} record(s)</p>
-        <div style="overflow-x:auto;">
-            <table class="admin-table">
-                <thead><tr><th>Name</th><th>Email</th><th>Joined</th>
-                    {% if manager_type == 'owner_workshop_manager' %}<th>Workshops</th>{% endif %}
-                    {% if manager_type == 'mechanic_manager' %}<th>Workshop</th><th>Experience</th><th>Status</th>{% endif %}
-                    <th>Action</th></tr></thead>
-                <tbody>
-                {% for record in records %}
-                    <tr>
-                        <td>{{ record.name }}</td><td>{{ record.email }}</td><td>{{ record.created_at }}</td>
-                        {% if manager_type == 'owner_workshop_manager' %}<td>{{ record.workshop_count }}</td>{% endif %}
-                        {% if manager_type == 'mechanic_manager' %}<td>{{ record.workshop_name or 'Not assigned' }}</td><td>{{ record.experience_yrs or 0 }} years</td><td>{{ record.active_stat or 'active' }}</td>{% endif %}
-                        <td>
-                            {% if manager_type == 'customer_manager' %}
-                                <form method="post" action="{{ url_for('dashboard.admin_terminate', role='customer', u_id=record.u_id) }}" onsubmit="return confirm('Permanently delete this customer account?')">
-<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn-danger">Delete</button></form>
-                            {% elif manager_type == 'owner_workshop_manager' %}
-                                <form method="post" action="{{ url_for('dashboard.admin_terminate', role='owner', u_id=record.u_id) }}" onsubmit="return confirm('Permanently delete this owner account and related records?')">
-<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn-danger">Delete owner</button></form>
+<div class="admin-layout" id="adminLayout">
+
+    <aside class="admin-sidebar" id="sideBar">
+        <div class="sidebar-header">
+            <i class='bx bxs-shield-alt-2'></i>
+            <span>Admin Panel</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#records" class="sidebar-link active">
+                <i class='bx bx-{{ "user" if mt == "customer_manager" else ("store" if mt == "owner_workshop_manager" else "wrench") }}'></i>
+                {{ nouns | capitalize }}
+            </a>
+            {% if mt == 'owner_workshop_manager' %}
+            <a href="#workshops" class="sidebar-link"><i class='bx bx-buildings'></i> Workshops</a>
+            {% endif %}
+            <a href="{{ url_for('dashboard.profile') }}" class="sidebar-link"><i class='bx bx-id-card'></i> My profile</a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-link"><i class='bx bx-log-out'></i> Logout</a>
+        </div>
+    </aside>
+
+    <main class="admin-main">
+
+        <header class="admin-hero">
+            <div class="admin-hero-icon"><i class="bx bxs-shield-alt-2"></i></div>
+            <div class="admin-hero-text">
+                <h1>{{ title_text }}</h1>
+                <p>Welcome, {{ session.get('user_name', 'Admin') }}. You manage {{ nouns }} on Getwheelz; other areas are not available to your account.</p>
+            </div>
+            <a class="hero-chip" href="{{ url_for('auth.logout') }}"><i class="bx bx-log-out"></i> Logout</a>
+        </header>
+
+        {# ---------------- summary ---------------- #}
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-number">{{ stats.total }}</span>
+                <span class="stat-label">Total {{ nouns }}</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ stats.new_30d }}</span>
+                <span class="stat-label">Joined in last 30 days</span>
+            </div>
+            {% if mt == 'owner_workshop_manager' %}
+            <div class="stat-card">
+                <span class="stat-number">{{ stats.workshops }}</span>
+                <span class="stat-label">Workshops listed</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ stats.no_workshop }}</span>
+                <span class="stat-label">Owners without a workshop</span>
+            </div>
+            {% elif mt == 'mechanic_manager' %}
+            <div class="stat-card">
+                <span class="stat-number">{{ stats.assigned }}</span>
+                <span class="stat-label">Working at a workshop</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ stats.unassigned }}</span>
+                <span class="stat-label">Not assigned yet</span>
+            </div>
+            {% else %}
+            <div class="stat-card">
+                <span class="stat-number">{{ stats.with_bookings }}</span>
+                <span class="stat-label">Customers with bookings</span>
+            </div>
+            {% endif %}
+        </div>
+
+        {# ---------------- records ---------------- #}
+        <section class="admin-section" id="records">
+            <h2>{{ nouns | capitalize }}</h2>
+
+            {% if records %}
+            <div class="sa-toolbar">
+                <div class="sa-search">
+                    <i class='bx bx-search'></i>
+                    <input class="sa-field" type="search" id="saSearch" placeholder="Search by name or email"
+                        aria-label="Search {{ nouns }}" autocomplete="off">
+                </div>
+                <select class="sa-select" id="saSort" aria-label="Sort {{ nouns }}">
+                    <option value="new">Newest first</option>
+                    <option value="old">Oldest first</option>
+                    <option value="name">Name A to Z</option>
+                </select>
+                <span class="sa-count" id="saCount" aria-live="polite"></span>
+            </div>
+
+            <div class="sa-table-wrap">
+                <table class="admin-table sa-table">
+                    <thead>
+                        <tr>
+                            <th>{{ noun | capitalize }}</th>
+                            <th>Joined</th>
+                            {% if mt == 'customer_manager' %}
+                            <th>Phone</th><th class="num">Bookings</th>
+                            {% elif mt == 'owner_workshop_manager' %}
+                            <th class="num">Workshops</th>
                             {% else %}
-                                <form method="post" action="{{ url_for('dashboard.admin_terminate', role='mechanic', u_id=record.u_id) }}" onsubmit="return confirm('Permanently delete this mechanic account?')">
-<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn-danger">Delete</button></form>
+                            <th>Workshop</th><th class="num">Experience</th><th>Status</th>
                             {% endif %}
-                        </td>
-                    </tr>
-                {% else %}<tr><td colspan="8">No records found.</td></tr>{% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </section>
+                            <th class="actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="saBody">
+                        {% for r in records %}
+                        <tr data-row
+                            data-search="{{ (r.name ~ ' ' ~ r.email) | lower }}"
+                            data-name="{{ r.name | lower }}"
+                            data-joined="{{ r.created_at.strftime('%Y%m%d%H%M%S') if r.created_at else '0' }}">
+                            <td>
+                                <div class="sa-person">
+                                    <span class="sa-avatar">
+                                        {% if r.profile_picture %}
+                                        <img src="{{ url_for('static', filename=r.profile_picture) }}" alt="">
+                                        {% else %}{{ r.name[:1] | upper }}{% endif %}
+                                    </span>
+                                    <span>
+                                        <a class="sa-person-name"
+                                            href="{{ url_for('dashboard.admin_user_profile', token=r.u_id | utoken) }}">{{ r.name }}</a>
+                                        <span class="sa-person-email">{{ r.email }}</span>
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="sa-date sa-muted">{{ r.created_at.strftime('%d %b %Y') if r.created_at else '—' }}</td>
 
-    {% if manager_type == 'owner_workshop_manager' %}
-    <section class="admin-section">
-        <h2>Workshop listings</h2>
-        <div style="overflow-x:auto;"><table class="admin-table">
-            <thead><tr><th>Workshop</th><th>Address</th><th>Owner</th><th>Owner email</th></tr></thead>
-            <tbody>{% for workshop in managed_workshops %}
-                <tr><td>{{ workshop.workshop_name }}</td><td>{{ workshop.address or '—' }}</td><td>{{ workshop.owner_name }}</td><td>{{ workshop.owner_email }}</td></tr>
-            {% else %}<tr><td colspan="4">No workshops found.</td></tr>{% endfor %}</tbody>
-        </table></div>
-    </section>
-    {% endif %}
-</section>
+                            {% if mt == 'customer_manager' %}
+                            <td class="sa-muted">{{ r.phone_no or '—' }}</td>
+                            <td class="num">
+                                {% if r.booking_count %}<span class="sa-pill is-on">{{ r.booking_count }}</span>
+                                {% else %}<span class="sa-pill is-off">None</span>{% endif %}
+                            </td>
+                            {% elif mt == 'owner_workshop_manager' %}
+                            <td class="num">
+                                {% if r.workshop_count %}<span class="sa-pill is-on"><i class='bx bx-store'></i> {{ r.workshop_count }}</span>
+                                {% else %}<span class="sa-pill is-off">None yet</span>{% endif %}
+                            </td>
+                            {% else %}
+                            <td>{{ r.workshop_name or 'Not assigned' }}</td>
+                            <td class="num sa-muted">{{ (r.experience_yrs ~ ' yrs') if r.experience_yrs else '—' }}</td>
+                            <td>
+                                <span class="status-badge {% if (r.active_stat or 'active') | lower in ['active', 'available'] %}status-completed{% else %}status-pending{% endif %}">{{ r.active_stat or 'active' }}</span>
+                            </td>
+                            {% endif %}
+
+                            <td class="actions">
+                                <a class="sa-icon-btn primary" title="View profile"
+                                    href="{{ url_for('dashboard.admin_user_profile', token=r.u_id | utoken) }}">
+                                    <i class='bx bx-user-circle'></i> View
+                                </a>
+                                <button type="button" class="sa-icon-btn danger deleteAcc" title="Delete account"
+                                    data-name="{{ r.name }}"
+                                    data-delete-url="{{ url_for('dashboard.admin_terminate', role=role_name, u_id=r.u_id) }}">
+                                    <i class='bx bx-trash'></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="sa-empty" id="saNoMatch" hidden>
+                    <i class='bx bx-search-alt'></i>
+                    No {{ noun }} matches your search.
+                </div>
+            </div>
+            {% else %}
+            <div class="sa-empty">
+                <i class='bx bx-group'></i>
+                No {{ nouns }} yet.
+            </div>
+            {% endif %}
+        </section>
+
+        {# ---------------- workshop listings (owner / workshop manager only) ---------------- #}
+        {% if mt == 'owner_workshop_manager' %}
+        <section class="admin-section" id="workshops">
+            <h2>Workshop listings</h2>
+            {% if managed_workshops %}
+            <div class="sa-table-wrap">
+                <table class="admin-table sa-table">
+                    <thead>
+                        <tr>
+                            <th>Workshop</th><th>Address</th><th>Owner</th><th class="num">Team</th><th class="actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for w in managed_workshops %}
+                        <tr>
+                            <td>
+                                <a class="sa-person-name"
+                                    href="{{ url_for('dashboard.admin_workshop_preview', token=w.w_id | wtoken) }}">{{ w.workshop_name }}</a>
+                            </td>
+                            <td class="sa-muted">{{ w.address or '—' }}</td>
+                            <td>
+                                {{ w.owner_name }}
+                                <span class="sa-person-email">{{ w.owner_email }}</span>
+                            </td>
+                            <td class="num"><span class="sa-pill {{ 'is-on' if w.team_size else 'is-off' }}">{{ w.team_size }}/{{ w.capacity }}</span></td>
+                            <td class="actions">
+                                <a class="sa-icon-btn primary" title="View workshop"
+                                    href="{{ url_for('dashboard.admin_workshop_preview', token=w.w_id | wtoken) }}">
+                                    <i class='bx bx-store'></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="sa-empty"><i class='bx bx-buildings'></i> No workshops listed yet.</div>
+            {% endif %}
+        </section>
+        {% endif %}
+    </main>
+</div>
+
+{# delete confirmation: same pop-up admin.js drives on the main dashboard #}
+<div class="delete-con" id="deleteCon" role="dialog" aria-modal="true" aria-labelledby="deleteTitle">
+    <h2 id="deleteTitle">Are you sure?</h2>
+    <p id="deleteMsg">
+        {% if mt == 'owner_workshop_manager' %}This owner and their workshop (with its services and bookings) will be permanently deleted.
+        {% elif mt == 'customer_manager' %}This customer and their bookings will be permanently deleted.
+        {% else %}This mechanic account will be permanently deleted.{% endif %}
+    </p>
+    <div class="delete-actions">
+        <form id="deleteForm" method="post" action="">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button id="confirmDel" type="submit" class="sure-btn danger">Yes, delete</button>
+        </form>
+        <button type="button" id="cancelDel" class="sure-btn cancel">Cancel</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin.js') }}" defer></script>
+<script>
+    (function () {
+        const body = document.getElementById('saBody');
+        if (!body) return;
+
+        const rows = Array.from(body.querySelectorAll('tr[data-row]'));
+        const search = document.getElementById('saSearch');
+        const sort = document.getElementById('saSort');
+        const count = document.getElementById('saCount');
+        const noMatch = document.getElementById('saNoMatch');
+
+        function apply() {
+            const term = search.value.trim().toLowerCase();
+            const mode = sort.value;
+
+            const ordered = rows.slice().sort((a, b) => {
+                if (mode === 'name') return a.dataset.name.localeCompare(b.dataset.name);
+                if (mode === 'old') return a.dataset.joined.localeCompare(b.dataset.joined);
+                return b.dataset.joined.localeCompare(a.dataset.joined);   // newest first
+            });
+
+            let shown = 0;
+            ordered.forEach(row => {
+                const match = !term || row.dataset.search.includes(term);
+                row.hidden = !match;
+                if (match) shown++;
+                body.appendChild(row);
+            });
+
+            count.textContent = 'Showing ' + shown + ' of ' + rows.length;
+            noMatch.hidden = shown !== 0;
+        }
+
+        search.addEventListener('input', apply);
+        sort.addEventListener('change', apply);
+        apply();
+
+        // put the person's name into the delete pop-up (admin.js opens it)
+        const msg = document.getElementById('deleteMsg');
+        const original = msg ? msg.textContent.trim() : '';
+        document.addEventListener('click', function (e) {
+            const trigger = e.target.closest ? e.target.closest('.deleteAcc') : null;
+            if (trigger && msg) {
+                msg.textContent = (trigger.dataset.name ? trigger.dataset.name + ': ' : '') + original;
+            }
+        });
+    })();
+</script>
 {% endblock %}

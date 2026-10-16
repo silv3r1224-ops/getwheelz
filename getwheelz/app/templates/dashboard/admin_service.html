@@ -1,9 +1,172 @@
 {% extends "base.html" %}
 
-{% block title %}Service Catalog — Admin{% endblock %}
+{% block title %}Service Catalog — Admin — Getwheelz{% endblock %}
+
+{% block head %}
+<style>
+    /* ---------- Service catalog page (uses the app's theme variables, so dark/light both work) ---------- */
+    .cat-stats { margin-bottom: 8px; }
+
+    .cat-add-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .cat-add-form .cat-field { flex: 1 1 260px; max-width: 460px; }
+
+    .cat-field,
+    .cat-select {
+        padding: 11px 14px;
+        border-radius: 10px;
+        border: 1px solid color-mix(in srgb, var(--text-color) 16%, transparent);
+        background: var(--bg-color);
+        color: var(--text-color);
+        font: inherit;
+        font-size: 14px;
+        transition: border-color .15s, box-shadow .15s;
+    }
+
+    .cat-field::placeholder { color: var(--text-muted); }
+
+    .cat-field:focus,
+    .cat-select:focus {
+        outline: none;
+        border-color: var(--main-color);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--main-color) 22%, transparent);
+    }
+
+    .cat-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 11px 20px;
+        border: 0;
+        border-radius: 10px;
+        background: var(--main-color);
+        color: #fff;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: filter .15s, transform .1s;
+    }
+
+    .cat-btn:hover { filter: brightness(1.1); }
+    .cat-btn:active { transform: translateY(1px); }
+    .cat-btn:focus-visible { outline: 2px solid var(--text-color); outline-offset: 2px; }
+
+    .cat-hint {
+        margin: 10px 0 0;
+        font-size: 13px;
+        color: var(--text-muted);
+    }
+
+    /* toolbar above the table */
+    .cat-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+
+    .cat-search { position: relative; flex: 1 1 240px; max-width: 360px; }
+    .cat-search i {
+        position: absolute;
+        left: 13px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 18px;
+        color: var(--text-muted);
+        pointer-events: none;
+    }
+    .cat-search .cat-field { width: 100%; padding-left: 40px; box-sizing: border-box; }
+
+    .cat-count {
+        margin-left: auto;
+        font-size: 13px;
+        color: var(--text-muted);
+    }
+
+    /* table */
+    .cat-table-wrap { overflow-x: auto; }
+    .cat-table { width: 100%; }
+    .cat-table th.num, .cat-table td.num { text-align: center; }
+    .cat-table th.actions, .cat-table td.actions { text-align: right; white-space: nowrap; width: 1%; }
+
+    .cat-name { font-weight: 600; }
+
+    .cat-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 11px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .cat-pill.is-used {
+        background: color-mix(in srgb, var(--main-color) 18%, transparent);
+        color: var(--main-color);
+    }
+    .cat-pill.is-unused {
+        background: color-mix(in srgb, var(--text-color) 9%, transparent);
+        color: var(--text-muted);
+    }
+
+    .cat-booking-count { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+    /* icon buttons */
+    .cat-icon-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        margin-left: 4px;
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--text-muted);
+        font-size: 19px;
+        cursor: pointer;
+        transition: background .15s, color .15s;
+    }
+    .cat-icon-btn:hover { background: color-mix(in srgb, var(--text-color) 10%, transparent); color: var(--text-color); }
+    .cat-icon-btn.danger:hover { background: rgba(239, 68, 68, .16); color: #ef4444; }
+    .cat-icon-btn:focus-visible { outline: 2px solid var(--main-color); outline-offset: 1px; }
+    .cat-icon-btn:disabled { opacity: .3; cursor: not-allowed; background: transparent; color: var(--text-muted); }
+
+    /* inline rename */
+    .cat-edit-form { display: none; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .cat-edit-form .cat-field { padding: 8px 12px; min-width: 200px; }
+    .cat-edit-form .cat-btn { padding: 8px 14px; }
+    .cat-btn.ghost {
+        background: transparent;
+        color: var(--text-muted);
+        border: 1px solid color-mix(in srgb, var(--text-color) 16%, transparent);
+    }
+    .cat-btn.ghost:hover { color: var(--text-color); filter: none; }
+
+    tr.is-editing .cat-name-view { display: none; }
+    tr.is-editing .cat-edit-form { display: flex; }
+    tr.is-editing .cat-row-actions { visibility: hidden; }
+
+    .cat-empty { padding: 28px 8px; text-align: center; color: var(--text-muted); }
+    .cat-empty i { display: block; font-size: 34px; margin-bottom: 6px; opacity: .6; }
+    [hidden] { display: none !important; }
+
+    @media (max-width: 640px) {
+        .cat-count { margin-left: 0; width: 100%; }
+        .cat-search { max-width: none; }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="admin-layout">
+<div class="admin-layout" id="adminLayout">
 
     <aside class="admin-sidebar" id="sideBar">
         <div class="sidebar-header">
@@ -17,6 +180,11 @@
             <a href="{{ url_for('dashboard.admin_services') }}" class="sidebar-link active">
                 <i class='bx bx-list-ul'></i> Service Catalog
             </a>
+            {% if session.get('is_main_admin') %}
+            <a href="{{ url_for('dashboard.admin_subadmins') }}" class="sidebar-link">
+                <i class='bx bx-user-plus'></i> Sub-admin Management
+            </a>
+            {% endif %}
         </nav>
         <div class="sidebar-footer">
             <a href="{{ url_for('auth.logout') }}" class="sidebar-link">
@@ -26,39 +194,219 @@
     </aside>
 
     <main class="admin-main">
-        <h1>Service Catalog</h1>
-        <p class="page-subtitle">
-            These are the services workshop owners can choose from when listing what they offer.
-        </p>
 
-        <form method="POST" action="{{ url_for('dashboard.admin_services') }}" class="catalog-add-form">
-<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="text" name="s_name" placeholder="New service name (e.g. Brake Repair)" required>
-            <button type="submit" class="fw-btn-con"><span class="fw-btn">Add Service</span></button>
-        </form>
+        <header class="admin-hero">
+            <div class="admin-hero-icon"><i class='bx bx-list-check'></i></div>
+            <div class="admin-hero-text">
+                <h1>Service Catalog</h1>
+                <p>The master list of services. Workshop owners pick from these when they set up what they offer.</p>
+            </div>
+            <a class="hero-chip" href="{{ url_for('dashboard.admin') }}">Back to dashboard</a>
+        </header>
 
-        <div class="catalog-list">
-            {% for c in catalog %}
-            <div class="catalog-item">
-                <span>{{ c.s_name }}</span>
-                <a class="mini-btn cancel deleteAcc" data-delete-url="{{ url_for('dashboard.delete_catalog_service', sc_id=c.sc_id) }}">
-                    Remove
-                </a>
+        <div class="stats-grid cat-stats">
+            <div class="stat-card">
+                <span class="stat-number">{{ stats.total }}</span>
+                <span class="stat-label">Services in catalog</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ stats.in_use }}</span>
+                <span class="stat-label">Offered by workshops</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ stats.unused }}</span>
+                <span class="stat-label">Not used yet</span>
+            </div>
+        </div>
+
+        {# ---------------- add ---------------- #}
+        <section class="admin-section">
+            <h2>Add a service</h2>
+            <form method="POST" action="{{ url_for('dashboard.admin_services') }}" class="cat-add-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input class="cat-field" type="text" name="s_name" maxlength="100" required
+                    placeholder="Service name, e.g. Brake Repair" aria-label="New service name">
+                <button type="submit" class="cat-btn"><i class='bx bx-plus'></i> Add service</button>
+            </form>
+            <p class="cat-hint">Names are checked for duplicates ignoring capital letters.</p>
+        </section>
+
+        {# ---------------- list ---------------- #}
+        <section class="admin-section">
+            <h2>All services</h2>
+
+            {% if catalog %}
+            <div class="cat-toolbar">
+                <div class="cat-search">
+                    <i class='bx bx-search'></i>
+                    <input class="cat-field" type="search" id="catSearch" placeholder="Search services"
+                        aria-label="Search services" autocomplete="off">
+                </div>
+                <select class="cat-select" id="catSort" aria-label="Sort services">
+                    <option value="name-asc">Name A to Z</option>
+                    <option value="name-desc">Name Z to A</option>
+                    <option value="used-desc">Most used</option>
+                    <option value="used-asc">Least used</option>
+                </select>
+                <span class="cat-count" id="catCount" aria-live="polite"></span>
+            </div>
+
+            <div class="cat-table-wrap">
+                <table class="admin-table cat-table">
+                    <thead>
+                        <tr>
+                            <th>Service</th>
+                            <th class="num">Workshops</th>
+                            <th class="num">Bookings</th>
+                            <th class="actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="catBody">
+                        {% for c in catalog %}
+                        <tr data-row data-name="{{ c.s_name | lower }}" data-used="{{ c.workshop_count }}">
+                            <td>
+                                <span class="cat-name-view cat-name">{{ c.s_name }}</span>
+                                <form class="cat-edit-form" method="POST"
+                                    action="{{ url_for('dashboard.rename_catalog_service', sc_id=c.sc_id) }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input class="cat-field" type="text" name="s_name" value="{{ c.s_name }}"
+                                        maxlength="100" required aria-label="Rename {{ c.s_name }}">
+                                    <button type="submit" class="cat-btn"><i class='bx bx-check'></i> Save</button>
+                                    <button type="button" class="cat-btn ghost" data-cancel-edit>Cancel</button>
+                                </form>
+                            </td>
+                            <td class="num">
+                                {% if c.workshop_count %}
+                                <span class="cat-pill is-used"><i class='bx bx-store'></i> {{ c.workshop_count }}</span>
+                                {% else %}
+                                <span class="cat-pill is-unused">Not used</span>
+                                {% endif %}
+                            </td>
+                            <td class="num cat-booking-count">{{ c.booking_count }}</td>
+                            <td class="actions">
+                                <span class="cat-row-actions">
+                                    <button type="button" class="cat-icon-btn" data-edit title="Rename"
+                                        aria-label="Rename {{ c.s_name }}"><i class='bx bx-edit-alt'></i></button>
+                                    {% if c.workshop_count %}
+                                    <button type="button" class="cat-icon-btn danger" disabled
+                                        title="Offered by {{ c.workshop_count }} workshop{{ '' if c.workshop_count == 1 else 's' }}, so it can't be removed"
+                                        aria-label="Cannot remove {{ c.s_name }}: in use"><i class='bx bx-trash'></i></button>
+                                    {% else %}
+                                    <button type="button" class="cat-icon-btn danger deleteAcc" title="Remove"
+                                        data-name="{{ c.s_name }}"
+                                        data-delete-url="{{ url_for('dashboard.delete_catalog_service', sc_id=c.sc_id) }}"
+                                        aria-label="Remove {{ c.s_name }}"><i class='bx bx-trash'></i></button>
+                                    {% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="cat-empty" id="catNoMatch" hidden>
+                    <i class='bx bx-search-alt'></i>
+                    No service matches your search.
+                </div>
             </div>
             {% else %}
-            <p class="no-results">No services in the catalog yet.</p>
-            {% endfor %}
-        </div>
+            <div class="cat-empty">
+                <i class='bx bx-list-ul'></i>
+                No services in the catalog yet. Add the first one above.
+            </div>
+            {% endif %}
+        </section>
     </main>
+</div>
 
+{# remove confirmation: same pop-up admin.js drives on the dashboard #}
+<div class="delete-con" id="deleteCon" role="dialog" aria-modal="true" aria-labelledby="deleteTitle">
+    <h2 id="deleteTitle">Remove this service?</h2>
+    <p id="deleteMsg">This service will be removed from the catalog.</p>
+    <div class="delete-actions">
+        <form id="deleteForm" method="post" action="">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button id="confirmDel" type="submit" class="sure-btn danger">Yes, remove</button>
+        </form>
+        <button type="button" id="cancelDel" class="sure-btn cancel">Cancel</button>
+    </div>
 </div>
-<div class="delete-con" id="deleteCon">
-    <h2>Are you sure?</h2>
-        <div class="action-sure">
-            <a href="#" id="confirmDel">Yes</a>
-        </div>
-        <div class="action-sure">
-            <a href="#" id="cancelDel">cancel</a>
-        </div>
-</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin.js') }}" defer></script>
+<script>
+    (function () {
+        const body = document.getElementById('catBody');
+        if (!body) return;
+
+        const rows = Array.from(body.querySelectorAll('tr[data-row]'));
+        const search = document.getElementById('catSearch');
+        const sort = document.getElementById('catSort');
+        const count = document.getElementById('catCount');
+        const noMatch = document.getElementById('catNoMatch');
+
+        function apply() {
+            const term = search.value.trim().toLowerCase();
+            const mode = sort.value;
+
+            const ordered = rows.slice().sort((a, b) => {
+                const an = a.dataset.name, bn = b.dataset.name;
+                const au = +a.dataset.used, bu = +b.dataset.used;
+                if (mode === 'name-desc') return bn.localeCompare(an);
+                if (mode === 'used-desc') return bu - au || an.localeCompare(bn);
+                if (mode === 'used-asc') return au - bu || an.localeCompare(bn);
+                return an.localeCompare(bn);
+            });
+
+            let shown = 0;
+            ordered.forEach(row => {
+                const match = !term || row.dataset.name.includes(term);
+                row.hidden = !match;
+                if (match) shown++;
+                body.appendChild(row);
+            });
+
+            count.textContent = 'Showing ' + shown + ' of ' + rows.length;
+            noMatch.hidden = shown !== 0;
+        }
+
+        search.addEventListener('input', apply);
+        sort.addEventListener('change', apply);
+        apply();
+
+        // inline rename
+        function stopEditing(row) { row.classList.remove('is-editing'); }
+
+        body.addEventListener('click', function (e) {
+            const edit = e.target.closest('[data-edit]');
+            if (edit) {
+                body.querySelectorAll('tr.is-editing').forEach(stopEditing);
+                const row = edit.closest('tr');
+                row.classList.add('is-editing');
+                const input = row.querySelector('.cat-edit-form input[name="s_name"]');
+                input.focus();
+                input.select();
+                return;
+            }
+            const cancel = e.target.closest('[data-cancel-edit]');
+            if (cancel) stopEditing(cancel.closest('tr'));
+        });
+
+        body.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                const row = e.target.closest('tr.is-editing');
+                if (row) stopEditing(row);
+            }
+        });
+
+        // put the service name into the remove pop-up (admin.js opens it)
+        const msg = document.getElementById('deleteMsg');
+        document.addEventListener('click', function (e) {
+            const trigger = e.target.closest ? e.target.closest('.deleteAcc') : null;
+            if (trigger && msg) {
+                msg.textContent = '"' + (trigger.dataset.name || 'This service') + '" will be removed from the catalog.';
+            }
+        });
+    })();
+</script>
 {% endblock %}

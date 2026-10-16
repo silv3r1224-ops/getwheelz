@@ -58,6 +58,35 @@
             </form>
         </section>
 
+        <section class="admin-section wp-panel" id="adminTeam">
+            <h2>Meet the Admin Team <span class="count-pill">{{ subadmins | length }}</span></h2>
+            {% if subadmins %}
+            <div class="team-grid">
+                {% for item in subadmins %}
+                <a class="team-card {% if item.u_id == session.user_id %}is-me{% endif %}"
+                    style="text-decoration:none; color:inherit;"
+                    href="{{ url_for('dashboard.admin_team_profile', token=item.u_id | utoken) }}">
+                    <div class="team-avatar">
+                        {% if item.profile_picture %}
+                        <img src="{{ url_for('static', filename=item.profile_picture) }}" alt="{{ item.name }}">
+                        {% else %}
+                        <span>{{ item.name[:1] | upper }}</span>
+                        {% endif %}
+                    </div>
+                    <h3>{{ item.name }}{% if item.u_id == session.user_id %} <small>(you)</small>{% endif %}</h3>
+                    <span class="owner-badge"><i class='bx {{ "bxs-crown" if item.admin_type == "main" else "bxs-shield-alt-2" }}'></i>
+                        {% if item.admin_type == 'main' %}Main Admin{% else %}{{ item.admin_type.replace('_', ' ').title() }}{% endif %}
+                    </span>
+                    <span class="status-badge {{ 'status-completed' if item.is_active else 'status-pending' }}">{{ 'Active' if item.is_active else 'Inactive' }}</span>
+                    <small class="view-profile-hint">View profile</small>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="no-results">No admin accounts found.</p>
+            {% endif %}
+        </section>
+
         <section class="admin-section">
             <h2>Existing admin accounts</h2>
             <div style="overflow-x:auto;">
