@@ -477,6 +477,7 @@ body.light .signup-form p {
 
 .mini-btn.cancel {
     background-color: #d64545;
+    color: #fff;
 }
 
 .flash-container {
@@ -597,6 +598,7 @@ body.light .signup-form p {
     transform: translate(-50%, -50%);
     background-color: var(--second-bg);
     padding: 20px;
+    border: 1px solid var(--border-soft);
     border-radius: 12px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
     z-index: 1200;
@@ -5441,15 +5443,6 @@ a.workshop-join-card {
     }
 }
 
-/* ===== NAVBAR on small phones: keep the logo and icons on screen ===== */
-@media (max-width: 600px) {
-    html body .navbar { gap: 8px; }
-    html body .menu { margin-left: 10px; width: 44px; height: 44px; font-size: 200%; }
-    html body .navbar-left { padding-left: 4px; }
-    html body .navbar-left a { font-size: 1.25rem; letter-spacing: 1px; white-space: nowrap; }
-    html body .navbar-right { margin-left: auto; padding-right: 10px; }
-}
-
 /* ===== CONTENT: stretch to fill the space beside the sidebar ===== */
 @media (min-width: 901px) {
     html body .admin-main,
@@ -5459,4 +5452,417 @@ a.workshop-join-card {
         min-width: 0;
         width: auto;
     }
+}
+
+/* ===== CONTENT on phones: tables scroll inside their card, search form stacks ===== */
+@media (max-width: 900px) {
+    html body .admin-section {
+        padding: 18px 14px;
+        border-radius: 16px;
+    }
+
+    html body .admin-table {
+        display: block;
+        min-width: 0;
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    html body .admin-table th,
+    html body .admin-table td {
+        padding: 12px 14px;
+    }
+
+    html body .search-admin {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    html body .search-admin input,
+    html body .search-admin select,
+    html body .search-admin button {
+        width: 100%;
+        height: 48px;
+    }
+
+    html body .search-admin select {
+        background: var(--second-bg);
+        color: var(--text-color);
+        border: 1px solid var(--text-color);
+        border-radius: 4px;
+        padding: 0 10px;
+    }
+}
+
+/* ===== NAVBAR on phones: compact top row, links on their own row ===== */
+@media (max-width: 768px) {
+    html body .navbar {
+        flex-wrap: wrap;
+        align-items: center;
+        height: auto;
+        padding: 8px 12px;
+        gap: 6px 10px;
+    }
+
+    html body .menu {
+        order: 1;
+        width: 42px;
+        height: 42px;
+        margin-left: 0;
+        font-size: 190%;
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+
+    html body .navbar-left {
+        order: 2;
+        flex: 0 1 auto;
+        min-width: 0;
+        padding-left: 0;
+    }
+
+    html body .navbar-left a {
+        font-size: 1.3rem;
+        letter-spacing: 1px;
+        white-space: nowrap;
+    }
+
+    html body .navbar-right {
+        order: 3;
+        margin-left: auto;
+        padding-right: 0;
+        gap: 6px;
+    }
+
+    html body .navbar-right button,
+    html body .navbar-right a {
+        font-size: 22px;
+    }
+
+    html body .user-actions { gap: 8px; }
+
+    html body .user-actions .login-btn-con { gap: 6px; }
+
+    html body .user-actions .login-btn-con .l-btn,
+    html body .user-actions .login-btn-con .s-btn {
+        font-size: 14px;
+        padding: 6px 12px;
+        border-radius: 8px;
+    }
+
+    /* links drop to their own full-width row */
+    html body .navbar-center {
+        order: 4;
+        flex: 1 0 100%;
+        justify-content: center;
+        padding-top: 6px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    html body .navbar-center:not(:has(.nav-links)) { display: none; }
+
+    html body .nav-links {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 6px 18px;
+    }
+
+    html body .nav-links a { font-size: 15px; }
+}
+
+/* very small phones */
+@media (max-width: 380px) {
+    html body .navbar-left a { font-size: 1.05rem; letter-spacing: 0.5px; }
+    html body .menu { width: 38px; height: 38px; }
+    html body .nav-links { gap: 6px 14px; }
+    html body .nav-links a { font-size: 14px; }
+    html body .navbar-right button,
+    html body .navbar-right a { font-size: 20px; }
+    html body .user-actions .login-btn-con .l-btn,
+    html body .user-actions .login-btn-con .s-btn { padding: 5px 9px; font-size: 13px; }
+}
+
+/* ===== HOME PAGE on phones: even side margins, tighter spacing ===== */
+@media (max-width: 600px) {
+    .hero {
+        padding: 36px 16px 24px;
+    }
+
+    .hero h1 { font-size: 1.9rem; }
+
+    .hero p {
+        padding: 12px 0 4px;
+        font-size: 1rem;
+    }
+
+    .search-form { gap: 12px; }
+
+    .search-form input,
+    .search-form .fw-btn-con {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .hero-cta {
+        gap: 14px;
+        margin-top: 18px;
+    }
+
+    /* empty 3D placeholder: nothing draws into it, so it only adds blank space */
+    #hero-3d-canvas { display: none; }
+
+    .stats-strip {
+        margin: 0 16px 16px;
+        padding: 16px 6px;
+        grid-template-columns: repeat(2, 1fr);
+        row-gap: 14px;
+    }
+
+    .categories { padding: 8px 0; }
+
+    .map-section,
+    .how-it-works,
+    .roles {
+        padding: 32px 16px;
+    }
+
+    .faq { padding: 24px 16px 40px; }
+
+    .cta-banner {
+        margin: 0 16px 20px;
+        padding: 32px 18px;
+    }
+
+    .map-section h2,
+    .how-it-works h2,
+    .roles h2,
+    .faq h2,
+    .cta-banner h2 {
+        font-size: 1.5rem;
+        margin-bottom: 20px;
+    }
+
+    #map { height: 320px; }
+}
+
+/* ===== LOGIN / SIGN UP popups on phones: fit the screen, scroll if too tall ===== */
+@media (max-width: 600px) {
+    .login-modal,
+    .signup-modal {
+        width: calc(100% - 32px);
+        max-width: 420px;
+        height: auto;
+        max-height: calc(100vh - 32px);
+        max-height: calc(100dvh - 32px);
+        padding: 4px;
+        overflow-y: auto;
+        box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.6), 0 10px 25px rgba(0, 0, 0, 0.4);
+    }
+
+    .login-form,
+    .signup-form {
+        height: auto;
+        padding: 16px;
+        gap: 10px;
+    }
+
+    .login-form h2,
+    .signup-form h2 {
+        font-size: 1.4rem;
+        margin-bottom: 2px;
+    }
+
+    .login-form p,
+    .signup-form p { font-size: 15px; }
+
+    .login-form p a,
+    .signup-form p a {
+        color: var(--main-color);
+        font-weight: 600;
+    }
+
+    .ggl-btn {
+        font-size: 15px;
+        font-weight: 600;
+    }
+}
+
+/* ===== FIND WORKSHOPS page on phones ===== */
+@media (max-width: 600px) {
+    .search-results-page { padding: 24px 16px; }
+
+    .search-header { margin-bottom: 18px; }
+
+    .search-header h1 {
+        font-size: 1.6rem;
+        margin-bottom: 14px;
+    }
+
+    /* Map / List switch becomes one full-width segmented control */
+    .view-toggle {
+        gap: 0;
+        margin-bottom: 16px;
+        border: 1px solid var(--main-color);
+        border-radius: 30px;
+        overflow: hidden;
+    }
+
+    .toggle-btn {
+        flex: 1;
+        padding: 12px 0;
+        font-size: 15px;
+        border: 0;
+        border-radius: 0;
+    }
+
+    #map.results-map { height: clamp(280px, 55vh, 460px); }
+
+    .workshop-list { gap: 10px; }
+
+    .workshop-card {
+        gap: 12px;
+        padding: 14px 16px;
+    }
+
+    .workshop-card-info { min-width: 0; }
+
+    .workshop-card-info h3 { font-size: 1rem; }
+
+    .workshop-card-info p { align-items: flex-start; }
+}
+
+/* ===== FOOTER on phones: compact two-column layout ===== */
+@media (max-width: 600px) {
+    .site-footer {
+        padding: 36px 16px 0;
+        margin-top: 32px;
+    }
+
+    .footer-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 28px 20px;
+        padding-bottom: 24px;
+    }
+
+    .footer-brand {
+        grid-column: 1 / -1;
+        min-width: 0;
+    }
+
+    .footer-col { min-width: 0; }
+
+    .footer-col h5 { margin-bottom: 8px; }
+
+    .footer-col ul { gap: 0; }
+
+    /* 40px-tall tap targets */
+    .footer-col ul li a {
+        display: block;
+        padding: 12px 0;
+    }
+
+    .footer-col ul li a:hover { padding-left: 0; }
+
+    .footer-bottom { padding: 16px 0 20px; }
+}
+
+/* ===== SEARCH BAR on phones: button beside the input ===== */
+@media (max-width: 600px) {
+    html body .search-form {
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: stretch;
+        gap: 8px;
+    }
+
+    html body .search-form input {
+        flex: 1 1 auto;
+        width: auto;
+        min-width: 0;
+        max-width: none;
+        height: 44px;
+        padding: 0 12px;
+        text-overflow: ellipsis;
+    }
+
+    html body .search-form input::placeholder {
+        font-size: 13px;
+        padding-left: 0;
+    }
+
+    html body .search-form .fw-btn-con {
+        flex: 0 0 auto;
+        width: 132px;     /* home page: "Find Workshops" */
+        max-width: none;
+        height: 44px;
+    }
+
+    html body .search-header .search-form .fw-btn-con {
+        width: 96px;      /* Find Workshops page: "Search" */
+    }
+
+    /* customer home: input + filter button + Find Workshops button */
+    html body #hero-search-form .fw-btn-con {
+        width: 108px;
+    }
+
+    html body .search-form .fw-btn {
+        font-size: 14px;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    html body #hero-search-form .fw-btn {
+        font-size: 13px;
+    }
+}
+
+/* very narrow phones: the customer form's button drops under the input */
+@media (max-width: 340px) {
+    html body #hero-search-form { flex-wrap: wrap; }
+
+    html body #hero-search-form .fw-btn-con {
+        flex: 1 0 100%;
+        width: 100%;
+    }
+}
+
+/* ===== HERO TEXT on phones: cleaner line breaks and spacing ===== */
+@media (max-width: 600px) {
+    html body .hero-kicker {
+        font-size: 0.72rem !important;
+        letter-spacing: 2px;
+        margin-bottom: 10px;
+    }
+
+    html body .hero h1 {
+        font-size: 1.85rem;
+        line-height: 1.25;
+        text-wrap: balance;
+    }
+
+    html body .hero p:not(.hero-kicker) {
+        max-width: 32ch;
+        margin: 0 auto;
+        padding: 12px 0 4px;
+        font-size: 0.98rem;
+        line-height: 1.55;
+        text-wrap: balance;
+    }
+
+    /* trust points: one tidy column, icons aligned */
+    html body .hero-trust {
+        display: grid;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 22px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 360px) {
+    html body .hero h1 { font-size: 1.6rem; }
 }
