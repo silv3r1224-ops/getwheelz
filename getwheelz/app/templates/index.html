@@ -2,155 +2,629 @@
 
 {% block title %}GetWheelz — Find Trusted Mechanics{% endblock %}
 
+{% block head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+    /* ==========================================================================
+       LANDING PAGE — premium redesign. Everything is scoped under .lp so it
+       cannot affect other pages. Colors come from the site's theme variables,
+       so the dark/light toggle keeps working.
+       ========================================================================== */
+    .lp {
+        --lp-display: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+        --lp-body: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
+        --lp-accent: var(--main-color);
+        --lp-accent-hi: #e8788d;
+        --lp-line: color-mix(in srgb, var(--text-color) 13%, transparent);
+        --lp-surface: color-mix(in srgb, var(--text-color) 5%, transparent);
+        --lp-surface-hi: color-mix(in srgb, var(--text-color) 9%, transparent);
+        --lp-radius: 20px;
+        font-family: var(--lp-body);
+        color: var(--text-color);
+        overflow-x: clip;
+    }
+
+    /* the global stylesheet forces Arial on every element; take it back for this page only */
+    .lp *, .lp *::before, .lp *::after { font-family: inherit; }
+    .lp h1, .lp h2, .lp h3, .lp .lp-display { font-family: var(--lp-display); letter-spacing: -0.02em; }
+
+    .lp-wrap { max-width: 1180px; margin: 0 auto; padding: 0 28px; }
+    .lp section { position: relative; }
+    .lp a { text-decoration: none; }
+
+    .lp-eyebrow {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 7px 14px; border-radius: 999px;
+        border: 1px solid var(--lp-line);
+        background: var(--lp-surface);
+        font-size: 13px; font-weight: 500; color: var(--text-muted);
+        backdrop-filter: blur(8px);
+    }
+    .lp-eyebrow i { color: var(--lp-accent-hi); font-size: 16px; }
+
+    .lp-section-head { max-width: 640px; margin-bottom: 44px; }
+    .lp-section-head h2 { font-size: clamp(1.9rem, 3.6vw, 2.8rem); line-height: 1.08; font-weight: 700; margin: 14px 0 12px; }
+    .lp-section-head p { color: var(--text-muted); font-size: 1.05rem; line-height: 1.6; }
+
+    /* ---------- buttons ---------- */
+    .lp-btn {
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        padding: 14px 26px; border: 0; border-radius: 14px; cursor: pointer;
+        font-size: 15px; font-weight: 600; color: #fff;
+        background: linear-gradient(135deg, #b93a52 0%, #d65670 100%);
+        box-shadow: 0 8px 24px -8px color-mix(in srgb, var(--lp-accent) 70%, transparent),
+                    inset 0 1px 0 rgba(255, 255, 255, .22);
+        transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+    }
+    .lp-btn:hover { transform: translateY(-2px); filter: brightness(1.08);
+        box-shadow: 0 14px 30px -10px color-mix(in srgb, var(--lp-accent) 80%, transparent), inset 0 1px 0 rgba(255, 255, 255, .22); }
+    .lp-btn:active { transform: translateY(0); }
+    .lp-btn:focus-visible, .lp-ghost:focus-visible, .lp-chip:focus-visible,
+    .lp-tile:focus-visible, .lp-search input:focus-visible { outline: 2px solid var(--lp-accent-hi); outline-offset: 3px; }
+
+    .lp-ghost {
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        padding: 13px 24px; border-radius: 14px; cursor: pointer;
+        border: 1px solid var(--lp-line); background: var(--lp-surface);
+        color: var(--text-color); font-size: 15px; font-weight: 600;
+        transition: background .2s, border-color .2s, transform .2s;
+    }
+    .lp-ghost:hover { background: var(--lp-surface-hi); border-color: color-mix(in srgb, var(--text-color) 28%, transparent); transform: translateY(-2px); }
+
+    /* ==========================================================================
+       HERO
+       ========================================================================== */
+    .lp-hero { padding: 76px 0 70px; isolation: isolate; }
+    .lp-hero::before {
+        content: ''; position: absolute; z-index: -1; pointer-events: none;
+        inset: -120px -10% auto -10%; height: 760px;
+        background:
+            radial-gradient(520px 340px at 18% 28%, color-mix(in srgb, var(--lp-accent) 30%, transparent), transparent 70%),
+            radial-gradient(480px 380px at 82% 40%, color-mix(in srgb, #4f6bff 16%, transparent), transparent 70%);
+        filter: blur(10px);
+    }
+
+    .lp-hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 56px; align-items: center; }
+
+    .lp-hero h1 {
+        font-size: clamp(2.5rem, 5.4vw, 4.4rem); line-height: 1.02; font-weight: 800;
+        margin: 22px 0 20px;
+    }
+    .lp-hero h1 .lp-grad {
+        background: linear-gradient(100deg, var(--lp-accent) 0%, var(--lp-accent-hi) 55%, #ffd1a8 100%);
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .lp-lead { font-size: 1.15rem; line-height: 1.65; color: var(--text-muted); max-width: 520px; }
+
+    /* search */
+    .lp-search {
+        display: flex; align-items: center; gap: 8px; margin-top: 34px; max-width: 560px;
+        padding: 8px 8px 8px 20px; border-radius: 18px;
+        border: 1px solid var(--lp-line);
+        background: color-mix(in srgb, var(--bg-color) 70%, transparent);
+        backdrop-filter: blur(14px);
+        box-shadow: 0 20px 50px -24px rgba(0, 0, 0, .55);
+        transition: border-color .2s, box-shadow .2s;
+    }
+    .lp-search:focus-within {
+        border-color: var(--lp-accent);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--lp-accent) 20%, transparent), 0 20px 50px -24px rgba(0, 0, 0, .55);
+    }
+    .lp-search > i { font-size: 21px; color: var(--text-muted); }
+    .lp-search input {
+        flex: 1; min-width: 0; padding: 12px 4px; border: 0; background: transparent;
+        color: var(--text-color); font-size: 16px; outline: none;
+    }
+    .lp-search input::placeholder { color: var(--text-muted); }
+    .lp-search .lp-btn { padding: 13px 22px; white-space: nowrap; }
+
+    .lp-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px; }
+    .lp-chips > span { font-size: 13px; color: var(--text-muted); margin-right: 2px; }
+    .lp-chip {
+        padding: 6px 13px; border-radius: 999px; font-size: 13px; font-weight: 500;
+        border: 1px solid var(--lp-line); color: var(--text-color); background: var(--lp-surface);
+        transition: background .2s, border-color .2s, transform .2s;
+    }
+    .lp-chip:hover { background: var(--lp-surface-hi); border-color: var(--lp-accent); transform: translateY(-1px); }
+
+    .lp-cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 30px; }
+
+    .lp-trust { display: flex; flex-wrap: wrap; gap: 8px 26px; margin-top: 34px; list-style: none; }
+    .lp-trust li { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-muted); }
+    .lp-trust i { color: var(--lp-accent-hi); font-size: 18px; }
+
+    /* hero visual: layered product preview */
+    .lp-stage { position: relative; height: 470px; }
+    .lp-card {
+        position: absolute; border-radius: var(--lp-radius); padding: 22px;
+        border: 1px solid var(--lp-line);
+        background: color-mix(in srgb, var(--bg-color) 82%, var(--text-color) 6%);
+        box-shadow: 0 40px 80px -36px rgba(0, 0, 0, .7), inset 0 1px 0 color-mix(in srgb, var(--text-color) 14%, transparent);
+    }
+    .lp-card-main { left: 4%; top: 52px; width: 78%; z-index: 3; animation: lp-float 7s ease-in-out infinite; }
+    .lp-card-back { right: 0; top: 190px; width: 62%; z-index: 2; transform: rotate(4deg); opacity: .96; animation: lp-float 8.5s ease-in-out -2s infinite; }
+    .lp-toast {
+        position: absolute; right: 2%; top: 4px; z-index: 4; display: flex; align-items: center; gap: 10px;
+        padding: 10px 16px 10px 12px; border-radius: 14px; font-size: 13px; font-weight: 600;
+        border: 1px solid var(--lp-line); background: color-mix(in srgb, var(--bg-color) 85%, var(--text-color) 6%);
+        box-shadow: 0 18px 40px -20px rgba(0, 0, 0, .6);
+        animation: lp-float 6s ease-in-out -1s infinite;
+    }
+    .lp-toast i { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; font-size: 17px; color: #2fd27a; background: rgba(47, 210, 122, .16); }
+
+    .lp-card-top { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+    .lp-card-icon {
+        display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px; font-size: 22px; color: #fff;
+        background: linear-gradient(135deg, #b93a52, #d65670);
+    }
+    .lp-card-top strong { display: block; font-family: var(--lp-display); font-size: 16px; }
+    .lp-card-top small { color: var(--text-muted); font-size: 12.5px; }
+
+    .lp-rows { display: grid; gap: 11px; padding: 16px 0; border-top: 1px solid var(--lp-line); border-bottom: 1px solid var(--lp-line); }
+    .lp-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    .lp-row span { color: var(--text-muted); }
+    .lp-row b { font-weight: 600; }
+    .lp-status { display: inline-flex; align-items: center; gap: 7px; padding: 4px 11px; border-radius: 999px; font-size: 12.5px; font-weight: 600; color: #2fd27a; background: rgba(47, 210, 122, .14); }
+    .lp-status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+    .lp-track { display: flex; align-items: center; margin-top: 18px; }
+    .lp-track .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--lp-line); flex: none; }
+    .lp-track .dot.on { background: var(--lp-accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--lp-accent) 24%, transparent); }
+    .lp-track .bar { flex: 1; height: 2px; background: var(--lp-line); }
+    .lp-track .bar.on { background: var(--lp-accent); }
+    .lp-track-labels { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11.5px; color: var(--text-muted); }
+
+    .lp-card-back h4 { font-family: var(--lp-display); font-size: 14px; margin-bottom: 12px; color: var(--text-muted); font-weight: 600; }
+    .lp-near { display: flex; align-items: center; gap: 10px; padding: 9px 0; font-size: 13.5px; }
+    .lp-near + .lp-near { border-top: 1px solid var(--lp-line); }
+    .lp-near i { color: var(--lp-accent-hi); font-size: 18px; }
+    .lp-near b { flex: 1; font-weight: 600; }
+    .lp-near span { color: var(--text-muted); font-size: 12.5px; }
+    .lp-preview-note { position: absolute; left: 6%; bottom: 0; font-size: 11.5px; color: var(--text-muted); opacity: .8; }
+
+    @keyframes lp-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -10px; } }
+
+    /* ==========================================================================
+       STATS
+       ========================================================================== */
+    .lp-stats { padding: 10px 0 30px; }
+    .lp-stats-bar {
+        display: grid; grid-template-columns: repeat(4, 1fr);
+        border: 1px solid var(--lp-line); border-radius: var(--lp-radius);
+        background: var(--lp-surface); backdrop-filter: blur(10px);
+    }
+    .lp-stat { padding: 30px 20px; text-align: center; }
+    .lp-stat + .lp-stat { border-left: 1px solid var(--lp-line); }
+    .lp-stat strong { display: block; font-family: var(--lp-display); font-size: clamp(2rem, 4vw, 2.9rem); font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+    .lp-stat span { display: block; margin-top: 10px; font-size: 13.5px; color: var(--text-muted); letter-spacing: .02em; }
+
+    /* ==========================================================================
+       SERVICES
+       ========================================================================== */
+    .lp-services { padding: 90px 0 30px; }
+    .lp-tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+    .lp-tile {
+        display: flex; flex-direction: column; gap: 14px; padding: 24px 20px;
+        border: 1px solid var(--lp-line); border-radius: var(--lp-radius); color: var(--text-color);
+        background: var(--lp-surface);
+        transition: transform .25s ease, border-color .25s ease, background .25s ease;
+    }
+    .lp-tile i.main {
+        display: grid; place-items: center; width: 48px; height: 48px; border-radius: 14px; font-size: 24px;
+        color: var(--lp-accent-hi); background: color-mix(in srgb, var(--lp-accent) 16%, transparent);
+        transition: background .25s, color .25s;
+    }
+    .lp-tile b { font-family: var(--lp-display); font-size: 17px; font-weight: 700; }
+    .lp-tile .go { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--text-muted); margin-top: auto; }
+    .lp-tile .go i { transition: transform .25s; }
+    .lp-tile:hover { transform: translateY(-5px); border-color: var(--lp-accent); background: var(--lp-surface-hi); }
+    .lp-tile:hover i.main { background: var(--lp-accent); color: #fff; }
+    .lp-tile:hover .go i { transform: translateX(4px); }
+
+    /* ==========================================================================
+       MAP
+       ========================================================================== */
+    .lp-map { padding: 90px 0 30px; }
+    .lp-map-frame {
+        padding: 10px; border-radius: 26px;
+        border: 1px solid var(--lp-line); background: var(--lp-surface);
+    }
+    .lp .lp-map-frame #map {
+        width: 100%; max-width: none; height: 460px; margin: 0;
+        border-radius: 18px; box-shadow: none;
+    }
+    .lp-map-note { display: flex; align-items: center; gap: 8px; margin: 14px 8px 4px; font-size: 13.5px; color: var(--text-muted); }
+    .lp-map-note i { color: var(--lp-accent-hi); font-size: 17px; }
+
+    /* ==========================================================================
+       HOW IT WORKS
+       ========================================================================== */
+    .lp-how { padding: 100px 0 30px; }
+    .lp-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; position: relative; counter-reset: step; }
+    .lp-step {
+        position: relative; padding: 32px 28px 30px; border-radius: var(--lp-radius);
+        border: 1px solid var(--lp-line); background: var(--lp-surface);
+    }
+    .lp-step-num {
+        display: grid; place-items: center; width: 46px; height: 46px; margin-bottom: 22px;
+        border-radius: 14px; font-family: var(--lp-display); font-size: 19px; font-weight: 800; color: #fff;
+        background: linear-gradient(135deg, #b93a52, #d65670);
+        box-shadow: 0 10px 24px -10px color-mix(in srgb, var(--lp-accent) 80%, transparent);
+    }
+    .lp-step h3 { font-size: 1.35rem; font-weight: 700; margin-bottom: 8px; }
+    .lp-step p { color: var(--text-muted); line-height: 1.6; }
+    .lp-step:not(:last-child)::after {
+        content: ''; position: absolute; top: 54px; left: calc(100% - 4px); width: 28px; height: 2px;
+        background: repeating-linear-gradient(90deg, var(--lp-accent) 0 5px, transparent 5px 10px);
+    }
+
+    /* ==========================================================================
+       ROLES
+       ========================================================================== */
+    .lp-roles { padding: 100px 0 30px; }
+    .lp-role-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .lp-role {
+        display: flex; flex-direction: column; padding: 32px 28px 28px; border-radius: var(--lp-radius);
+        border: 1px solid var(--lp-line); background: var(--lp-surface);
+        transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+    }
+    .lp-role:hover { transform: translateY(-6px); border-color: var(--lp-accent); box-shadow: 0 30px 60px -34px color-mix(in srgb, var(--lp-accent) 60%, transparent); }
+    .lp-role .ico {
+        display: grid; place-items: center; width: 54px; height: 54px; border-radius: 16px; margin-bottom: 22px;
+        font-size: 27px; color: var(--lp-accent-hi); background: color-mix(in srgb, var(--lp-accent) 16%, transparent);
+    }
+    .lp-role h3 { font-size: 1.4rem; font-weight: 700; margin-bottom: 16px; }
+    .lp-role ul { list-style: none; display: grid; gap: 12px; margin-bottom: 28px; }
+    .lp-role li { display: flex; gap: 10px; align-items: flex-start; color: var(--text-muted); line-height: 1.5; font-size: 15px; }
+    .lp-role li i { color: #2fd27a; font-size: 18px; margin-top: 2px; flex: none; }
+    .lp-role .lp-ghost { margin-top: auto; }
+
+    /* ==========================================================================
+       FAQ
+       ========================================================================== */
+    .lp-faq { padding: 100px 0 30px; }
+    .lp-faq-grid { display: grid; grid-template-columns: .8fr 1.2fr; gap: 60px; align-items: start; }
+    .lp-faq-grid .lp-section-head { margin-bottom: 0; position: sticky; top: 110px; }
+    .lp-faq-list { display: grid; gap: 12px; }
+    .lp-faq-list details {
+        border: 1px solid var(--lp-line); border-radius: 16px; background: var(--lp-surface);
+        transition: border-color .2s, background .2s;
+    }
+    .lp-faq-list details[open] { border-color: color-mix(in srgb, var(--lp-accent) 60%, transparent); background: var(--lp-surface-hi); }
+    .lp-faq-list summary {
+        display: flex; justify-content: space-between; align-items: center; gap: 16px; cursor: pointer;
+        padding: 20px 24px; font-weight: 600; font-size: 1.02rem; list-style: none;
+    }
+    .lp-faq-list summary::-webkit-details-marker { display: none; }
+    .lp-faq-list summary::after {
+        content: '+'; flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
+        font-size: 20px; line-height: 1; color: var(--lp-accent-hi); background: color-mix(in srgb, var(--lp-accent) 16%, transparent);
+        transition: transform .25s;
+    }
+    .lp-faq-list details[open] summary::after { transform: rotate(45deg); }
+    .lp-faq-list summary:focus-visible { outline: 2px solid var(--lp-accent-hi); outline-offset: -2px; border-radius: 16px; }
+    .lp-faq-list details p { padding: 0 24px 22px; color: var(--text-muted); line-height: 1.7; }
+
+    /* ==========================================================================
+       FINAL CTA
+       ========================================================================== */
+    .lp-final { padding: 100px 0 110px; }
+    .lp-final-card {
+        position: relative; overflow: hidden; isolation: isolate;
+        padding: 72px 40px; text-align: center; border-radius: 32px;
+        border: 1px solid color-mix(in srgb, var(--lp-accent) 45%, var(--lp-line));
+        background:
+            radial-gradient(600px 320px at 50% 0%, color-mix(in srgb, var(--lp-accent) 38%, transparent), transparent 70%),
+            var(--lp-surface);
+    }
+    .lp-final-card::after {
+        content: ''; position: absolute; inset: 0; z-index: -1; opacity: .5;
+        background-image: linear-gradient(var(--lp-line) 1px, transparent 1px), linear-gradient(90deg, var(--lp-line) 1px, transparent 1px);
+        background-size: 44px 44px;
+        mask-image: radial-gradient(circle at 50% 30%, #000, transparent 72%);
+        -webkit-mask-image: radial-gradient(circle at 50% 30%, #000, transparent 72%);
+    }
+    .lp-final-card h2 { font-size: clamp(2rem, 4.4vw, 3.3rem); line-height: 1.05; font-weight: 800; max-width: 680px; margin: 0 auto 16px; }
+    .lp-final-card p { color: var(--text-muted); font-size: 1.1rem; max-width: 520px; margin: 0 auto 32px; line-height: 1.6; }
+    .lp-final-card .lp-cta-row { justify-content: center; margin-top: 0; }
+
+    /* ==========================================================================
+       RESPONSIVE
+       ========================================================================== */
+    @media (max-width: 1020px) {
+        .lp-hero-grid { grid-template-columns: 1fr; gap: 40px; }
+        .lp-stage { max-width: 520px; margin: 0 auto; width: 100%; }
+        .lp-tiles { grid-template-columns: repeat(3, 1fr); }
+        .lp-faq-grid { grid-template-columns: 1fr; gap: 34px; }
+        .lp-faq-grid .lp-section-head { position: static; }
+    }
+    @media (max-width: 760px) {
+        .lp-wrap { padding: 0 20px; }
+        .lp-hero { padding: 48px 0 40px; }
+        .lp-stats-bar { grid-template-columns: repeat(2, 1fr); }
+        .lp-stat:nth-child(3) { border-left: 0; }
+        .lp-stat:nth-child(n+3) { border-top: 1px solid var(--lp-line); }
+        .lp-steps, .lp-role-grid { grid-template-columns: 1fr; }
+        .lp-step:not(:last-child)::after { display: none; }
+        .lp-tiles { grid-template-columns: repeat(2, 1fr); }
+        .lp .lp-map-frame #map { height: 340px; }
+        .lp-services, .lp-map, .lp-how, .lp-roles, .lp-faq { padding-top: 64px; }
+        .lp-final { padding: 64px 0 70px; }
+        .lp-final-card { padding: 52px 22px; border-radius: 24px; }
+    }
+    @media (max-width: 520px) {
+        .lp-search { flex-wrap: wrap; padding: 10px; }
+        .lp-search > i { display: none; }
+        .lp-search input { flex: 1 1 100%; padding: 8px 6px; }
+        .lp-search .lp-btn { width: 100%; }
+        .lp-stage { height: 420px; }
+        .lp-card-main { width: 92%; left: 0; }
+        .lp-card-back { width: 74%; top: 220px; }
+        .lp-tiles { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .lp *, .lp *::before, .lp *::after { animation: none !important; transition: none !important; }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="index-con" id="mainCon">
-    <section class="hero">
-        <p class="hero-kicker">Vehicle care, made simple</p>
-        <h1>Find a workshop your vehicle can <span class="accent">rely on.</span></h1>
-        <p>Search trusted local workshops, compare services, and request your preferred appointment in minutes.</p>
-        <form action="{{ url_for('workshops.search') }}" method="get" class="search-form">
-            <input type="text" name="service" placeholder="What does your vehicle need today?">
-            <div class="fw-btn-con">
-                <button class="fw-btn" type="submit">&nbsp;Find Workshops</button>
+<div class="index-con lp" id="mainCon">
+
+    {# ===================== HERO ===================== #}
+    <section class="lp-hero">
+        <div class="lp-wrap lp-hero-grid">
+            <div>
+                <span class="lp-eyebrow"><i class='bx bxs-check-shield'></i> Vehicle care, made simple</span>
+                <h1>Find a workshop your vehicle can <span class="lp-grad">rely on.</span></h1>
+                <p class="lp-lead">Search trusted local workshops, compare services, and request your preferred appointment in minutes.</p>
+
+                <form action="{{ url_for('workshops.search') }}" method="get" class="lp-search" role="search">
+                    <i class='bx bx-search' aria-hidden="true"></i>
+                    <input type="text" name="service" placeholder="What does your vehicle need today?" aria-label="Search for a service">
+                    <button class="lp-btn" type="submit">Find workshops</button>
+                </form>
+
+                <div class="lp-chips">
+                    <span>Popular:</span>
+                    <a class="lp-chip" href="{{ url_for('workshops.search', service='engine') }}">Engine repair</a>
+                    <a class="lp-chip" href="{{ url_for('workshops.search', service='tires') }}">Tires</a>
+                    <a class="lp-chip" href="{{ url_for('workshops.search', service='ac') }}">AC service</a>
+                    <a class="lp-chip" href="{{ url_for('workshops.search', service='electrical') }}">Electrical</a>
+                </div>
+
+                <div class="lp-cta-row">
+                    <a class="lp-btn" href="#" data-signup="signupBtn">Get started <i class='bx bx-right-arrow-alt'></i></a>
+                    <a class="lp-ghost" href="#how">See how it works</a>
+                </div>
+
+                <ul class="lp-trust">
+                    <li><i class='bx bx-map-pin'></i> Workshops near you</li>
+                    <li><i class='bx bx-calendar-check'></i> Book in minutes</li>
+                    <li><i class='bx bx-group'></i> Real mechanics, real owners</li>
+                </ul>
             </div>
-        </form>
-        <div class="hero-cta">
-            <div class="fw-btn-con">
-                <a class="fw-btn" href="#" data-signup="signupBtn">Get Started</a>
+
+            {# product preview (illustration) #}
+            <div class="lp-stage" aria-hidden="true">
+                <div class="lp-toast"><i class='bx bx-check'></i> Request sent</div>
+
+                <div class="lp-card lp-card-main">
+                    <div class="lp-card-top">
+                        <div class="lp-card-icon"><i class='bx bx-wrench'></i></div>
+                        <div>
+                            <strong>Brake service</strong>
+                            <small>Sample workshop</small>
+                        </div>
+                    </div>
+                    <div class="lp-rows">
+                        <div class="lp-row"><span>Date</span><b>Tomorrow, 10:30 AM</b></div>
+                        <div class="lp-row"><span>Duration</span><b>About 2 hours</b></div>
+                        <div class="lp-row"><span>Status</span><em class="lp-status">Confirmed</em></div>
+                    </div>
+                    <div class="lp-track">
+                        <span class="dot on"></span><span class="bar on"></span>
+                        <span class="dot on"></span><span class="bar"></span>
+                        <span class="dot"></span>
+                    </div>
+                    <div class="lp-track-labels"><span>Requested</span><span>Confirmed</span><span>Completed</span></div>
+                </div>
+
+                <div class="lp-card lp-card-back">
+                    <h4>Workshops near you</h4>
+                    <div class="lp-near"><i class='bx bx-map-pin'></i><b>Workshop one</b><span>Nearby</span></div>
+                    <div class="lp-near"><i class='bx bx-map-pin'></i><b>Workshop two</b><span>Nearby</span></div>
+                    <div class="lp-near"><i class='bx bx-map-pin'></i><b>Workshop three</b><span>Nearby</span></div>
+                </div>
+
+                <span class="lp-preview-note">Illustrative preview</span>
             </div>
-            <a href="#how" class="hero-link">See how it works <i class='bx bx-down-arrow-alt'></i></a>
         </div>
-
-        <ul class="hero-trust">
-            <li><i class='bx bx-map-pin'></i> Workshops near you</li>
-            <li><i class='bx bx-calendar-check'></i> Book in minutes</li>
-            <li><i class='bx bx-group'></i> Real mechanics, real owners</li>
-        </ul>
-
-        <div id="hero-3d-canvas"></div>
     </section>
 
+    {# ===================== STATS (real numbers) ===================== #}
     {% if stats %}
-    <section class="stats-strip reveal">
-        <div class="stat-item"><strong data-count="{{ stats.workshops }}">{{ stats.workshops
-                }}</strong><span>Workshops</span></div>
-        <div class="stat-item"><strong data-count="{{ stats.mechanics }}">{{ stats.mechanics }}</strong><span>Working
-                mechanics</span></div>
-        <div class="stat-item"><strong data-count="{{ stats.services }}">{{ stats.services }}</strong><span>Services
-                listed</span></div>
-        <div class="stat-item"><strong data-count="{{ stats.jobs }}">{{ stats.jobs }}</strong><span>Jobs
-                completed</span></div>
+    <section class="lp-stats reveal">
+        <div class="lp-wrap">
+            <div class="lp-stats-bar">
+                <div class="lp-stat"><strong data-count="{{ stats.workshops }}">{{ stats.workshops }}</strong><span>Workshops</span></div>
+                <div class="lp-stat"><strong data-count="{{ stats.mechanics }}">{{ stats.mechanics }}</strong><span>Working mechanics</span></div>
+                <div class="lp-stat"><strong data-count="{{ stats.services }}">{{ stats.services }}</strong><span>Services listed</span></div>
+                <div class="lp-stat"><strong data-count="{{ stats.jobs }}">{{ stats.jobs }}</strong><span>Jobs completed</span></div>
+            </div>
+        </div>
     </section>
     {% endif %}
 
-    <section class="categories reveal">
+    {# ===================== SERVICES ===================== #}
+    <section class="lp-services reveal">
+        <div class="lp-wrap">
+            <div class="lp-section-head">
+                <span class="lp-eyebrow"><i class='bx bx-cog'></i> Services</span>
+                <h2>Whatever your vehicle needs, start here.</h2>
+                <p>Pick a service and see the workshops that offer it, nearest first.</p>
+            </div>
+            <div class="lp-tiles">
+                <a class="lp-tile" href="{{ url_for('workshops.search', service='engine') }}">
+                    <i class='bx bx-cog main'></i><b>Engine repair</b>
+                    <span class="go">Browse <i class='bx bx-right-arrow-alt'></i></span>
+                </a>
+                <a class="lp-tile" href="{{ url_for('workshops.search', service='electrical') }}">
+                    <i class='bx bx-bolt-circle main'></i><b>Electrical</b>
+                    <span class="go">Browse <i class='bx bx-right-arrow-alt'></i></span>
+                </a>
+                <a class="lp-tile" href="{{ url_for('workshops.search', service='tires') }}">
+                    <i class='bx bx-disc main'></i><b>Tires</b>
+                    <span class="go">Browse <i class='bx bx-right-arrow-alt'></i></span>
+                </a>
+                <a class="lp-tile" href="{{ url_for('workshops.search', service='ac') }}">
+                    <i class='bx bx-wind main'></i><b>AC service</b>
+                    <span class="go">Browse <i class='bx bx-right-arrow-alt'></i></span>
+                </a>
+                <a class="lp-tile" href="{{ url_for('workshops.search', service='general') }}">
+                    <i class='bx bx-wrench main'></i><b>General servicing</b>
+                    <span class="go">Browse <i class='bx bx-right-arrow-alt'></i></span>
+                </a>
+            </div>
+        </div>
+    </section>
 
-        <section class="map-section reveal">
-            <h2>Workshops Near You</h2>
-            <p class="map-caption"><i class='bx bx-current-location'></i> Allow location access and the map centres on
-                you.</p>
-            <div id="map"></div>
-        </section>
+    {# ===================== MAP ===================== #}
+    <section class="lp-map reveal">
+        <div class="lp-wrap">
+            <div class="lp-section-head">
+                <span class="lp-eyebrow"><i class='bx bx-map-alt'></i> Near you</span>
+                <h2>Workshops on your doorstep.</h2>
+                <p>See every listed workshop on the map and open one to view its services and book.</p>
+            </div>
+            <div class="lp-map-frame">
+                <div id="map"></div>
+                <p class="lp-map-note"><i class='bx bx-current-location'></i> Allow location access and the map centres on you.</p>
+            </div>
+        </div>
+    </section>
 
-        <section class="how-it-works reveal" id="how">
-            <h2>Three steps to better vehicle care</h2>
-            <div class="steps">
-                <div class="step">
-                    <span class="step-number">1</span>
+    {# ===================== HOW IT WORKS ===================== #}
+    <section class="lp-how reveal" id="how">
+        <div class="lp-wrap">
+            <div class="lp-section-head">
+                <span class="lp-eyebrow"><i class='bx bx-list-check'></i> How it works</span>
+                <h2>Three steps to better vehicle care.</h2>
+            </div>
+            <div class="lp-steps">
+                <div class="lp-step">
+                    <span class="lp-step-num">1</span>
                     <h3>Search</h3>
                     <p>Find workshops by service and location.</p>
                 </div>
-                <div class="step">
-                    <span class="step-number">2</span>
+                <div class="lp-step">
+                    <span class="lp-step-num">2</span>
                     <h3>Book</h3>
                     <p>Choose the service and time that suit you.</p>
                 </div>
-                <div class="step">
-                    <span class="step-number">3</span>
+                <div class="lp-step">
+                    <span class="lp-step-num">3</span>
                     <h3>Drive on</h3>
                     <p>Keep track of your booking from one place.</p>
                 </div>
             </div>
-        </section>
-        <section class="roles reveal">
-            <h2>Built for everyone in vehicle care</h2>
-            <div class="role-grid">
-                <article class="role-card">
-                    <i class='bx bx-car'></i>
+        </div>
+    </section>
+
+    {# ===================== ROLES ===================== #}
+    <section class="lp-roles reveal">
+        <div class="lp-wrap">
+            <div class="lp-section-head">
+                <span class="lp-eyebrow"><i class='bx bx-group'></i> Who it's for</span>
+                <h2>Built for everyone in vehicle care.</h2>
+                <p>One platform for the people who drive, the people who run workshops, and the people who fix.</p>
+            </div>
+            <div class="lp-role-grid">
+                <article class="lp-role">
+                    <span class="ico"><i class='bx bx-car'></i></span>
                     <h3>Customers</h3>
                     <ul>
-                        <li>Find and compare workshops near you</li>
-                        <li>Book a service in minutes</li>
-                        <li>Track every booking in one place</li>
+                        <li><i class='bx bxs-check-circle'></i> Find and compare workshops near you</li>
+                        <li><i class='bx bxs-check-circle'></i> Book a service in minutes</li>
+                        <li><i class='bx bxs-check-circle'></i> Track every booking in one place</li>
                     </ul>
-                    <a href="#" class="role-btn" data-signup="signupBtn" data-role="customer">Sign up as a customer</a>
+                    <a href="#" class="lp-ghost" data-signup="signupBtn" data-role="customer">Sign up as a customer</a>
                 </article>
-                <article class="role-card">
-                    <i class='bx bx-store'></i>
+                <article class="lp-role">
+                    <span class="ico"><i class='bx bx-store'></i></span>
                     <h3>Workshop owners</h3>
                     <ul>
-                        <li>List your workshop and services</li>
-                        <li>Manage bookings and prices</li>
-                        <li>Build your team and set capacity</li>
+                        <li><i class='bx bxs-check-circle'></i> List your workshop and services</li>
+                        <li><i class='bx bxs-check-circle'></i> Manage bookings and prices</li>
+                        <li><i class='bx bxs-check-circle'></i> Build your team and set capacity</li>
                     </ul>
-                    <a href="#" class="role-btn" data-signup="signupBtn" data-role="owner">Sign up as an owner</a>
+                    <a href="#" class="lp-ghost" data-signup="signupBtn" data-role="owner">Sign up as an owner</a>
                 </article>
-                <article class="role-card">
-                    <i class='bx bx-wrench'></i>
+                <article class="lp-role">
+                    <span class="ico"><i class='bx bx-wrench'></i></span>
                     <h3>Mechanics</h3>
                     <ul>
-                        <li>Browse workshops that are hiring</li>
-                        <li>Send a joining request in one tap</li>
-                        <li>See your team and workshop bookings</li>
+                        <li><i class='bx bxs-check-circle'></i> Browse workshops that are hiring</li>
+                        <li><i class='bx bxs-check-circle'></i> Send a joining request in one tap</li>
+                        <li><i class='bx bxs-check-circle'></i> See your team and workshop bookings</li>
                     </ul>
-                    <a href="#" class="role-btn" data-signup="signupBtn" data-role="mechanic">Sign up as a mechanic</a>
+                    <a href="#" class="lp-ghost" data-signup="signupBtn" data-role="mechanic">Sign up as a mechanic</a>
                 </article>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <section class="faq reveal">
-            <h2>Questions, answered</h2>
-            <div class="faq-list">
+    {# ===================== FAQ ===================== #}
+    <section class="lp-faq reveal">
+        <div class="lp-wrap lp-faq-grid">
+            <div class="lp-section-head">
+                <span class="lp-eyebrow"><i class='bx bx-help-circle'></i> FAQ</span>
+                <h2>Questions, answered.</h2>
+                <p>Anything else you'd like to know? Reach us from the Contact page.</p>
+            </div>
+            <div class="lp-faq-list">
                 <details>
                     <summary>How do I book a service?</summary>
-                    <p>Search for a workshop or browse by service, open its page, choose a service and a time, and send
-                        the
-                        request. The workshop confirms it and you can follow its status under My Bookings.</p>
+                    <p>Search for a workshop or browse by service, open its page, choose a service and a time, and send the request. The workshop confirms it and you can follow its status under My Bookings.</p>
                 </details>
                 <details>
                     <summary>Do I need an account?</summary>
-                    <p>You can search and look at workshops without one. You need a free account to book, and it only
-                        takes a
-                        minute to create.</p>
+                    <p>You can search and look at workshops without one. You need a free account to book, and it only takes a minute to create.</p>
                 </details>
                 <details>
                     <summary>Which services can I find?</summary>
-                    <p>Engine repair, electrical work, tires, AC service and general servicing, plus anything else
-                        workshops
-                        add to their listing.</p>
+                    <p>Engine repair, electrical work, tires, AC service and general servicing, plus anything else workshops add to their listing.</p>
                 </details>
                 <details>
                     <summary>How do mechanics join a workshop?</summary>
-                    <p>A mechanic sends a joining request from a workshop's page. The owner reviews it and accepts it if
-                        the
-                        workshop has an open spot.</p>
+                    <p>A mechanic sends a joining request from a workshop's page. The owner reviews it and accepts it if the workshop has an open spot.</p>
                 </details>
                 <details>
                     <summary>Can a mechanic leave a workshop?</summary>
-                    <p>Yes. They send a leave request and the owner decides, so the team is never left short without
-                        notice.</p>
+                    <p>Yes. They send a leave request and the owner decides, so the team is never left short without notice.</p>
                 </details>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <section class="cta-banner reveal">
-            <h2>Ready to get your vehicle looked after?</h2>
-            <p>Join Getwheelz today and find a workshop you can rely on.</p>
-            <div class="fw-btn-con">
-                <a class="fw-btn" href="#" data-signup="signupBtn">Create your account</a>
+    {# ===================== FINAL CTA ===================== #}
+    <section class="lp-final reveal">
+        <div class="lp-wrap">
+            <div class="lp-final-card">
+                <h2>Ready to get your vehicle looked after?</h2>
+                <p>Join Getwheelz today and find a workshop you can rely on.</p>
+                <div class="lp-cta-row">
+                    <a class="lp-btn" href="#" data-signup="signupBtn">Create your account <i class='bx bx-right-arrow-alt'></i></a>
+                    <a class="lp-ghost" href="{{ url_for('workshops.search') }}">Browse workshops</a>
+                </div>
             </div>
-        </section>
+        </div>
+    </section>
 </div>
+
+{# ===================== AUTH MODALS (unchanged: header.js and main.js depend on these ids/classes) ===================== #}
 <div class="login-modal" id="loginModal">
     <form action="{{ url_for('auth.login') }}" method="post" class="login-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
