@@ -5866,3 +5866,23 @@ a.workshop-join-card {
 @media (max-width: 360px) {
     html body .hero h1 { font-size: 1.6rem; }
 }
+
+.profile-link { color: inherit; font-weight: 600; text-decoration: none; }
+.profile-link:hover { text-decoration: underline; }
+
+.view-profile-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    margin-right: 6px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    color: #42a5f5;
+    background: rgba(33, 150, 243, 0.14);
+    transition: background 0.2s;
+}
+.view-profile-btn:hover { background: rgba(33, 150, 243, 0.28); }
+.view-profile-btn i { font-size: 18px; }
