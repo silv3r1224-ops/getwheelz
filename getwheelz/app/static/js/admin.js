@@ -82,6 +82,8 @@
     }
 
     document.querySelectorAll(".sidebar-link").forEach((sidebarLink) => {
+        // Links that open a dialog (class "sidebar-action") are not pages, so they never become "active".
+        if (sidebarLink.classList.contains("sidebar-action")) return;
         sidebarLink.addEventListener("click", () => {
             document.querySelectorAll(".sidebar-link").forEach((link) => {
                 link.classList.toggle("active", link === sidebarLink);

@@ -425,16 +425,6 @@
     }
 
     /* No-Workshop Banner */
-    .no-workshop-card {
-        background: var(--second-bg);
-        border: 2px dashed rgba(255, 255, 255, 0.12);
-        border-radius: 24px;
-        padding: 60px 30px;
-        text-align: center;
-        max-width: 580px;
-        margin: 40px auto;
-    }
-
     .create-btn-con{
         display: flex;
         justify-content: center;
@@ -452,19 +442,6 @@
         display: flex;
         justify-content: center;
         align-items: center;
-    }
-
-    .no-workshop-card h1 {
-        font-size: 1.8rem;
-        margin-bottom: 10px;
-    }
-
-    .no-workshop-card p {
-        color: var(--text-muted);
-        font-size: 14px;
-        max-width: 420px;
-        margin: 0 auto 24px;
-        line-height: 1.5;
     }
 
     /* Responsive */
@@ -682,8 +659,7 @@
             <a href="{{ url_for('dashboard.owner') }}" class="sidebar-link active">
                 <i class='bx bx-rocket'></i> Get started
             </a>
-            <a href="#" class="sidebar-link"
-                onclick="document.getElementById('create-workshop-btn').click(); return false;">
+            <a href="#" class="sidebar-link sidebar-action" data-open-create-workshop role="button">
                 <i class='bx bx-plus-circle'></i> Create workshop
             </a>
         </nav>
@@ -719,11 +695,29 @@
     <main class="admin-main">
         {% if not workshop %}
         <!-- Welcome empty state when no workshop listed -->
-        <div class="no-workshop-card">
-            <i class='bx bx-store-alt'></i>
+        <section class="owner-welcome">
+            <div class="ow-icon"><i class='bx bx-store-alt'></i></div>
             <h1>Welcome, Workshop Owner!</h1>
-            <p>You haven't registered your workshop yet. Set it up with location and services to start accepting
-                customer bookings.</p>
+            <p class="ow-lead">Let's get your workshop listed so customers nearby can find and book you.</p>
+
+            <ol class="ow-steps">
+                <li>
+                    <span class="ow-num">1</span>
+                    <div><strong>Create your workshop</strong>
+                        <small>Add its name, address and a pin on the map.</small></div>
+                </li>
+                <li>
+                    <span class="ow-num">2</span>
+                    <div><strong>Add your services</strong>
+                        <small>Choose what you offer, with prices and durations.</small></div>
+                </li>
+                <li>
+                    <span class="ow-num">3</span>
+                    <div><strong>Take bookings and build a team</strong>
+                        <small>Confirm jobs and accept mechanics who want to join you.</small></div>
+                </li>
+            </ol>
+
             <div class="create-btn-con">
                 <div class="fw-btn-con">
                     <a href="#" class="fw-btn" id="create-workshop-btn">
@@ -731,9 +725,8 @@
                     </a>
                 </div>
             </div>
-
-
-        </div>
+            <p class="ow-note">Takes about a minute.</p>
+        </section>
         {% else %}
         <!-- Workshop Hero Header -->
         <article class="owner-hero-card">
@@ -1182,24 +1175,66 @@
     </form>
 </div>
 <!-- Modal: Create Workshop -->
-<div class="login-modal" id="createWorkshopModal">
-    <form method="POST" action="{{ url_for('dashboard.create_workshop') }}" class="login-form">
-<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <h2>Set Up Your Workshop</h2>
-        <input type="text" name="name" placeholder="Workshop Name" required>
-        <input type="text" name="address" placeholder="Address" required>
-        <input type="text" name="contact_no" placeholder="Contact Number">
-        <p style="font-size: 13px; color: rgba(255,255,255,0.6); align-self: flex-start;">
-            Click or drag the pin to mark your workshop's exact location
-        </p>
-        <div class="pin-map-wrapper">
-            <div id="workshop-pin-map"></div>
-        </div>
-        <input type="hidden" id="latitude" name="latitude">
-        <input type="hidden" id="longitude" name="longitude">
-        <p id="location-status" style="font-size: 13px; color: rgba(255,255,255,0.5);"></p>
-        <button type="submit" class="fw-btn-con"><span class="fw-btn">Create Workshop</span></button>
-    </form>
+<div class="fw-modal" id="createWorkshopModal" role="dialog" aria-modal="true" aria-labelledby="cwTitle">
+    <div class="fw-modal-panel">
+        <header class="fw-modal-header">
+            <div>
+                <h2 id="cwTitle">Set up your workshop</h2>
+                <p>Tell customers who you are and where to find you.</p>
+            </div>
+            <button type="button" class="fw-modal-close" data-close aria-label="Close">&times;</button>
+        </header>
+
+        <form method="POST" action="{{ url_for('dashboard.create_workshop') }}" id="createWorkshopForm" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" id="latitude" name="latitude">
+            <input type="hidden" id="longitude" name="longitude">
+
+            <div class="fw-modal-body">
+                <div class="fw-field">
+                    <label for="cwName">Workshop name <span class="fw-req">*</span></label>
+                    <input type="text" id="cwName" name="name" maxlength="150" autocomplete="organization"
+                        placeholder="e.g. Speedy Auto Care" aria-describedby="cwNameError">
+                    <p class="fw-error" id="cwNameError" hidden></p>
+                </div>
+
+                <div class="fw-field">
+                    <label for="cwAddress">Address <span class="fw-req">*</span></label>
+                    <input type="text" id="cwAddress" name="address" maxlength="300" autocomplete="street-address"
+                        placeholder="Street, area, city" aria-describedby="cwAddressError">
+                    <p class="fw-error" id="cwAddressError" hidden></p>
+                </div>
+
+                <div class="fw-field">
+                    <label for="cwContact">Contact number <span class="fw-opt">(optional)</span></label>
+                    <input type="tel" id="cwContact" name="contact_no" maxlength="20" inputmode="tel"
+                        autocomplete="tel" placeholder="e.g. +91 98765 43210" aria-describedby="cwContactError">
+                    <p class="fw-error" id="cwContactError" hidden></p>
+                </div>
+
+                <div class="fw-field">
+                    <div class="fw-label-row">
+                        <label id="cwMapLabel">Location on map <span class="fw-req">*</span></label>
+                        <button type="button" class="fw-link-btn" id="cwUseLocation">
+                            <i class='bx bx-current-location'></i> Use my location
+                        </button>
+                    </div>
+                    <p class="fw-hint">Click the map or drag the pin. Customers find you through this location.</p>
+                    <div class="pin-map-wrapper" id="cwMapWrap">
+                        <div id="workshop-pin-map" aria-labelledby="cwMapLabel"></div>
+                    </div>
+                    <p class="fw-status" id="location-status" data-state="empty" role="status">
+                        No location set yet. Click the map to drop a pin.</p>
+                    <p class="fw-error" id="cwLocationError" hidden></p>
+                </div>
+            </div>
+
+            <footer class="fw-modal-footer">
+                <button type="button" class="fw-btn-ghost" data-close>Cancel</button>
+                <button type="submit" class="fw-btn-primary" id="cwSubmit">Create workshop</button>
+            </footer>
+        </form>
+    </div>
 </div>
 <!-- Confirm: remove service -->
 <div class="confirm-dialog" id="confirmDialog" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">

@@ -1,318 +1,361 @@
 {% extends "base.html" %}
 
-{% block title %}Home — Getwheelz (Enhanced){% endblock %}
+{% block title %}Home — Getwheelz{% endblock %}
 
 {% block head %}
-<style>
-    /* Section Headers */
-    .section-header {
-        margin-bottom: 25px;
-        text-align: left;
-    }
-
-    .section-subtitle {
-        color: var(--text-muted);
-        font-size: 0.9rem;
-        margin-top: 5px;
-    }
-
-    .carousel-controls-info {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 15px;
-        font-size: 0.8rem;
-        color: var(--text-muted);
-    }
-
-    .workshop-count {
-        background: var(--second-bg);
-        padding: 4px 12px;
-        border-radius: 20px;
-        border: 1px solid var(--border-soft);
-    }
-
-    .carousel-status {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .status-dot {
-        width: 8px;
-        height: 8px;
-        background: var(--main-color);
-        border-radius: 50%;
-        animation: pulse 2s infinite;
-    }
-
-    .status-dot.paused {
-        background: var(--text-muted);
-        animation: none;
-    }
-
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-    }
-
-    /* Recommended Section Enhancements */
-    .recommended-section {
-        padding: 40px 30px;
-        position: relative;
-    }
-
-    .workshop-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        background: rgba(199, 69, 92, 0.1);
-        color: var(--main-color);
-        padding: 3px 8px;
-        border-radius: 4px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        margin-bottom: 8px;
-    }
-
-    /* Nearby Section Grid (Requested List Section) */
-    .nearby-section {
-        padding: 40px 30px;
-        border-top: 1px solid var(--border-soft);
-    }
-
-    .nearby-list {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 20px;
-        margin-top: 20px;
-    }
-
-    .nearby-card {
-        display: flex;
-        background-color: var(--second-bg);
-        border-radius: 12px;
-        overflow: hidden;
-        text-decoration: none;
-        color: var(--text-color);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        border: 1px solid var(--border-soft);
-    }
-
-    .nearby-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-        border-color: var(--main-color);
-    }
-
-    .nearby-card-img {
-        width: 100px;
-        height: 100px;
-        flex-shrink: 0;
-    }
-
-    .nearby-card-img img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .nearby-card-body {
-        padding: 12px;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-
-    .nearby-card-body h3 {
-        font-size: 1rem;
-        margin-bottom: 4px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .nearby-card-distance {
-        font-size: 0.8rem;
-        color: var(--main-color);
-        font-weight: 600;
-        margin-bottom: 5px;
-    }
-
-    .nearby-card-address {
-        font-size: 0.75rem;
-        color: var(--text-muted);
-        display: flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-
-    /* ---- Boxed sections (whole carousel / whole list sit in one panel) ---- */
-    .recommended-section,
-    .nearby-section {
-        max-width: 1200px;
-        margin: 40px auto;
-        padding: 30px;
-        background-color: var(--second-bg);
-        border: 1px solid var(--border-soft);
-        border-radius: 20px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-    }
-
-    .nearby-section {
-        border-top: 1px solid var(--border-soft);
-    }
-
-    /* inner cards use the page bg so they stand out against the panel */
-    .recommended-section .carousel-card,
-    .nearby-section .nearby-card {
-        background-color: var(--bg-color);
-    }
-
-    .recommended-section .carousel-card-img,
-    .nearby-section .nearby-card-img {
-        background-color: rgba(255, 255, 255, 0.04);
-    }
-
-    .recommended-section .workshop-count {
-        background: var(--bg-color);
-    }
-
-    /* keep the arrow buttons visible inside the panel */
-    .recommended-section .carousel-btn {
-        background-color: var(--bg-color);
-    }
-    .recommended-section .carousel-btn.prev { left: 0; }
-    .recommended-section .carousel-btn.next { right: 0; }
-
-    body.light .recommended-section,
-    body.light .nearby-section {
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
-    }
-
-    @media (max-width: 600px) {
-        .recommended-section,
-        .nearby-section {
-            margin: 24px 12px;
-            padding: 20px 16px;
-            border-radius: 16px;
-        }
-    }
-
-    /* Carousel Smooth Transition */
-    .carousel-track {
-        scroll-behavior: smooth;
-    }
-</style>
+{% include 'partials/px_head.html' %}
 {% endblock %}
 
 {% block content %}
-<section class="hero">
-    <h1>Welcome back, {{ session.user_name }}</h1>
-    <p id="sub-ttl">Find a workshop and book a service in minutes.</p>
+<div class="px">
 
-    <form action="{{ url_for('workshops.search') }}" method="get" class="search-form" id="hero-search-form">
-        <input type="text" name="service" id="main-search-input" placeholder="What service do you need?">
+    {# ===================== HERO ===================== #}
+    <section class="px-hero">
+        <div class="px-wrap">
+            <span class="px-eyebrow"><i class='bx bxs-hand'></i> Welcome back</span>
+            <h1 class="px-title">Hello, <span class="grad">{{ session.user_name }}</span>.<br>What does your vehicle need?</h1>
+            <p class="px-lead">Search trusted workshops, see how far each one is, and book a service in minutes.</p>
 
-        <div class="filter-wrapper">
-            <button type="button" id="filter-toggle-btn" class="filter-btn" title="Filter by service">
-                <i class='bx bx-filter-alt'></i>
-            </button>
-            <div class="filter-popover" id="filterPopover">
-                <h4>Filter by Service</h4>
-                {% for opt in ['Engine Repair', 'Electrical', 'Tires', 'AC Service', 'General Servicing'] %}
-                <label class="filter-check">
-                    <input type="checkbox" name="services" value="{{ opt }}"> {{ opt }}
-                </label>
+            <form action="{{ url_for('workshops.search') }}" method="get" class="px-search" id="hero-search-form" role="search" style="margin-top: 28px;">
+                <i class='bx bx-search' aria-hidden="true"></i>
+                <input type="text" name="service" id="main-search-input" placeholder="Engine repair, tires, AC service..." aria-label="Search for a service">
+                <input type="hidden" id="search-lat" name="lat">
+                <input type="hidden" id="search-lng" name="lng">
+                <button class="px-btn" type="submit">Find workshops</button>
+            </form>
+
+            {% if catalog_services %}
+            <div class="px-chips" style="margin-top: 16px;">
+                <span class="px-count">Browse by service:</span>
+                {% for svc in catalog_services[:8] %}
+                <a class="px-chip" href="{{ url_for('workshops.search', service=svc.name) }}">{{ svc.name }}</a>
                 {% endfor %}
             </div>
-        </div>
+            {% endif %}
 
-        <input type="hidden" id="search-lat" name="lat">
-        <input type="hidden" id="search-lng" name="lng">
-
-        <div class="fw-btn-con">
-            <button class="fw-btn" type="submit">Find Workshops</button>
-        </div>
-    </form>
-</section>
-
-<!-- Recommended Section with Auto-sliding Carousel -->
-<section class="recommended-section">
-    <div class="section-header">
-        <h2>Recommended Workshops</h2>
-        <p class="section-subtitle">Auto-sliding for your convenience</p>
-    </div>
-
-    {% if recommended %}
-    <div class="carousel-controls-info">
-        <span class="workshop-count">
-            <i class='bx bx-store'></i> {{ recommended|length }} workshop{{ '' if recommended|length == 1 else 's' }}
-        </span>
-        <span class="carousel-status">
-            <span class="status-dot" id="rec-status-dot"></span>
-            <span id="rec-status-text">Auto-sliding</span>
-        </span>
-    </div>
-    {% endif %}
-
-    <div class="carousel-wrapper">
-        <button class="carousel-btn prev" id="rec-prev">
-            <i class='bx bx-chevron-left'></i>
-        </button>
-
-        <div class="carousel-track" id="rec-track">
-            {% for w in recommended %}
-            <a href="{{ url_for('workshops.selected', w_id=w.w_id) }}" class="carousel-card">
-                <div class="carousel-card-img">
-                    {% if w.photo_path %}
-                    <img src="{{ url_for('static', filename=w.photo_path) }}" alt="{{ w.name }}">
-                    {% else %}
-                    <div class="carousel-card-img-placeholder"><i class='bx bx-store'></i></div>
-                    {% endif %}
+            {% if next_booking %}
+            <a class="px-card px-lift px-next" href="{{ url_for('bookings.my_bookings') }}">
+                <span class="px-next-ico"><i class='bx bx-calendar-check'></i></span>
+                <div>
+                    <small>Your next appointment</small>
+                    <strong>{{ next_booking.s_name }} at {{ next_booking.workshop_name }}</strong>
+                    <span class="meta">{{ next_booking.requested_time.strftime('%a, %d %b · %I:%M %p') }}</span>
                 </div>
-
-                <div class="carousel-card-body">
-                    <div class="workshop-badge">
-                        <i class='bx bx-star'></i> Recommended
-                    </div>
-                    <h3>{{ w.name }}</h3>
-                    <p class="carousel-card-address"><i class='bx bx-map'></i> {{ w.address }}</p>
-                    <div class="carousel-card-tags">
-                        {% for service in (w.service_names or [])[:3] %}
-                        <span class="service-tag">{{ service }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
+                <span class="px-badge {{ next_booking.status }}">{{ next_booking.status }}</span>
             </a>
             {% else %}
-            <p class="no-results">No workshops to show yet.</p>
-            {% endfor %}
+            <div class="px-card px-next">
+                <span class="px-next-ico"><i class='bx bx-calendar-plus'></i></span>
+                <div>
+                    <small>Your next appointment</small>
+                    <strong>Nothing booked yet</strong>
+                    <span class="meta">Pick a workshop below and book your first service.</span>
+                </div>
+            </div>
+            {% endif %}
         </div>
+    </section>
 
-        <button class="carousel-btn next" id="rec-next">
-            <i class='bx bx-chevron-right'></i>
-        </button>
-    </div>
-</section>
+    {# ===================== RECOMMENDED (inside one black box) ===================== #}
+    <section class="px-section">
+        <div class="px-wrap">
+            <div class="px-card px-showcase">
+                <div class="px-section-head">
+                    <div>
+                        <h2>Recommended workshops</h2>
+                        <p>{% if recommended %}{{ recommended | length }} workshop{{ '' if recommended | length == 1 else 's' }} to start with.{% else %}A few workshops to start with.{% endif %}</p>
+                    </div>
+                    <span class="px-loc" id="loc-chip">
+                        <i class='bx bx-current-location'></i>
+                        <span class="loc-text">Finding your location...</span>
+                        <button type="button" data-enable-location hidden>Enable</button>
+                    </span>
+                </div>
 
-<!-- Nearby Workshops Section (Requested List Format) -->
-<section class="nearby-section" id="nearby-section" style="display:none;"
+                {% if recommended %}
+                <div class="px-carousel">
+                    <button type="button" class="px-icon-btn px-nav prev" id="rec-prev" aria-label="Previous workshop"><i class='bx bx-chevron-left'></i></button>
+                    <div class="px-track" id="rec-track">
+                        {% for w in recommended %}
+                        <a href="{{ url_for('workshops.selected', w_id=w.w_id) }}" class="px-card px-lift px-wcard"
+                            {% if w.latitude is not none and w.longitude is not none %}data-lat="{{ w.latitude }}" data-lng="{{ w.longitude }}"{% endif %}>
+                            <div class="px-wcard-img">
+                                {% if w.photo_path %}
+                                <img src="{{ url_for('static', filename=w.photo_path) }}" alt="{{ w.name }}" loading="lazy">
+                                {% else %}
+                                <div class="px-ph"><i class='bx bx-store'></i></div>
+                                {% endif %}
+                                <div class="px-wcard-top">
+                                    <span class="px-feat"><i class='bx bxs-star'></i> Recommended</span>
+                                    <span class="px-dist"><i class='bx bx-navigation'></i><span class="px-dist-text"></span></span>
+                                </div>
+                            </div>
+                            <div class="px-wcard-body">
+                                <h3>{{ w.name }}</h3>
+                                <p class="px-addr"><i class='bx bx-map'></i><span>{{ w.address or 'Address not listed' }}</span></p>
+                                {% if w.service_names %}
+                                <div class="px-tags">
+                                    {% for service in w.service_names[:3] %}<span class="px-tag">{{ service }}</span>{% endfor %}
+                                    {% if w.service_names | length > 3 %}<span class="px-tag">+{{ w.service_names | length - 3 }}</span>{% endif %}
+                                </div>
+                                {% endif %}
+                                <div class="px-wcard-foot">View workshop <i class='bx bx-right-arrow-alt'></i></div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    <button type="button" class="px-icon-btn px-nav next" id="rec-next" aria-label="Next workshop"><i class='bx bx-chevron-right'></i></button>
+                </div>
+                {% else %}
+                <div class="px-empty">
+                    <i class='bx bx-store'></i>
+                    <h3>No workshops yet</h3>
+                    <p>Workshops will appear here as soon as owners list them.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    {# ===================== NEARBY ===================== #}
+    <section class="px-section" id="nearby-section"
         data-url="{{ url_for('workshops.nearby') }}"
         data-profile-url="{{ url_for('workshops.selected', w_id=0) }}"
         data-static-url="{{ url_for('static', filename='') }}">
-    <div class="section-header">
-        <h2>Nearby Workshops</h2>
-        <p class="section-subtitle">Quickly access workshops closest to you</p>
-    </div>
+        <div class="px-wrap">
+            <div class="px-section-head">
+                <div>
+                    <h2>Closest to you</h2>
+                    <p>Workshops within 25 km, nearest first.</p>
+                </div>
+                <a class="px-ghost sm" href="{{ url_for('workshops.search') }}">Browse all workshops <i class='bx bx-right-arrow-alt'></i></a>
+            </div>
+            <div class="px-grid" id="nearby-grid"></div>
+            <div class="px-card px-empty" id="nearby-status" hidden></div>
+        </div>
+    </section>
 
-    <div class="nearby-list" id="nearby-list">
-        <!-- Will be populated by JS -->
-    </div>
-</section>
+    {# ===================== BROWSE BY SERVICE ===================== #}
+    {% if catalog_services %}
+    <section class="px-section">
+        <div class="px-wrap">
+            <div class="px-section-head">
+                <div>
+                    <h2>Browse by service</h2>
+                    <p>Pick what your vehicle needs and see who offers it.</p>
+                </div>
+            </div>
+            <div class="px-tiles">
+                {% for svc in catalog_services[:12] %}
+                {% set n = svc.name | lower %}
+                {% set icon = 'bx-cog' if 'engine' in n
+                    else 'bx-bolt-circle' if ('electr' in n or 'battery' in n)
+                    else 'bx-disc' if ('tire' in n or 'tyre' in n or 'wheel' in n)
+                    else 'bx-wind' if ('ac' in n.split() or 'a/c' in n or 'air' in n.split() or 'conditioning' in n or 'cooling' in n)
+                    else 'bx-stop-circle' if 'brake' in n
+                    else 'bx-droplet' if ('oil' in n.split() or 'fluid' in n)
+                    else 'bx-brush' if ('paint' in n or 'body' in n.split() or 'denting' in n)
+                    else 'bx-water' if ('wash' in n or 'clean' in n or 'detail' in n)
+                    else 'bx-wrench' %}
+                <a class="px-card px-lift px-tile" href="{{ url_for('workshops.search', service=svc.name) }}">
+                    <span class="px-tile-ico"><i class='bx {{ icon }}'></i></span>
+                    <b>{{ svc.name }}</b>
+                    <span class="count">
+                        <span>{% if svc.count %}{{ svc.count }} workshop{{ '' if svc.count == 1 else 's' }}{% else %}No workshops yet{% endif %}</span>
+                        <i class='bx bx-right-arrow-alt'></i>
+                    </span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    {# ===================== RECENT BOOKINGS ===================== #}
+    {% if recent_bookings %}
+    <section class="px-section">
+        <div class="px-wrap">
+            <div class="px-section-head">
+                <div>
+                    <h2>Pick up where you left off</h2>
+                    <p>Your latest booking requests.</p>
+                </div>
+                <a class="px-ghost sm" href="{{ url_for('bookings.my_bookings') }}">All my bookings <i class='bx bx-right-arrow-alt'></i></a>
+            </div>
+            <div class="px-list">
+                {% for b in recent_bookings %}
+                <a class="px-card px-lift px-booking" href="{{ url_for('workshops.selected', w_id=b.w_id) }}">
+                    <div class="px-date"><b>{{ b.requested_time.strftime('%d') }}</b><span>{{ b.requested_time.strftime('%b') }}</span></div>
+                    <div class="px-booking-info">
+                        <h3>{{ b.s_name }}</h3>
+                        <p>
+                            <span><i class='bx bx-store'></i> {{ b.workshop_name }}</span>
+                            <span><i class='bx bx-time'></i> {{ b.requested_time.strftime('%a, %I:%M %p') }}</span>
+                        </p>
+                    </div>
+                    <div class="px-booking-side"><span class="px-badge {{ b.status }}">{{ b.status }}</span></div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    {# ===================== MAP ===================== #}
+    {% if map_workshops %}
+    <section class="px-section">
+        <div class="px-wrap">
+            <div class="px-section-head">
+                <div>
+                    <h2>Workshops on the map</h2>
+                    <p>Tap a pin to see the workshop and open its page.</p>
+                </div>
+            </div>
+            <div class="px-card px-map-frame short"><div id="map"></div></div>
+        </div>
+    </section>
+    {% endif %}
+
+    {# ===================== HOW BOOKING WORKS ===================== #}
+    <section class="px-section">
+        <div class="px-wrap">
+            <div class="px-section-head">
+                <div>
+                    <h2>How booking works</h2>
+                    <p>From search to service in three steps.</p>
+                </div>
+            </div>
+            <div class="px-how">
+                <div class="px-card px-how-card">
+                    <span class="px-how-num">1</span>
+                    <h3>Choose a workshop</h3>
+                    <p>Search by service, check the distance and the services each workshop offers.</p>
+                </div>
+                <div class="px-card px-how-card">
+                    <span class="px-how-num">2</span>
+                    <h3>Send a request</h3>
+                    <p>Pick a service and a time that suits you. Your request goes to the workshop.</p>
+                </div>
+                <div class="px-card px-how-card">
+                    <span class="px-how-num">3</span>
+                    <h3>Get it confirmed</h3>
+                    <p>Once the workshop accepts, the status changes to Confirmed in My Bookings.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {# ===================== VEHICLE CARE TIPS ===================== #}
+    <section class="px-section">
+        <div class="px-wrap">
+            <div class="px-section-head">
+                <div>
+                    <h2>Vehicle care tips</h2>
+                    <p>Small habits that save big repairs.</p>
+                </div>
+            </div>
+            <div class="px-tips">
+                <div class="px-card px-tip">
+                    <i class='bx bx-disc'></i>
+                    <h3>Check tire pressure</h3>
+                    <p>Look at it monthly and before long trips. Correct pressure improves grip and tire life.</p>
+                </div>
+                <div class="px-card px-tip">
+                    <i class='bx bx-droplet'></i>
+                    <h3>Change oil on schedule</h3>
+                    <p>Follow the interval in your owner's manual. Old oil wears the engine faster.</p>
+                </div>
+                <div class="px-card px-tip">
+                    <i class='bx bx-error-circle'></i>
+                    <h3>Do not ignore warning lights</h3>
+                    <p>A light on the dashboard is an early warning. Getting it checked is cheaper than a breakdown.</p>
+                </div>
+                <div class="px-card px-tip">
+                    <i class='bx bx-wind'></i>
+                    <h3>Service the AC before summer</h3>
+                    <p>If the cooling feels weak, get it looked at before the hottest weeks arrive.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {# ===================== FAQ ===================== #}
+    <section class="px-section">
+        <div class="px-wrap px-faq-grid">
+            <div class="px-section-head">
+                <div>
+                    <h2>Good to know</h2>
+                    <p>Quick answers about bookings and distances.</p>
+                </div>
+            </div>
+            <div class="px-faq">
+                <details class="px-card">
+                    <summary>How do I know my booking is confirmed?</summary>
+                    <p>A new request starts as Pending. When the workshop accepts it, the status changes to Confirmed, and after the visit it becomes Completed. You can follow all of this under My Bookings.</p>
+                </details>
+                <details class="px-card">
+                    <summary>Can I cancel a booking?</summary>
+                    <p>Yes. While a booking is still Pending you can cancel it from My Bookings.</p>
+                </details>
+                <details class="px-card">
+                    <summary>How is the distance worked out?</summary>
+                    <p>It is the straight-line distance from your device's location to the workshop's pin on the map, so the road distance may be a little longer. Your location stays in your browser and is not saved.</p>
+                </details>
+                <details class="px-card">
+                    <summary>Why can't I see distances?</summary>
+                    <p>Allow location access when your browser asks. If you blocked it earlier, turn it back on in the site settings of your browser, then use the Enable button on this page.</p>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    {# ===================== CLOSING CTA ===================== #}
+    <section class="px-section" style="padding-bottom: 90px;">
+        <div class="px-wrap">
+            <div class="px-card px-cta">
+                <h2>Need something specific?</h2>
+                <p>Search every listed workshop, or check on a booking you already made.</p>
+                <div class="px-btn-row">
+                    <a class="px-btn" href="{{ url_for('workshops.search') }}">Browse all workshops</a>
+                    <a class="px-ghost" href="{{ url_for('bookings.my_bookings') }}">My bookings</a>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
 {% endblock %}
+
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/distance.js') }}"></script>
+<script>
+    // reuse a location we already have so the search results page can show distances straight away
+    (function () {
+        var loc = window.GW && window.GW.cachedLocation();
+        if (loc) {
+            document.getElementById('search-lat').value = loc.lat;
+            document.getElementById('search-lng').value = loc.lng;
+        }
+    })();
+</script>
+<script src="{{ url_for('static', filename='js/customer-home.js') }}"></script>
 <script src="{{ url_for('static', filename='js/workshop.js') }}" defer></script>
+
+{% if map_workshops %}
+<script>
+    const mapCenterOnUser = true;
+    const mapClickToInteract = true;
+    const workshopData = [
+        {% for w in map_workshops %}
+        {
+            id: {{ w.w_id | tojson }},
+            name: {{ w.name | tojson }},
+            address: {{ (w.address or '') | tojson }},
+            lat: {{ w.latitude | float }},
+            lng: {{ w.longitude | float }}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+</script>
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+{% endif %}
 {% endblock %}

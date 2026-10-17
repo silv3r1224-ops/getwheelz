@@ -2,114 +2,168 @@
 
 {% block title %}Find Workshops — Getwheelz{% endblock %}
 
+{% block head %}
+{% include 'partials/px_head.html' %}
+<style>
+    /* list on the left, map on the right (stacked on small screens) */
+    .px-split { display: grid; grid-template-columns: minmax(0, 520px) 1fr; gap: 22px; align-items: start; }
+    .px-split .px-list-col { display: grid; gap: 14px; }
+    .px-split .px-map-col { position: sticky; top: 96px; }
+    .px .px-split .px-map-frame #map { height: calc(100vh - 150px); min-height: 480px; max-height: 720px; }
+    @media (max-width: 1020px) {
+        .px-split { grid-template-columns: 1fr; }
+        .px-split .px-map-col { position: static; order: -1; }
+        .px .px-split .px-map-frame #map { height: 340px; min-height: 0; }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="index-con" id="mainCon">
-<section class="search-results-page">
-    <div class="search-header">
-        <h1>Find a Workshop</h1>
-        <form action="{{ url_for('workshops.search') }}" method="get" class="search-form">
-            <input type="text" name="service" placeholder="What service do you need?" value="{{ service }}">
-            <button type="submit" class="fw-btn-con"><span class="fw-btn">Search</span></button>
-        </form>
-    </div>
+{% set term_names = terms | map('lower') | list %}
+<div class="px index-con" id="mainCon">
 
-    <div class="view-toggle">
-        <button id="show-map-btn" class="toggle-btn active">Map View</button>
-        <button id="show-list-btn" class="toggle-btn">List View</button>
-    </div>
+    <section class="px-hero" style="padding-bottom: 6px;">
+        <div class="px-wrap">
+            <span class="px-eyebrow"><i class='bx bx-search-alt'></i> Find a workshop</span>
+            <h1 class="px-title">
+                {% if terms %}Workshops for <span class="grad">{{ terms | join(', ') }}</span>{% else %}Every workshop, <span class="grad">nearest first.</span>{% endif %}
+            </h1>
 
-    <div id="map" class="results-map"></div>
+            <form action="{{ url_for('workshops.search') }}" method="get" class="px-search" role="search" style="margin-top: 22px;">
+                <i class='bx bx-search' aria-hidden="true"></i>
+                <input type="text" name="service" value="{{ service }}" placeholder="What service do you need?" aria-label="Search for a service">
+                {% if user_lat is not none %}
+                <input type="hidden" name="lat" value="{{ user_lat }}">
+                <input type="hidden" name="lng" value="{{ user_lng }}">
+                {% endif %}
+                <button class="px-btn" type="submit">Search</button>
+            </form>
 
-    <div id="workshop-list" class="workshop-list hidden">
-        {% if workshops %}
-        {% for workshop in workshops %}
-        <a href="{{ url_for('workshops.selected', w_id=workshop.w_id) }}" class="workshop-card">
-            <div class="workshop-card-info">
-                <h3>{{ workshop.name }}</h3>
-                <p><i class='bx bx-map'></i> {{ workshop.address }}</p>
+            {% if catalog_services %}
+            <div class="px-chips" style="margin-top: 16px;">
+                <a class="px-chip {% if not terms %}active{% endif %}" href="{{ url_for('workshops.search', lat=user_lat, lng=user_lng) }}">All services</a>
+                {% for svc in catalog_services[:10] %}
+                <a class="px-chip {% if svc.name | lower in term_names %}active{% endif %}"
+                    href="{{ url_for('workshops.search', service=svc.name, lat=user_lat, lng=user_lng) }}">{{ svc.name }}</a>
+                {% endfor %}
             </div>
-            <i class='bx bx-chevron-right'></i>
-        </a>
-        {% endfor %}
-        {% else %}
-        <p class="no-results">No workshops found. Try a different search.</p>
-        {% endif %}
-    </div>
-</section>
-</div>
-<div class="login-modal" id="loginModal">
-    <form action="{{ url_for('auth.login') }}" method="post" class="login-form">
-<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <h2>Login</h2>
-        <input type="email" name="email" placeholder="Email" required>
-        <input type="password" name="password" placeholder="Password" required>
-        <div class="fw-btn-con">
-            <button class="fw-btn" type="submit">Login</button>
+            {% endif %}
         </div>
-        <p>Don't have an account? <a data-signup="signupBtn">Sign Up</a></p>
-        <p>or</p>
-        <button class="ggl-btn" id="google-login-btn">Login with Google</button>
-    </form>
-</div>
-<div class="signup-modal" id="signUpModal">
-    <form action="{{ url_for('auth.signup') }}" method="post" class="signup-form">
-<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <h2>Sign Up</h2>
-        <input type="text" name="name" placeholder="Username" required>
-        <input type="email" name="email" placeholder="Email" required>
-        <input type="password" name="password" placeholder="Password" required>
-        <input type="password" name="confirm_password" placeholder="Confirm Password" required>
-        <select name="role">
-            <option value="customer">Customer</option>
-            <option value="owner">Workshop Owner</option>
-            <option value="mechanic">Mechanic</option>
-        </select>
-        <div class="fw-btn-con">
-            <button class="fw-btn" type="submit">Sign Up</button>
+    </section>
+
+    <section class="px-section" style="padding-top: 8px; padding-bottom: 80px;">
+        <div class="px-wrap">
+            <div class="px-toolbar">
+                <p class="px-count"><b>{{ workshops | length }}</b> workshop{{ '' if workshops | length == 1 else 's' }} found
+                    <span id="sort-note">{% if user_lat is not none %}· nearest first{% else %}· A to Z{% endif %}</span></p>
+                <span class="px-loc {% if user_lat is not none %}ok{% endif %}" id="loc-chip">
+                    <i class='bx bx-current-location'></i>
+                    <span class="loc-text">{% if user_lat is not none %}Distances measured from your location{% else %}Finding your location...{% endif %}</span>
+                    <button type="button" id="enable-location" hidden>Enable</button>
+                </span>
+            </div>
+
+            {% if workshops %}
+            <div class="px-split">
+                <div class="px-list-col" id="workshop-list">
+                    {% for w in workshops %}
+                    <a href="{{ url_for('workshops.selected', w_id=w.w_id) }}"
+                        class="px-card px-lift px-row {% if w.distance_km is not none %}has-dist{% endif %}"
+                        {% if w.latitude is not none and w.longitude is not none %}data-lat="{{ w.latitude }}" data-lng="{{ w.longitude }}"{% endif %}
+                        {% if w.distance_km is not none %}data-km="{{ w.distance_km }}"{% endif %}>
+                        <div class="px-row-img">
+                            {% if w.photo_path %}
+                            <img src="{{ url_for('static', filename=w.photo_path) }}" alt="{{ w.name }}" loading="lazy">
+                            {% else %}
+                            <div class="px-ph"><i class='bx bx-store'></i></div>
+                            {% endif %}
+                        </div>
+                        <div class="px-row-main">
+                            <h3>{{ w.name }}</h3>
+                            <p class="px-addr"><i class='bx bx-map'></i><span>{{ w.address or 'Address not listed' }}</span></p>
+                            {% if w.service_names %}
+                            <div class="px-tags">
+                                {% for s in w.service_names[:3] %}<span class="px-tag">{{ s }}</span>{% endfor %}
+                                {% if w.service_names | length > 3 %}<span class="px-tag">+{{ w.service_names | length - 3 }}</span>{% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="px-row-side">
+                            <span class="px-dist"><i class='bx bx-navigation'></i><span class="px-dist-text">{% if w.distance_label %}{{ w.distance_label }} away{% endif %}</span></span>
+                            <i class='bx bx-right-arrow-alt'></i>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+
+                <div class="px-map-col">
+                    <div class="px-card px-map-frame"><div id="map"></div></div>
+                </div>
+            </div>
+            {% else %}
+            <div class="px-card px-empty">
+                <i class='bx bx-search-alt'></i>
+                <h3>No workshops found</h3>
+                <p>{% if terms %}No workshop offers "{{ terms | join(', ') }}" yet. Try another service or browse everything.{% else %}No workshops are listed yet.{% endif %}</p>
+                <a class="px-btn sm" href="{{ url_for('workshops.search', lat=user_lat, lng=user_lng) }}">Show all workshops</a>
+            </div>
+            {% endif %}
         </div>
-        <p>Already have an account? <a data-login="loginBtn">Login</a></p>
-        <p>or</p>
-        <button class="ggl-btn" id="google-signup-btn">Sign Up with Google</button>
-    </form>
+    </section>
 </div>
+
+{% if not session.get('user_id') %}
+{% include 'partials/px_auth_modals.html' %}
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
 <script>
     const workshopData = [
-        {% for workshop in workshops %}
+        {% for w in workshops %}
         {
-            id: {{ workshop.w_id }},
-            name: {{ workshop.name | tojson }},
-            address: {{ workshop.address | tojson }},
-            lat: {{ workshop.latitude or 'null' }},
-            lng: {{ workshop.longitude or 'null' }}
-        },
+            id: {{ w.w_id | tojson }},
+            name: {{ w.name | tojson }},
+            address: {{ (w.address or '') | tojson }},
+            lat: {{ w.latitude | float if w.latitude is not none else 'null' }},
+            lng: {{ w.longitude | float if w.longitude is not none else 'null' }}
+        }{% if not loop.last %},{% endif %}
         {% endfor %}
     ];
-    const presetUserLat = {{ user_lat or 'null' }};
-    const presetUserLng = {{ user_lng or 'null' }};
+    const presetUserLat = {{ user_lat if user_lat is not none else 'null' }};
+    const presetUserLng = {{ user_lng if user_lng is not none else 'null' }};
 </script>
+<script src="{{ url_for('static', filename='js/distance.js') }}"></script>
 <script src="{{ url_for('static', filename='js/map.js') }}"></script>
 <script>
-    const showMapBtn = document.getElementById('show-map-btn');
-    const showListBtn = document.getElementById('show-list-btn');
-    const mapEl = document.getElementById('map');
-    const listEl = document.getElementById('workshop-list');
+    // When the server did not get coordinates, measure from the browser instead and sort nearest first.
+    (function () {
+        const chip = document.getElementById('loc-chip');
+        const list = document.getElementById('workshop-list');
+        const note = document.getElementById('sort-note');
+        const enable = document.getElementById('enable-location');
+        if (!chip || !window.GW) return;
+        if (presetUserLat !== null) return;   // distances already came from the server
 
-    if (showMapBtn && showListBtn) {
-        showMapBtn.addEventListener('click', () => {
-            mapEl.classList.remove('hidden');
-            listEl.classList.add('hidden');
-            showMapBtn.classList.add('active');
-            showListBtn.classList.remove('active');
-        });
-        showListBtn.addEventListener('click', () => {
-            mapEl.classList.add('hidden');
-            listEl.classList.remove('hidden');
-            showListBtn.classList.add('active');
-            showMapBtn.classList.remove('active');
-        });
-    }
+        const text = chip.querySelector('.loc-text');
+        function off() { text.textContent = 'Turn on location to see distances'; enable.hidden = false; }
+
+        function run(force) {
+            text.textContent = 'Finding your location...';
+            enable.hidden = true;
+            window.GW.getLocation(force).then(function (loc) {
+                chip.classList.add('ok');
+                text.textContent = 'Distances measured from your location';
+                if (list) {
+                    window.GW.fillDistances(list, loc);
+                    window.GW.sortByDistance(list, '.px-row');
+                }
+                if (note) note.textContent = '· nearest first';
+            }).catch(off);
+        }
+
+        enable.addEventListener('click', function () { run(true); });
+        run(false);
+    })();
 </script>
 {% endblock %}

@@ -36,6 +36,10 @@ def create_app():
     app.register_blueprint(customer_bp, url_prefix='/customer')
     app.register_blueprint(mechanics_bp, url_prefix='/mechanics')
 
+    # forms sent by static/js/ajax-forms.js get a JSON answer instead of a redirect
+    from app.ajax import register_ajax
+    register_ajax(app)
+
     @app.context_processor
     def inject_catalog_services():
         # makes `catalog_services` available in every template (navbar dropdown, footer, landing page)

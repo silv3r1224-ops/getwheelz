@@ -1,36 +1,42 @@
 {% extends "base.html" %}
 
-{% block title %}Booking Confirmed — Getwheelz{% endblock %}
+{% block title %}Booking Requested — Getwheelz{% endblock %}
+
+{% block head %}
+{% include 'partials/px_head.html' %}
+{% endblock %}
 
 {% block content %}
-<section class="confirmation-page">
-    <div class="confirmation-icon"><i class='bx bx-check-circle'></i></div>
-    <h1>Booking Requested!</h1>
-    <p>Your request has been sent to the workshop — you'll be notified once it's confirmed.</p>
+<div class="px">
+    <section class="px-confirm" style="padding-bottom: 80px;">
+        <div class="px-wrap px-narrow">
+            <div class="px-check"><i class='bx bx-check'></i></div>
+            <h1 class="px-title" style="margin-top: 0;">Booking <span class="grad">requested.</span></h1>
+            <p class="px-lead" style="margin: 0 auto;">Your request is with the workshop. You will see it move to Confirmed under My Bookings once they accept.</p>
 
-    <div class="confirmation-card">
-        <div class="confirmation-row">
-            <span>Workshop</span>
-            <strong>{{ booking.workshop_name }}</strong>
-        </div>
-        <div class="confirmation-row">
-            <span>Address</span>
-            <strong>{{ booking.address }}</strong>
-        </div>
-        <div class="confirmation-row">
-            <span>Service</span>
-            <strong>{{ booking.s_name }}</strong>
-        </div>
-        <div class="confirmation-row">
-            <span>Requested Time</span>
-            <strong>{{ booking.requested_time.strftime('%d %b %Y, %I:%M %p') }}</strong>
-        </div>
-        <div class="confirmation-row">
-            <span>Status</span>
-            <span class="status-badge status-{{ booking.status }}">{{ booking.status }}</span>
-        </div>
-    </div>
+            <div class="px-card px-receipt">
+                <div class="px-receipt-top">
+                    <small>Booking #{{ booking.b_id }}</small>
+                    <span class="px-badge {{ booking.status }}">{{ booking.status }}</span>
+                </div>
+                <div class="px-divider"></div>
+                <div class="px-sum-row"><span>Workshop</span><b>{{ booking.workshop_name }}</b></div>
+                <div class="px-sum-row"><span>Address</span><b>{{ booking.address or '—' }}</b></div>
+                <div class="px-sum-row"><span>Service</span><b>{{ booking.s_name }}</b></div>
+                <div class="px-sum-row"><span>Requested time</span><b>{{ booking.requested_time.strftime('%a, %d %b %Y, %I:%M %p') }}</b></div>
+            </div>
 
-    <a href="{{ url_for('bookings.my_bookings') }}" class="book-btn">View My Bookings</a>
-</section>
+            <div class="px-timeline">
+                <div class="px-tl done"><i class='bx bx-check'></i><div><b>Request sent</b><span>The workshop has your request.</span></div></div>
+                <div class="px-tl now"><i class='bx bx-time-five'></i><div><b>Waiting for the workshop</b><span>They review it and confirm the time.</span></div></div>
+                <div class="px-tl"><i class='bx bx-wrench'></i><div><b>Service day</b><span>Visit the workshop at the confirmed time.</span></div></div>
+            </div>
+
+            <div class="px-btn-row" style="justify-content: center; margin-top: 26px;">
+                <a href="{{ url_for('bookings.my_bookings') }}" class="px-btn">View my bookings</a>
+                <a href="{{ url_for('customer.home') }}" class="px-ghost">Back to home</a>
+            </div>
+        </div>
+    </section>
+</div>
 {% endblock %}

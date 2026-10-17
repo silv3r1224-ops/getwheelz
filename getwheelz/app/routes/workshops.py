@@ -1,35 +1,86 @@
+import math
 from flask import Blueprint, render_template, request, jsonify, abort, session
 from app.db import get_db_connection
 
 workshops_bp = Blueprint('workshops', __name__)
 
 
+def _distance_km(lat1, lng1, lat2, lng2):
+    """Great-circle distance in kilometres (same formula the /nearby query uses)."""
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    d_lng = math.radians(lng2 - lng1)
+    cos_angle = math.sin(p1) * math.sin(p2) + math.cos(p1) * math.cos(p2) * math.cos(d_lng)
+    return 6371 * math.acos(max(-1.0, min(1.0, cos_angle)))
+
+
+def _distance_label(km):
+    """450 m, 3.2 km, 27 km (kept identical to GW.formatDistance in distance.js)."""
+    if km < 1:
+        return f"{max(10, round(km * 100) * 10)} m"
+    if km < 10:
+        return f"{km:.1f} km"
+    return f"{round(km)} km"
+
+
+def _like(term):
+    """Turn user text into a safe ILIKE pattern (so '%' and '_' typed by the user are literal)."""
+    escaped = term.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+    return f'%{escaped}%'
+
+
 @workshops_bp.route('/search')
 def search():
     service = request.args.get('service', '').strip()
+    picked = [s.strip() for s in request.args.getlist('services') if s.strip()]
+    terms = ([service] if service else []) + [s for s in picked if s.lower() != service.lower()]
+
     lat = request.args.get('lat', type=float)
     lng = request.args.get('lng', type=float)
+    if lat is None or lng is None or not (-90 <= lat <= 90 and -180 <= lng <= 180):
+        lat = lng = None
+
+    where, params = '', []
+    if terms:
+        likes = ' OR '.join(['sc2.s_name ILIKE %s'] * len(terms))
+        where = f"""WHERE EXISTS (
+            SELECT 1 FROM service s2 JOIN service_catalog sc2 ON sc2.sc_id = s2.sc_id
+            WHERE s2.w_id = w.w_id AND ({likes}))"""
+        params = [_like(t) for t in terms]
 
     conn = get_db_connection()
-    cur = conn.cursor()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(f"""
+                SELECT w.w_id, w.name, w.address, w.latitude, w.longitude, w.photo_path,
+                       array_agg(DISTINCT sc.s_name) FILTER (WHERE sc.s_name IS NOT NULL) AS service_names
+                FROM workshop w
+                LEFT JOIN service s ON s.w_id = w.w_id
+                LEFT JOIN service_catalog sc ON sc.sc_id = s.sc_id
+                {where}
+                GROUP BY w.w_id, w.name, w.address, w.latitude, w.longitude, w.photo_path
+            """, params)
+            rows = cur.fetchall()
+    finally:
+        conn.close()
 
-    if service:
-        cur.execute("""
-            SELECT DISTINCT w.w_id, w.name, w.address, w.latitude, w.longitude
-            FROM workshop w
-            JOIN service s ON s.w_id = w.w_id
-            JOIN service_catalog sc ON sc.sc_id = s.sc_id
-            WHERE sc.s_name ILIKE %s
-        """, (f'%{service}%',))
+    workshops = []
+    for r in rows:
+        w = dict(r)
+        w['distance_km'] = w['distance_label'] = None
+        if lat is not None and w['latitude'] is not None and w['longitude'] is not None:
+            km = _distance_km(lat, lng, w['latitude'], w['longitude'])
+            w['distance_km'] = round(km, 3)
+            w['distance_label'] = _distance_label(km)
+        workshops.append(w)
+
+    # nearest first when we know where the visitor is, otherwise A to Z
+    if lat is not None:
+        workshops.sort(key=lambda w: (w['distance_km'] is None, w['distance_km'] or 0, w['name'].lower()))
     else:
-        cur.execute("SELECT w_id, name, address, latitude, longitude FROM workshop")
+        workshops.sort(key=lambda w: w['name'].lower())
 
-    workshops = cur.fetchall()
-    cur.close()
-    conn.close()
-
-    return render_template('workshops/search.html', workshops=workshops,
-                           service=service, user_lat=lat, user_lng=lng)
+    return render_template('workshops/search.html', workshops=workshops, service=service,
+                           terms=terms, user_lat=lat, user_lng=lng)
 
 
 @workshops_bp.route('/nearby')

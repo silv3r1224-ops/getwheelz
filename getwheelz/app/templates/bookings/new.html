@@ -2,31 +2,140 @@
 
 {% block title %}Book a Service — Getwheelz{% endblock %}
 
+{% block head %}
+{% include 'partials/px_head.html' %}
+{% endblock %}
+
 {% block content %}
-<section class="booking-page">
-    <div class="booking-header">
-        <h1>Book a Service</h1>
-        <p class="booking-workshop-name"><i class='bx bx-store'></i> {{ workshop.name }}</p>
-        <p class="booking-workshop-address"><i class='bx bx-map'></i> {{ workshop.address }}</p>
-    </div>
+<div class="px">
+    <section class="px-hero" style="padding-bottom: 0;">
+        <div class="px-wrap">
+            <a class="px-chip" href="{{ url_for('workshops.selected', w_id=workshop.w_id) }}"><i class='bx bx-arrow-back'></i> Back to workshop</a>
+            <h1 class="px-title">Book a service at <span class="grad">{{ workshop.name }}</span></h1>
+            <p class="px-lead"><i class='bx bx-map'></i> {{ workshop.address or 'Address not listed' }}</p>
+        </div>
+    </section>
 
-    <form method="POST" action="{{ url_for('bookings.new', w_id=workshop.w_id) }}" class="booking-form">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <label for="s_id">Select a Service</label>
-        <select name="s_id" id="s_id" required>
-            <option value="" disabled {% if not preselected_service %}selected{% endif %}>Choose a service</option>
-            {% for service in services %}
-            <option value="{{ service.s_id }}" {% if preselected_service==service.s_id %}selected{% endif %}>
-                {{ service.s_name }}{% if service.price_range %} — {{ service.price_range }}{% endif %}
-            </option>
-            {% endfor %}
-        </select>
+    <section class="px-section" style="padding-top: 0; padding-bottom: 80px;">
+        <div class="px-wrap">
+            {% if services %}
+            <form method="POST" action="{{ url_for('bookings.new', w_id=workshop.w_id) }}" class="px-form-grid" id="booking-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-        <label for="requested_time">Preferred Date & Time</label>
-        <input type="datetime-local" id="requested_time" name="requested_time"
-            value="{{ time_value }}" min="{{ min_time }}" required>
+                <div class="px-card px-panel">
+                    <div class="px-step">
+                        <div class="px-step-head"><span class="px-step-num">1</span><h2>Choose a service</h2></div>
+                        <div class="px-choices" role="radiogroup" aria-label="Service">
+                            {% for service in services %}
+                            <label class="px-choice">
+                                <input type="radio" name="s_id" value="{{ service.s_id }}" required
+                                    data-name="{{ service.s_name }}"
+                                    data-price="{{ service.price_range or '' }}"
+                                    data-duration="{{ service.duration or '' }}"
+                                    {% if preselected_service == service.s_id %}checked{% endif %}>
+                                <span class="px-choice-body">
+                                    <span class="px-radio"></span>
+                                    <span class="px-choice-info">
+                                        <strong>{{ service.s_name }}</strong>
+                                        <span>{% if service.duration %}About {{ service.duration }}{% else %}Duration on request{% endif %}</span>
+                                    </span>
+                                    {% if service.price_range %}<span class="px-choice-price">{{ service.price_range }}</span>{% endif %}
+                                </span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
 
-        <button type="submit" class="fw-btn-con"><span class="fw-btn">Confirm Booking</span></button>
-    </form>
-</section>
+                    <div class="px-step" style="margin-bottom: 0;">
+                        <div class="px-step-head"><span class="px-step-num">2</span><h2>Pick a date and time</h2></div>
+                        <div class="px-field">
+                            <label for="requested_time">Preferred date and time</label>
+                            <input class="px-input" type="datetime-local" id="requested_time" name="requested_time"
+                                value="{{ time_value }}" min="{{ min_time }}" required>
+                        </div>
+                        <div class="px-quick" aria-label="Quick picks">
+                            <button type="button" data-days="1">Tomorrow, 10:00 AM</button>
+                            <button type="button" data-days="2">In 2 days, 10:00 AM</button>
+                            <button type="button" data-days="7">Next week, 10:00 AM</button>
+                        </div>
+                    </div>
+                </div>
+
+                <aside class="px-card px-summary px-side">
+                    <h2>Your booking</h2>
+                    <div class="px-sum-row"><span>Workshop</span><b>{{ workshop.name }}</b></div>
+                    <div class="px-sum-row"><span>Service</span><b id="sum-service">Not chosen yet</b></div>
+                    <div class="px-sum-row"><span>Price</span><b id="sum-price">—</b></div>
+                    <div class="px-sum-row"><span>Duration</span><b id="sum-duration">—</b></div>
+                    <div class="px-sum-row"><span>When</span><b id="sum-when">Not chosen yet</b></div>
+                    <div class="px-divider"></div>
+                    <p class="px-note"><i class='bx bx-info-circle' style="color: var(--px-accent-hi);"></i>
+                        This sends a request. The workshop confirms it, and you can follow the status under My Bookings.</p>
+                    <button type="submit" class="px-btn block">Send booking request</button>
+                </aside>
+            </form>
+            {% else %}
+            <div class="px-card px-empty" style="margin-top: 26px;">
+                <i class='bx bx-wrench'></i>
+                <h3>No services to book yet</h3>
+                <p>This workshop hasn't listed any services. Try another workshop.</p>
+                <a class="px-btn sm" href="{{ url_for('workshops.search') }}">Browse workshops</a>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        const form = document.getElementById('booking-form');
+        if (!form) return;
+        const radios = form.querySelectorAll('input[name="s_id"]');
+        const when = document.getElementById('requested_time');
+        const out = {
+            service: document.getElementById('sum-service'),
+            price: document.getElementById('sum-price'),
+            duration: document.getElementById('sum-duration'),
+            when: document.getElementById('sum-when')
+        };
+
+        function pad(n) { return String(n).padStart(2, '0'); }
+        function toLocalInput(d) {
+            return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+        }
+
+        function refresh() {
+            const chosen = form.querySelector('input[name="s_id"]:checked');
+            out.service.textContent = chosen ? chosen.dataset.name : 'Not chosen yet';
+            out.price.textContent = (chosen && chosen.dataset.price) || '—';
+            out.duration.textContent = (chosen && chosen.dataset.duration) || '—';
+            if (when.value) {
+                const d = new Date(when.value);
+                out.when.textContent = isNaN(d) ? 'Not chosen yet' :
+                    d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) + ', ' +
+                    d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+            } else {
+                out.when.textContent = 'Not chosen yet';
+            }
+        }
+
+        radios.forEach((r) => r.addEventListener('change', refresh));
+        when.addEventListener('input', refresh);
+        when.addEventListener('change', refresh);
+
+        form.querySelectorAll('.px-quick button').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const d = new Date();
+                d.setDate(d.getDate() + Number(btn.dataset.days));
+                d.setHours(10, 0, 0, 0);
+                when.value = toLocalInput(d);
+                refresh();
+            });
+        });
+
+        refresh();
+    })();
+</script>
 {% endblock %}
