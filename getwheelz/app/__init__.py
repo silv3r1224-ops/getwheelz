@@ -36,6 +36,12 @@ def create_app():
     app.register_blueprint(customer_bp, url_prefix='/customer')
     app.register_blueprint(mechanics_bp, url_prefix='/mechanics')
 
+    @app.context_processor
+    def inject_catalog_services():
+        # makes `catalog_services` available in every template (navbar dropdown, footer, landing page)
+        from app.catalog import get_catalog_services
+        return {'catalog_services': get_catalog_services()}
+
     @app.errorhandler(CSRFError)
     def handle_csrf_error(e):
         flash('Your session expired or the form was invalid. Please try again.', 'error')
