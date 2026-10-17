@@ -23,7 +23,9 @@ def home():
 
         cur.execute("""
             SELECT w.w_id, w.name, w.address, w.contact_no, w.photo_path, w.capacity,
-            u.name AS owner_name, u.u_id AS owner_uid
+            u.name AS owner_name, u.u_id AS owner_uid,
+            u.profile_picture AS owner_picture, u.created_at AS owner_since,
+            (SELECT COUNT(*) FROM workshop w2 WHERE w2.o_id = w.o_id) AS owner_workshops
             FROM workshop w
             JOIN owner o ON w.o_id = o.o_id
             JOIN users u ON o.u_id = u.u_id
@@ -32,12 +34,15 @@ def home():
         workshop = cur.fetchone()
 
         cur.execute("""
-            SELECT b.b_id, b.requested_time, b.status, u.name AS customer_name, sc.s_name
+            SELECT b.b_id, b.requested_time, b.status, u.name AS customer_name, sc.s_name,
+            b.assigned_m_id, mu.name AS mechanic_name
             FROM booking b
             JOIN customer c ON b.c_id = c.c_id
             JOIN users u ON c.u_id = u.u_id
             JOIN service s ON b.s_id = s.s_id
             JOIN service_catalog sc ON s.sc_id = sc.sc_id
+            LEFT JOIN mechanic bm ON b.assigned_m_id = bm.m_id
+            LEFT JOIN users mu ON bm.u_id = mu.u_id
             WHERE b.w_id = %s
             ORDER BY b.requested_time DESC
         """, (w_id,))
@@ -69,15 +74,22 @@ def home():
         cur.close()
         conn.close()
 
+        # jobs the owner has assigned to this mechanic (cancelled ones are hidden)
+        my_jobs = [b for b in bookings
+                   if b['assigned_m_id'] == mechanic['m_id']
+                   and b['status'] in ('confirmed', 'completed')]
+
         stats = {
             'total': len(bookings),
             'pending': sum(1 for b in bookings if b['status'] == 'pending'),
             'confirmed': sum(1 for b in bookings if b['status'] == 'confirmed'),
             'completed': sum(1 for b in bookings if b['status'] == 'completed'),
+            'mine': sum(1 for b in bookings
+                        if b['assigned_m_id'] == mechanic['m_id'] and b['status'] == 'confirmed'),
         }
         return render_template('mechanics/mechanic_dashboard.html',
                                 workshop=workshop, bookings=bookings, mechanic=mechanic,
-                                team=team, stats=stats,
+                                my_jobs=my_jobs, team=team, stats=stats,
                                 leave_pending=leave_pending, leave_rejected=leave_rejected)
 
     # unassigned: browsable workshop list
@@ -322,6 +334,39 @@ def request_leave():
     flash('Leave request sent. You stay in the workshop until the owner approves it.'
         if sent else 'You already have a pending leave request.', 'success' if sent else 'error')
     return redirect(url_for('mechanics.home'))
+
+
+@mechanics_bp.route('/booking/<int:booking_id>/complete', methods=['POST'])
+@role_required('mechanic')
+def complete_job(booking_id):
+    """A mechanic marks a CONFIRMED job that the owner assigned to them as completed."""
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            # One atomic statement: the booking must be confirmed, assigned to THIS mechanic,
+            # and the mechanic must still work in the booking's workshop.
+            cur.execute("""
+                UPDATE booking SET status = 'completed'
+                WHERE b_id = %s
+                  AND status = 'confirmed'
+                  AND assigned_m_id = (
+                        SELECT m.m_id FROM mechanic m
+                        WHERE m.u_id = %s AND m.w_id = booking.w_id
+                  )
+            """, (booking_id, session['user_id']))
+            changed = cur.rowcount
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+    if changed:
+        flash('Job marked as completed.', 'success')
+    else:
+        flash('You can only complete confirmed jobs that are assigned to you.', 'error')
+    return redirect(url_for('mechanics.home') + '#mMyJobs')
 
 
 @mechanics_bp.route('/leave_request/cancel', methods=['POST'])

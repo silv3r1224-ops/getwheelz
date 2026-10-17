@@ -112,11 +112,14 @@ def my_bookings():
     customer = cur.fetchone()
 
     cur.execute("""
-        SELECT b.b_id, b.requested_time, b.status, w.name AS workshop_name, w.w_id, sc.s_name
+        SELECT b.b_id, b.requested_time, b.status, w.name AS workshop_name, w.w_id, sc.s_name,
+               mu.name AS mechanic_name
         FROM booking b
         JOIN workshop w ON b.w_id = w.w_id
         JOIN service s ON b.s_id = s.s_id
         JOIN service_catalog sc ON sc.sc_id = s.sc_id
+        LEFT JOIN mechanic bm ON b.assigned_m_id = bm.m_id
+        LEFT JOIN users mu ON bm.u_id = mu.u_id
         WHERE b.c_id = %s
         ORDER BY b.requested_time DESC
     """, (customer['c_id'],))
