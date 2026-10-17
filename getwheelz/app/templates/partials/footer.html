@@ -23,10 +23,9 @@
         <div class="footer-col">
             <h5>Services</h5>
             <ul>
-                <li><a href="{{ url_for('workshops.search', service='engine') }}">Engine Repair</a></li>
-                <li><a href="{{ url_for('workshops.search', service='electrical') }}">Electrical</a></li>
-                <li><a href="{{ url_for('workshops.search', service='tires') }}">Tires</a></li>
-                <li><a href="{{ url_for('workshops.search', service='ac') }}">AC Service</a></li>
+                {% for svc in catalog_services[:5] %}
+                <li><a href="{{ url_for('workshops.search', service=svc.name) }}">{{ svc.name }}</a></li>
+                {% endfor %}
             </ul>
         </div>
 

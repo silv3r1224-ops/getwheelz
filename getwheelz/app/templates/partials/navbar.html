@@ -34,12 +34,12 @@
         <ul class="nav-links">
             <li class="dropdown">
                 <a href="#" id="dropdown">Services <i class='bx bx-chevron-down'></i></a>
-                <ul class="dropdown-menu" id="dropdownMenu">
-                    <li><a href="{{ url_for('workshops.search', service='engine') }}">Engine Repair</a></li>
-                    <li><a href="{{ url_for('workshops.search', service='electrical') }}">Electrical</a></li>
-                    <li><a href="{{ url_for('workshops.search', service='tires') }}">Tires</a></li>
-                    <li><a href="{{ url_for('workshops.search', service='ac') }}">AC Service</a></li>
-                    <li><a href="{{ url_for('workshops.search', service='general') }}">General Servicing</a></li>
+                <ul class="dropdown-menu" id="dropdownMenu" style="max-height: 60vh; overflow-y: auto;">
+                    {% for svc in catalog_services %}
+                    <li><a href="{{ url_for('workshops.search', service=svc.name) }}">{{ svc.name }}</a></li>
+                    {% else %}
+                    <li><a href="{{ url_for('workshops.search') }}">Browse all workshops</a></li>
+                    {% endfor %}
                 </ul>
             </li>
             <li><a href="{{ url_for('workshops.search') }}">Find Workshops</a></li>
