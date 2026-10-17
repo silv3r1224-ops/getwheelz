@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}{{ person.name }} — Getwheelz{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+
+    <aside class="admin-sidebar" id="sideBar">
+        <div class="sidebar-header">
+            <i class='bx bxs-store'></i>
+            <span>Owner Panel</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('dashboard.owner') }}" class="sidebar-link"><i class='bx bx-arrow-back'></i> Back to my panel</a>
+            <a href="#overview" class="sidebar-link active"><i class='bx bx-user'></i> Profile</a>
+            {% if is_member %}
+            <a href="#pfJobs" class="sidebar-link"><i class='bx bx-wrench'></i> Jobs</a>
+            {% endif %}
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-link"><i class='bx bx-log-out'></i> Logout</a>
+        </div>
+    </aside>
+
+    <main class="admin-main wp-main">
+
+        {# ---------------- hero ---------------- #}
+        <header class="wp-hero" id="overview">
+            <div class="team-avatar hero-avatar">
+                {% if person.profile_picture %}
+                <img src="{{ url_for('static', filename=person.profile_picture) }}" alt="{{ person.name }}">
+                {% else %}
+                <span>{{ person.name[:1] | upper }}</span>
+                {% endif %}
+            </div>
+
+            <div class="wp-hero-info">
+                <span class="preview-badge">
+                    {% if is_applicant %}<i class='bx bx-user-plus'></i> Applied to join {{ workshop.name }}
+                    {% else %}<i class='bx bx-show'></i> Team member at {{ workshop.name }}{% endif %}
+                </span>
+                <h1>{{ person.name }}</h1>
+                <p class="wp-line"><i class='bx bxs-wrench'></i> Mechanic</p>
+                <p class="wp-line"><i class='bx bx-envelope'></i> {{ person.email }}</p>
+                {% if person.created_at %}
+                <p class="wp-line"><i class='bx bx-calendar'></i> Member since {{ person.created_at.strftime('%b %Y') }}</p>
+                {% endif %}
+            </div>
+
+            <div class="wp-apply">
+                <a href="{{ url_for('dashboard.owner') }}#{{ 'joiningRequests' if is_applicant else 'mechanics' }}" class="back-link"><i
+                        class='bx bx-arrow-back'></i> Go back</a>
+            </div>
+        </header>
+
+        {# ---------------- stats ---------------- #}
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-number">{{ person.experience_yrs if person.experience_yrs else '—' }}</span>
+                <span class="stat-label">Years of Experience</span>
+            </div>
+            {% if is_member %}
+            <div class="stat-card">
+                <span class="stat-number" style="font-size:1.3rem; text-transform:capitalize;">{{ person.active_stat or '—' }}</span>
+                <span class="stat-label">Availability</span>
+            </div>
+            <div class="stat-card {% if jobs.active %}highlight{% endif %}">
+                <span class="stat-number">{{ jobs.active }}</span>
+                <span class="stat-label">Jobs In Progress</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ jobs.completed }}</span>
+                <span class="stat-label">Jobs Completed</span>
+            </div>
+            {% endif %}
+        </div>
+
+        {# ---------------- applicant: decide right here ---------------- #}
+        {% if is_applicant %}
+        <section class="admin-section wp-panel" id="pfDecision">
+            <h2>Joining Request</h2>
+            <p class="leave-text">
+                {{ person.name }} wants to join <strong>{{ workshop.name }}</strong>.
+                {% if full %}Your workshop is at full capacity ({{ workshop.team_size }}/{{ workshop.capacity }}), so you can't accept right now.{% endif %}
+            </p>
+            <form method="POST" action="{{ url_for('dashboard.review_mechanic', jr_id=person.jr_id, action='accept') }}"
+                class="inline-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="mini-btn confirm" {% if full %}disabled title="Workshop is at full capacity"{% endif %}>
+                    <i class='bx bx-check'></i> Accept
+                </button>
+            </form>
+            <form method="POST" action="{{ url_for('dashboard.review_mechanic', jr_id=person.jr_id, action='reject') }}"
+                class="inline-form" onsubmit="return confirm('Reject this mechanic application?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="mini-btn cancel"><i class='bx bx-x'></i> Reject</button>
+            </form>
+        </section>
+        {% endif %}
+
+        {# ---------------- member: leave notice ---------------- #}
+        {% if is_member and person.leave_pending %}
+        <section class="admin-section wp-panel">
+            <div class="notice-card notice-bad">
+                <i class='bx bx-log-out-circle'></i>
+                <div>
+                    <strong>Leave requested</strong>
+                    <p>{{ person.name }} has asked to leave your workshop. You can approve or decline it from your panel.</p>
+                </div>
+            </div>
+        </section>
+        {% endif %}
+
+        {% if is_member %}
+        <section class="admin-section wp-panel" id="pfJobs">
+            <h2>Jobs at {{ workshop.name }}</h2>
+            <p class="leave-text">
+                {{ person.name }} has completed <strong>{{ jobs.completed }}</strong>
+                job{{ '' if jobs.completed == 1 else 's' }} here and currently has
+                <strong>{{ jobs.active }}</strong> in progress.
+                Assign more from the Bookings table on your panel.
+            </p>
+        </section>
+        {% endif %}
+    </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin.js') }}" defer></script>
+{% endblock %}

@@ -673,6 +673,21 @@
             <i class='bx bxs-store'></i>
             <span>Owner Panel</span>
         </div>
+        {% if not workshop %}
+        <div class="sidebar-warning">
+            <i class='bx bx-error'></i>
+            <p>You haven't created your workshop yet. Set it up to start receiving bookings and mechanics.</p>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('dashboard.owner') }}" class="sidebar-link active">
+                <i class='bx bx-rocket'></i> Get started
+            </a>
+            <a href="#" class="sidebar-link"
+                onclick="document.getElementById('create-workshop-btn').click(); return false;">
+                <i class='bx bx-plus-circle'></i> Create workshop
+            </a>
+        </nav>
+        {% else %}
         <nav class="sidebar-nav">
             <a href="{{ url_for('dashboard.owner') }}" class="sidebar-link active">
                 <i class='bx bx-grid-alt'></i> Overview
@@ -694,6 +709,7 @@
                 <i class='bx bx-group'></i> Mechanics
             </a>
         </nav>
+        {% endif %}
         <div class="sidebar-footer">
             <a href="{{ url_for('auth.logout') }}" class="sidebar-link">
                 <i class='bx bx-log-out'></i> Logout
@@ -851,6 +867,7 @@
                             <th>Service</th>
                             <th>Requested Time</th>
                             <th>Status</th>
+                            <th>Assigned Mechanic</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -862,6 +879,32 @@
                             <td>{{ b.s_name }}</td>
                             <td>{{ b.requested_time.strftime('%d %b %Y, %I:%M %p') }}</td>
                             <td><span class="status-badge status-{{ b.status }}">{{ b.status }}</span></td>
+                            <td>
+                                {% if b.status == 'confirmed' %}
+                                {% if mechanics %}
+                                <form method="POST"
+                                    action="{{ url_for('dashboard.assign_booking', booking_id=b.b_id) }}"
+                                    class="inline-form assign-form">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <select name="m_id" class="assign-select" aria-label="Assign mechanic">
+                                        <option value="" {% if not b.assigned_m_id %}selected{% endif %}>Unassigned</option>
+                                        {% for m in mechanics %}
+                                        <option value="{{ m.m_id }}" {% if b.assigned_m_id == m.m_id %}selected{% endif %}>
+                                            {{ m.name }}{% if m.leave_pending %} (leaving){% endif %}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="submit" class="mini-btn confirm">Save</button>
+                                </form>
+                                {% else %}
+                                <span style="color: var(--text-muted); font-size: 13px;">No mechanics in your workshop yet</span>
+                                {% endif %}
+                                {% elif b.status == 'completed' and b.mechanic_name %}
+                                <strong>{{ b.mechanic_name }}</strong>
+                                {% else %}
+                                <span style="color: var(--text-muted); font-size: 13px;">&mdash;</span>
+                                {% endif %}
+                            </td>
                             <td>
                                 {% if b.status == 'pending' %}
                                 <form method="POST"
@@ -927,6 +970,12 @@
                             <td>{{ s.price_range or '—' }}</td>
                             <td>{{ s.duration or '—' }}</td>
                             <td>
+                                <button type="button" class="mini-btn neutral"
+                                    data-edit-url="{{ url_for('dashboard.edit_service', s_id=s.s_id) }}"
+                                    data-name="{{ s.s_name }}" data-price="{{ s.price_range or '' }}"
+                                    data-duration="{{ s.duration or '' }}">
+                                    <i class='bx bx-edit'></i> Edit
+                                </button>
                                 {% if s.booking_count %}
                                 <button type="button" class="mini-btn cancel" disabled
                                     title="This service has bookings, so it can't be removed">
@@ -970,10 +1019,13 @@
                         {% for m in pending_requests %}
                         <tr>
                             <td>{{ loop.index }}</td>
-                            <td><strong>{{ m.name }}</strong></td>
+                            <td><a class="person-link" href="{{ url_for('dashboard.mechanic_profile', token=m.u_id | utoken) }}"
+                                    title="Review {{ m.name }}'s profile"><strong>{{ m.name }}</strong></a></td>
                             <td>{{ m.email }}</td>
                             <td>{% if m.experience_yrs %}{{ m.experience_yrs }} yrs{% else %}—{% endif %}</td>
                             <td>
+                                <a href="{{ url_for('dashboard.mechanic_profile', token=m.u_id | utoken) }}"
+                                    class="mini-btn neutral"><i class='bx bx-user'></i> Profile</a>
                                 <form method="POST"
                                     action="{{ url_for('dashboard.review_mechanic', jr_id=m.jr_id, action='accept') }}"
                                     class="inline-form">
@@ -1066,13 +1118,15 @@
                             <th>Email</th>
                             <th>Experience</th>
                             <th>Current Status</th>
+                            <th>Profile</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for m in mechanics %}
                         <tr>
                             <td>{{ loop.index }}</td>
-                            <td><strong>{{ m.name }}</strong></td>
+                            <td><a class="person-link" href="{{ url_for('dashboard.mechanic_profile', token=m.u_id | utoken) }}"
+                                    title="View {{ m.name }}'s profile"><strong>{{ m.name }}</strong></a></td>
                             <td>{{ m.email }}</td>
                             <td>{{ m.experience_yrs or '—' }} yrs</td>
                             <td>
@@ -1082,6 +1136,10 @@
                                 </span>
                                 {% if m.leave_pending %}<span class="status-badge status-cancelled">Leave
                                     requested</span>{% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('dashboard.mechanic_profile', token=m.u_id | utoken) }}"
+                                    class="mini-btn neutral"><i class='bx bx-user'></i> View</a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -1109,6 +1167,18 @@
         <input type="text" name="price_range" placeholder="Price Range (e.g. ₹500–800)">
         <input type="text" name="duration" placeholder="Duration (e.g. 1–2 hours)">
         <button type="submit" class="fw-btn-con"><span class="fw-btn">Add Service</span></button>
+    </form>
+</div>
+<!-- Modal: Edit Service -->
+<div class="login-modal" id="editServiceModal">
+    <form method="POST" action="" class="login-form" id="editServiceForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <h2>Edit <span id="editServiceName">Service</span></h2>
+        <input type="text" name="price_range" id="editServicePrice" maxlength="50"
+            placeholder="Price Range (e.g. ₹500–800)">
+        <input type="text" name="duration" id="editServiceDuration" maxlength="50"
+            placeholder="Duration (e.g. 1–2 hours)">
+        <button type="submit" class="fw-btn-con"><span class="fw-btn">Save Changes</span></button>
     </form>
 </div>
 <!-- Modal: Create Workshop -->
@@ -1176,6 +1246,37 @@
 <script src="{{ url_for('static', filename='js/customer-home.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/admin.js') }}" defer></script>
 <script>
+    // Edit-service modal
+    (function () {
+        var modal = document.getElementById('editServiceModal');
+        if (!modal) return;
+        var form = document.getElementById('editServiceForm');
+        var pressStartedInside = false;
+        document.addEventListener('pointerdown', function (e) {
+            pressStartedInside = modal.contains(e.target);
+        });
+        document.addEventListener('click', function (e) {
+            var trigger = e.target.closest('[data-edit-url]');
+            if (trigger) {
+                form.action = trigger.dataset.editUrl;
+                document.getElementById('editServiceName').textContent = trigger.dataset.name;
+                document.getElementById('editServicePrice').value = trigger.dataset.price;
+                document.getElementById('editServiceDuration').value = trigger.dataset.duration;
+                modal.classList.add('show');
+                document.getElementById('editServicePrice').focus();
+                return;
+            }
+            // Click outside the card closes it (the modal IS the card, there is no backdrop element).
+            // Ignore it if the press started inside the card, e.g. dragging to select text in an input.
+            if (modal.classList.contains('show') && !modal.contains(e.target) && !pressStartedInside) {
+                modal.classList.remove('show');
+            }
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') modal.classList.remove('show');
+        });
+    })();
+
     // Remove-service confirmation dialog
     (function () {
         var dialog = document.getElementById('confirmDialog');

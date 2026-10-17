@@ -77,6 +77,10 @@
                 <span class="stat-number">{{ stats.pending }}</span>
                 <span class="stat-label">Pending</span>
             </div>
+            <div class="stat-card {% if stats.mine %}highlight{% endif %}">
+                <span class="stat-number">{{ stats.mine }}</span>
+                <span class="stat-label">Assigned to Me</span>
+            </div>
             <div class="stat-card">
                 <span class="stat-number">{{ stats.confirmed }}</span>
                 <span class="stat-label">Confirmed</span>
@@ -87,7 +91,55 @@
             </div>
         </div>
 
-        {# ---------------- bookings (read-only) ---------------- #}
+        {# ---------------- jobs assigned to me by the owner ---------------- #}
+        <section class="admin-section wp-panel" id="mMyJobs">
+            <h2>My Assigned Jobs</h2>
+            {% if my_jobs %}
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>S.No</th>
+                            <th>Customer</th>
+                            <th>Service</th>
+                            <th>Requested Time</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in my_jobs %}
+                        <tr {% if b.status == 'confirmed' %}class="assigned-to-me"{% endif %}>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ b.customer_name }}</td>
+                            <td>{{ b.s_name }}</td>
+                            <td>{{ b.requested_time.strftime('%d %b %Y, %I:%M %p') }}</td>
+                            <td><span class="status-badge status-{{ b.status }}">{{ b.status }}</span></td>
+                            <td>
+                                {% if b.status == 'confirmed' %}
+                                <form method="POST" action="{{ url_for('mechanics.complete_job', booking_id=b.b_id) }}"
+                                    class="inline-form" data-confirm-title="Mark this job as completed?"
+                                    data-confirm-text="{{ b.s_name }} for {{ b.customer_name }} will be shown as done to the owner and the customer."
+                                    data-confirm-yes="Yes, mark complete">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="mini-btn confirm"><i class='bx bx-check-double'></i>
+                                        Mark Complete</button>
+                                </form>
+                                {% else %}
+                                <span style="color: var(--text-muted); font-size: 13px;">Done</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="no-results">No jobs assigned to you yet. When the owner assigns you a confirmed booking, it will appear here.</p>
+            {% endif %}
+        </section>
+
+        {# ---------------- all workshop bookings (read-only) ---------------- #}
         <section class="admin-section wp-panel" id="mBookings">
             <h2>Workshop Bookings</h2>
             {% if bookings %}
@@ -100,16 +152,26 @@
                             <th>Service</th>
                             <th>Requested Time</th>
                             <th>Status</th>
+                            <th>Assigned To</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for b in bookings %}
-                        <tr>
+                        <tr {% if b.assigned_m_id == mechanic.m_id and b.status == 'confirmed' %}class="assigned-to-me"{% endif %}>
                             <td>{{ loop.index }}</td>
                             <td>{{ b.customer_name }}</td>
                             <td>{{ b.s_name }}</td>
                             <td>{{ b.requested_time.strftime('%d %b %Y, %I:%M %p') }}</td>
                             <td><span class="status-badge status-{{ b.status }}">{{ b.status }}</span></td>
+                            <td>
+                                {% if b.status == 'cancelled' or not b.mechanic_name %}
+                                <span style="color: var(--text-muted);">&mdash;</span>
+                                {% elif b.assigned_m_id == mechanic.m_id %}
+                                <strong>You</strong>
+                                {% else %}
+                                {{ b.mechanic_name }}
+                                {% endif %}
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -150,7 +212,12 @@
             <h2>My Team <span class="count-pill">{{ team | length }}/{{ workshop.capacity }}</span></h2>
             <div class="team-grid">
                 {% for t in team %}
-                <div class="team-card {% if t.m_id == mechanic.m_id %}is-me{% endif %}">
+                <div class="team-card profile-trigger {% if t.m_id == mechanic.m_id %}is-me{% endif %}" role="button"
+                    tabindex="0" data-role="Mechanic" data-name="{{ t.name }}"
+                    data-picture="{{ url_for('static', filename=t.profile_picture) if t.profile_picture else '' }}"
+                    data-experience="{{ (t.experience_yrs ~ ' yrs') if t.experience_yrs else '' }}"
+                    data-status="{{ t.active_stat or '' }}"
+                    data-url="{{ url_for('mechanics.user_profile', token=t.u_id | utoken) }}">
                     <div class="team-avatar">
                         {% if t.profile_picture %}
                         <img src="{{ url_for('static', filename=t.profile_picture) }}" alt="{{ t.name }}">
@@ -163,6 +230,7 @@
                         {% if t.experience_yrs %}{{ t.experience_yrs }} yr{{ '' if t.experience_yrs == 1 else 's' }}
                         experience{% else %}Experience not listed{% endif %}
                     </p>
+                    <small class="view-profile-hint">View profile</small>
                 </div>
                 {% endfor %}
             </div>
@@ -204,4 +272,21 @@
 
     </main>
 </div>
+
+{# ---------------- profile popup (owner and team mechanics) ---------------- #}
+<div class="confirm-dialog" id="profilePop" role="dialog" aria-modal="true" aria-labelledby="ppName">
+    <div class="confirm-box profile-pop-box">
+        <button type="button" class="pp-close" data-close aria-label="Close">&times;</button>
+        <div class="team-avatar pp-avatar" id="ppAvatar"></div>
+        <h3 id="ppName"></h3>
+        <span class="owner-badge" id="ppRole"></span>
+        <ul class="pp-details" id="ppDetails"></ul>
+        <a href="#" class="join-btn" id="ppLink">View full profile</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/profile.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/confirm.js') }}" defer></script>
 {% endblock %}
