@@ -367,6 +367,35 @@
     @media (prefers-reduced-motion: reduce) {
         .lp *, .lp *::before, .lp *::after { animation: none !important; transition: none !important; }
     }
+
+    /* ==========================================================================
+       BLACK CARDS — every card is solid black with white text in both themes.
+       Overriding the variables here is enough because the card rules above
+       read them (--lp-surface, --lp-line, --text-color, --text-muted).
+       To change the black, edit --lp-card-bg only.
+       ========================================================================== */
+    .lp-stats-bar, .lp-tile, .lp-step, .lp-role, .lp-faq-list details,
+    .lp-map-frame, .lp-final-card, .lp-card, .lp-toast {
+        --lp-card-bg: #09090b;
+        --text-color: #fff;
+        --text-muted: rgba(255, 255, 255, .62);
+        --lp-line: rgba(255, 255, 255, .11);
+        --lp-surface: var(--lp-card-bg);
+        --lp-surface-hi: #151518;
+        background: var(--lp-card-bg);
+        color: #fff;
+        box-shadow: 0 26px 50px -30px rgba(0, 0, 0, .75);
+    }
+    .lp-final-card {
+        background:
+            radial-gradient(600px 320px at 50% 0%, color-mix(in srgb, var(--main-color) 34%, transparent), transparent 70%),
+            var(--lp-card-bg);
+    }
+    .lp-card, .lp-toast {
+        box-shadow: 0 40px 80px -36px rgba(0, 0, 0, .8), inset 0 1px 0 rgba(255, 255, 255, .1);
+    }
+    .lp-faq-list details[open] { background: var(--lp-surface-hi); }
+    .lp-role:hover { box-shadow: 0 30px 60px -34px color-mix(in srgb, var(--main-color) 60%, transparent); }
 </style>
 {% endblock %}
 
@@ -387,13 +416,15 @@
                     <button class="lp-btn" type="submit">Find workshops</button>
                 </form>
 
+                {% set popular = catalog_services | selectattr('count') | sort(attribute='name') | sort(attribute='count', reverse=true) | list %}
+                {% if popular %}
                 <div class="lp-chips">
                     <span>Popular:</span>
-                    <a class="lp-chip" href="{{ url_for('workshops.search', service='engine') }}">Engine repair</a>
-                    <a class="lp-chip" href="{{ url_for('workshops.search', service='tires') }}">Tires</a>
-                    <a class="lp-chip" href="{{ url_for('workshops.search', service='ac') }}">AC service</a>
-                    <a class="lp-chip" href="{{ url_for('workshops.search', service='electrical') }}">Electrical</a>
+                    {% for svc in popular[:4] %}
+                    <a class="lp-chip" href="{{ url_for('workshops.search', service=svc.name) }}">{{ svc.name }}</a>
+                    {% endfor %}
                 </div>
+                {% endif %}
 
                 <div class="lp-cta-row">
                     <a class="lp-btn" href="#" data-signup="signupBtn">Get started <i class='bx bx-right-arrow-alt'></i></a>
@@ -467,26 +498,24 @@
                 <p>Pick a service and see the workshops that offer it, nearest first.</p>
             </div>
             <div class="lp-tiles">
-                <a class="lp-tile" href="{{ url_for('workshops.search', service='engine') }}">
-                    <i class='bx bx-cog main'></i><b>Engine repair</b>
+                {% for svc in catalog_services[:10] %}
+                {% set n = svc.name | lower %}
+                {% set icon = 'bx-cog' if 'engine' in n
+                    else 'bx-bolt-circle' if ('electr' in n or 'battery' in n)
+                    else 'bx-disc' if ('tire' in n or 'tyre' in n or 'wheel' in n)
+                    else 'bx-wind' if ('ac' in n.split() or 'a/c' in n or 'air' in n.split() or 'conditioning' in n or 'cooling' in n)
+                    else 'bx-stop-circle' if 'brake' in n
+                    else 'bx-droplet' if ('oil' in n.split() or 'fluid' in n)
+                    else 'bx-brush' if ('paint' in n or 'body' in n.split() or 'denting' in n)
+                    else 'bx-water' if ('wash' in n or 'clean' in n or 'detail' in n)
+                    else 'bx-wrench' %}
+                <a class="lp-tile" href="{{ url_for('workshops.search', service=svc.name) }}">
+                    <i class='bx {{ icon }} main'></i><b>{{ svc.name }}</b>
                     <span class="go">Browse <i class='bx bx-right-arrow-alt'></i></span>
                 </a>
-                <a class="lp-tile" href="{{ url_for('workshops.search', service='electrical') }}">
-                    <i class='bx bx-bolt-circle main'></i><b>Electrical</b>
-                    <span class="go">Browse <i class='bx bx-right-arrow-alt'></i></span>
-                </a>
-                <a class="lp-tile" href="{{ url_for('workshops.search', service='tires') }}">
-                    <i class='bx bx-disc main'></i><b>Tires</b>
-                    <span class="go">Browse <i class='bx bx-right-arrow-alt'></i></span>
-                </a>
-                <a class="lp-tile" href="{{ url_for('workshops.search', service='ac') }}">
-                    <i class='bx bx-wind main'></i><b>AC service</b>
-                    <span class="go">Browse <i class='bx bx-right-arrow-alt'></i></span>
-                </a>
-                <a class="lp-tile" href="{{ url_for('workshops.search', service='general') }}">
-                    <i class='bx bx-wrench main'></i><b>General servicing</b>
-                    <span class="go">Browse <i class='bx bx-right-arrow-alt'></i></span>
-                </a>
+                {% else %}
+                <p style="grid-column: 1 / -1; color: var(--text-muted);">Services will appear here once the admin adds them to the catalog.</p>
+                {% endfor %}
             </div>
         </div>
     </section>
