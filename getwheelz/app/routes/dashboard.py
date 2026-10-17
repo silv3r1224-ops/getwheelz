@@ -5,6 +5,7 @@ import os
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.db import get_db_connection
+from app.catalog import clear_catalog_cache
 from app.utils import login_required, role_required, admin_access_required, decode_uid, decode_wid
 
 dashboard_bp = Blueprint("dashboard", __name__)
@@ -428,6 +429,7 @@ def admin_services():
                         try:
                             cur.execute("INSERT INTO service_catalog (s_name) VALUES (%s)", (s_name,))
                             conn.commit()
+                            clear_catalog_cache()
                             flash(f'"{s_name}" added to the service catalog.', 'success')
                         except Exception:
                             conn.rollback()
@@ -483,6 +485,7 @@ def rename_catalog_service(sc_id):
                     try:
                         cur.execute("UPDATE service_catalog SET s_name = %s WHERE sc_id = %s", (new_name, sc_id))
                         conn.commit()
+                        clear_catalog_cache()
                         flash(f'Renamed to "{new_name}".', 'success')
                     except Exception:
                         conn.rollback()
@@ -514,6 +517,7 @@ def delete_catalog_service(sc_id):
                 try:
                     cur.execute("DELETE FROM service_catalog WHERE sc_id = %s", (sc_id,))
                     conn.commit()
+                    clear_catalog_cache()
                     flash(f'"{row["s_name"]}" removed from the catalog.', 'success')
                 except Exception:
                     conn.rollback()
@@ -661,12 +665,15 @@ def owner():
 
     if workshop:
         cur.execute("""
-            SELECT b.b_id, b.requested_time, b.status, u.name AS customer_name, sc.s_name
+            SELECT b.b_id, b.requested_time, b.status, u.name AS customer_name, sc.s_name,
+            b.assigned_m_id, mu.name AS mechanic_name
             FROM booking b
             JOIN customer c ON b.c_id = c.c_id
             JOIN users u ON c.u_id = u.u_id
             JOIN service s ON b.s_id = s.s_id
             JOIN service_catalog sc ON s.sc_id = sc.sc_id
+            LEFT JOIN mechanic bm ON b.assigned_m_id = bm.m_id
+            LEFT JOIN users mu ON bm.u_id = mu.u_id
             WHERE b.w_id = %s
             ORDER BY b.requested_time DESC
         """, (workshop['w_id'],))
@@ -683,7 +690,7 @@ def owner():
         services = cur.fetchall()
 
         cur.execute("""
-            SELECT m.m_id, u.name, u.email, m.experience_yrs, m.active_stat,
+            SELECT m.m_id, u.u_id, u.name, u.email, m.experience_yrs, m.active_stat,
             (m.leave_requested_at IS NOT NULL) AS leave_pending
             FROM mechanic m JOIN users u ON m.u_id = u.u_id
             WHERE m.w_id = %s
@@ -700,7 +707,7 @@ def owner():
         leave_requests = cur.fetchall()
 
         cur.execute("""
-            SELECT jr.jr_id, m.m_id, u.name, u.email, m.experience_yrs
+            SELECT jr.jr_id, m.m_id, u.u_id, u.name, u.email, m.experience_yrs
             FROM join_request jr
             JOIN mechanic m ON jr.m_id = m.m_id
             JOIN users u ON m.u_id = u.u_id
@@ -728,6 +735,103 @@ def owner():
         pending_requests=pending_requests,
         leave_requests=leave_requests
     )
+
+@dashboard_bp.route('/owner/mechanic/<token>')
+@role_required('owner')
+def mechanic_profile(token):
+    """Read-only profile of a mechanic who works in, or has applied to, this owner's workshop."""
+    u_id = decode_uid(token)
+    if u_id is None:
+        abort(404)
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT w.w_id, w.name, w.capacity,
+                       (SELECT COUNT(*) FROM mechanic m WHERE m.w_id = w.w_id) AS team_size
+                FROM workshop w JOIN owner o ON w.o_id = o.o_id
+                WHERE o.u_id = %s
+            """, (session['user_id'],))
+            ws = cur.fetchone()
+            if not ws:
+                abort(403)
+
+            cur.execute("""
+                SELECT u.u_id, u.name, u.email, u.profile_picture, u.created_at,
+                       m.m_id, m.experience_yrs, m.active_stat, m.w_id,
+                       (m.leave_requested_at IS NOT NULL) AS leave_pending,
+                       (SELECT jr.jr_id FROM join_request jr
+                        WHERE jr.m_id = m.m_id AND jr.w_id = %s AND jr.status = 'pending'
+                        ORDER BY jr.created_at DESC LIMIT 1) AS jr_id
+                FROM mechanic m JOIN users u ON m.u_id = u.u_id
+                WHERE u.u_id = %s
+            """, (ws['w_id'], u_id))
+            person = cur.fetchone()
+
+            # only people connected to THIS workshop are viewable
+            is_member = bool(person) and person['w_id'] == ws['w_id']
+            is_applicant = bool(person) and person['w_id'] is None and person['jr_id'] is not None
+            if not (is_member or is_applicant):
+                abort(404)
+
+            jobs = None
+            if is_member:
+                cur.execute("""
+                    SELECT COUNT(*) FILTER (WHERE status = 'completed') AS completed,
+                           COUNT(*) FILTER (WHERE status = 'confirmed') AS active
+                    FROM booking
+                    WHERE assigned_m_id = %s AND w_id = %s
+                """, (person['m_id'], ws['w_id']))
+                jobs = cur.fetchone()
+    finally:
+        conn.close()
+
+    return render_template('dashboard/mechanic_profile.html',
+                           person=person, workshop=ws, jobs=jobs,
+                           is_member=is_member, is_applicant=is_applicant,
+                           full=ws['team_size'] >= ws['capacity'])
+
+
+@dashboard_bp.route('/owner/service/<int:s_id>/edit', methods=['POST'])
+@role_required('owner')
+def edit_service(s_id):
+    """Update the price range and duration of one of this owner's services."""
+    price_range = (request.form.get('price_range') or '').strip()
+    duration = (request.form.get('duration') or '').strip()
+
+    # columns are VARCHAR(50)
+    if len(price_range) > 50 or len(duration) > 50:
+        flash('Price range and duration must be 50 characters or fewer.', 'error')
+        return redirect(url_for('dashboard.owner') + '#services')
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            # the service must belong to THIS owner's workshop (checked inside the UPDATE)
+            cur.execute("""
+                UPDATE service SET price_range = %s, duration = %s
+                WHERE s_id = %s
+                  AND w_id = (
+                        SELECT w.w_id FROM workshop w
+                        JOIN owner o ON w.o_id = o.o_id
+                        WHERE o.u_id = %s
+                  )
+            """, (price_range or None, duration or None, s_id, session['user_id']))
+            changed = cur.rowcount
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+    if changed:
+        flash('Service updated.', 'success')
+    else:
+        flash('Service not found.', 'error')
+    return redirect(url_for('dashboard.owner') + '#services')
+
 
 @dashboard_bp.route('/owner/service/<int:s_id>/remove', methods=['POST'])
 @role_required('owner')
@@ -806,6 +910,11 @@ def review_leave(lr_id, action):
             UPDATE mechanic
             SET w_id = NULL, leave_requested_at = NULL, leave_reason = NULL, leave_rejected_at = NULL
             WHERE m_id = %s
+        """, (lr_id,))
+        # jobs not yet finished go back to "unassigned" so the owner can reassign them
+        cur.execute("""
+            UPDATE booking SET assigned_m_id = NULL
+            WHERE assigned_m_id = %s AND status IN ('pending', 'confirmed')
         """, (lr_id,))
         conn.commit()
         flash('Leave approved. The mechanic has been released from your workshop.', 'success')
@@ -902,6 +1011,66 @@ def update_booking_status(booking_id, action):
 
     flash(f'Booking {new_status}.' if changed else 'Booking not found or cannot be changed.', 'success' if changed else 'error')
     return redirect(url_for('dashboard.owner'))
+
+@dashboard_bp.route('/owner/booking/<int:booking_id>/assign', methods=['POST'])
+@role_required('owner')
+def assign_booking(booking_id):
+    """Assign a CONFIRMED booking to a mechanic of this owner's workshop (blank = unassign)."""
+    raw = (request.form.get('m_id') or '').strip()
+    try:
+        m_id = int(raw) if raw else None
+    except ValueError:
+        abort(400)
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT w.w_id FROM workshop w
+                JOIN owner o ON w.o_id = o.o_id
+                WHERE o.u_id = %s
+            """, (session['user_id'],))
+            ws = cur.fetchone()
+            if not ws:
+                abort(403)
+
+            mech_name = None
+            if m_id is not None:
+                # the mechanic must work in THIS workshop (row is locked so a leave
+                # approval can't slip in between this check and the update)
+                cur.execute("""
+                    SELECT u.name FROM mechanic m
+                    JOIN users u ON m.u_id = u.u_id
+                    WHERE m.m_id = %s AND m.w_id = %s
+                    FOR SHARE OF m
+                """, (m_id, ws['w_id']))
+                row = cur.fetchone()
+                if not row:
+                    conn.rollback()
+                    flash('That mechanic is not part of your workshop.', 'error')
+                    return redirect(url_for('dashboard.owner'))
+                mech_name = row['name']
+
+            # only this workshop's bookings, and only once the booking is confirmed
+            cur.execute("""
+                UPDATE booking SET assigned_m_id = %s
+                WHERE b_id = %s AND w_id = %s AND status = 'confirmed'
+            """, (m_id, booking_id, ws['w_id']))
+            changed = cur.rowcount
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+    if not changed:
+        flash('Only confirmed bookings of your workshop can be assigned.', 'error')
+    elif mech_name:
+        flash(f'Booking assigned to {mech_name}.', 'success')
+    else:
+        flash('Booking is now unassigned.', 'success')
+    return redirect(url_for('dashboard.owner') + '#bookings')
 
 #add service for owner
 @dashboard_bp.route('/owner/add-service', methods=['POST'])
