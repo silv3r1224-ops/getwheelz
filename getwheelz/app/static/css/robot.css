@@ -1,0 +1,185 @@
+/* ==========================================================================
+   GetWheelz robot mascot: an animated SVG character.
+   Use through the Jinja macro in templates/partials/robot.html.
+
+   Moods (data-mood):  neutral | happy | working | strained
+   Skins (data-skin):  (cyan default) | lime | amber | violet
+   Everything moves with CSS; robot.js adds eye-tracking, blinking variety and
+   click reactions. Honors prefers-reduced-motion.
+   ========================================================================== */
+
+.rb {
+    --rb-eye: #27c4f2;
+    --rb-accent: #ff3d6e;
+    --rb-body: #0b0b0e;
+    --rb-rim: rgba(255, 255, 255, .2);
+    display: block;
+    overflow: visible;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+.rb[data-skin="lime"]   { --rb-eye: #7ee05a; }
+.rb[data-skin="amber"]  { --rb-eye: #ffb224; }
+.rb[data-skin="violet"] { --rb-eye: #b18cff; }
+
+/* ---------- static look ---------- */
+.rb-shell   { fill: var(--rb-body); stroke: var(--rb-rim); stroke-width: 2; }
+.rb-accents path { fill: none; stroke: var(--rb-accent); stroke-width: 5; stroke-linecap: round; }
+.rb-visor   { fill: #040405; stroke: #f4f4f6; stroke-width: 3; }
+.rb-m rect, .rb-m-neutral rect { fill: var(--rb-eye); }
+.rb-stroke  { fill: none; stroke: var(--rb-eye); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.rb-stroke.thin { stroke-width: 3; }
+.rb-m rect.rb-outline, .rb-outline { fill: color-mix(in srgb, var(--rb-eye) 16%, transparent); stroke: var(--rb-eye); stroke-width: 4; stroke-linejoin: round; }
+.rb-shadow  { fill: #000; opacity: .55; filter: blur(4px); transform-origin: 120px 238px; }
+.rb-sparkles .sp { fill: var(--rb-eye); }
+.rb-glint  { fill: #fff; opacity: .95; transform-box: fill-box; transform-origin: center; }
+.rb-blush  { fill: var(--rb-accent); opacity: .5; }
+.rb-open   { fill: var(--rb-eye); stroke: var(--rb-eye); stroke-width: 3; stroke-linejoin: round; }
+.rb-thumb rect, .rb-thumb path:not(.rb-stroke) { fill: var(--rb-body); stroke: rgba(255, 255, 255, .6); stroke-width: 2.5; stroke-linejoin: round; }
+
+/* ---------- moods: only one face shows at a time ---------- */
+.rb-m, .rb-sparkles, .rb-thumb {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .22s ease, scale .22s ease;
+    transform-origin: 120px 112px;
+    scale: .92;
+}
+.rb[data-mood="neutral"]  .rb-m-neutral,
+.rb[data-mood="happy"]    .rb-m-happy,
+.rb[data-mood="strained"] .rb-m-strained,
+.rb[data-mood="working"]  .rb-m-working,
+.rb[data-mood="excited"]  .rb-m-excited,
+.rb[data-mood="happy"]    .rb-sparkles,
+.rb[data-mood="excited"]  .rb-sparkles,
+.rb[data-mood="happy"]    .rb-thumb { opacity: 1; scale: 1; }
+
+/* ---------- idle motion ---------- */
+.rb-body   { animation: rb-float 3.8s ease-in-out infinite; }
+.rb-shadow { animation: rb-shadow 3.8s ease-in-out infinite; }
+.rb-eyes   { transform-origin: 120px 109px; animation: rb-blink 5.4s infinite; }
+.rb-face   { translate: calc(var(--lx, 0) * 1px) calc(var(--ly, 0) * 1px); transition: translate .16s ease-out; }
+.rb-head   { transform-origin: 120px 112px; }
+
+@keyframes rb-float  { 0%, 100% { translate: 0 0; } 50% { translate: 0 -9px; } }
+@keyframes rb-shadow { 0%, 100% { scale: 1; opacity: .55; } 50% { scale: .8; opacity: .32; } }
+@keyframes rb-blink  { 0%, 91%, 100% { scale: 1 1; } 94.5% { scale: 1 .08; } }
+
+/* ---------- working: the hammer taps, the head thuds ---------- */
+.rb-hammer { transform-origin: 120px 152px; }
+.rb[data-mood="working"] .rb-hammer { animation: rb-hit 1s cubic-bezier(.45, 0, .35, 1) infinite; }
+.rb[data-mood="working"] .rb-head   { animation: rb-thud 1s ease-out infinite; }
+.rb[data-mood="working"] .rb-sparks { animation: rb-spark 1s ease-out infinite; }
+.rb[data-mood="working"] .rb-motion { animation: rb-swish 1s linear infinite; }
+.rb-sparks, .rb-motion { opacity: 0; transform-origin: 84px 128px; }
+
+@keyframes rb-hit   { 0%, 28% { rotate: -50deg; } 46% { rotate: -8deg; } 54% { rotate: -15deg; } 82%, 100% { rotate: -50deg; } }
+@keyframes rb-thud  { 0%, 43% { translate: 0 0; } 48% { translate: 0 3px; } 58%, 100% { translate: 0 0; } }
+@keyframes rb-spark { 0%, 44% { opacity: 0; scale: .5; } 48% { opacity: 1; scale: 1; } 66%, 100% { opacity: 0; scale: 1.35; } }
+@keyframes rb-swish { 0%, 26% { opacity: 0; } 36% { opacity: .9; } 46%, 100% { opacity: 0; } }
+
+/* ---------- strained: squeezed eyes, jittery effort ---------- */
+.rb[data-mood="strained"] .rb-head { animation: rb-shake .38s ease-in-out infinite; }
+.rb[data-mood="strained"] .rb-zig  { animation: rb-zig .38s ease-in-out infinite; }
+@keyframes rb-shake { 0%, 100% { translate: 0 0; rotate: 0deg; } 25% { translate: -1.6px 0; rotate: -.9deg; } 75% { translate: 1.6px 0; rotate: .9deg; } }
+@keyframes rb-zig   { 0%, 100% { translate: -1px 0; } 50% { translate: 1px 0; } }
+
+/* ---------- happy: sparkles twinkle, thumb pops in ---------- */
+.rb-thumb { transform-origin: 196px 196px; }
+.rb[data-mood="happy"] .rb-thumb { animation: rb-pop .55s cubic-bezier(.2, 1.6, .4, 1) both; }
+.rb-sparkles .sp { transform-box: fill-box; transform-origin: center; }
+.rb[data-mood="happy"] .sp.s1, .rb[data-mood="excited"] .sp.s1 { animation: rb-twinkle 1.5s ease-in-out infinite; }
+.rb[data-mood="happy"] .sp.s2, .rb[data-mood="excited"] .sp.s2 { animation: rb-twinkle 1.5s ease-in-out -.5s infinite; }
+.rb[data-mood="happy"] .sp.s3, .rb[data-mood="excited"] .sp.s3 { animation: rb-twinkle 1.5s ease-in-out -1s infinite; }
+@keyframes rb-pop     { from { scale: 0; rotate: -20deg; } to { scale: 1; rotate: 0deg; } }
+@keyframes rb-twinkle { 0%, 100% { scale: .55; opacity: .5; } 50% { scale: 1.15; opacity: 1; } }
+
+/* ---------- click / tap: a squashy boop ---------- */
+.rb.is-boop .rb-body { animation: rb-float 3.8s ease-in-out infinite, rb-boop .6s ease-out; }
+.rb-body { transform-origin: 120px 200px; }
+@keyframes rb-boop {
+    0%   { scale: 1 1; }
+    22%  { scale: 1.1 .88; }
+    50%  { scale: .95 1.07; }
+    75%  { scale: 1.02 .98; }
+    100% { scale: 1 1; }
+}
+
+/* ---------- wander: the robot looks around by itself, as if wondering ----------
+   Add the data-wander attribute (robot('neutral', 128, wander=True)).
+   Sequence: glance left, glance right, look up and think, look down at whatever is
+   below it, then stare straight ahead. The head tilts a little with each look.   */
+.rb[data-wander][data-mood="neutral"] .rb-face { animation: rb-wander 11s ease-in-out infinite; }
+.rb[data-wander][data-mood="neutral"] .rb-head { animation: rb-wonder-tilt 11s ease-in-out infinite; }
+
+@keyframes rb-wander {
+    0%, 10%   { translate: 0 0; }
+    18%, 27%  { translate: -9px -1px; }
+    35%, 42%  { translate: 9px -2px; }
+    50%, 58%  { translate: 5px -7px; }
+    66%, 78%  { translate: -2px 7px; }
+    88%, 100% { translate: 0 0; }
+}
+@keyframes rb-wonder-tilt {
+    0%, 10%   { rotate: 0deg; }
+    18%, 27%  { rotate: -4deg; }
+    35%, 42%  { rotate: 3.5deg; }
+    50%, 58%  { rotate: 5deg; }
+    66%, 78%  { rotate: -2deg; }
+    88%, 100% { rotate: 0deg; }
+}
+
+/* ---------- excited: hops with joy, wide sparkly eyes, rosy cheeks ---------- */
+.rb[data-mood="excited"] .rb-body   { animation: rb-hop .8s cubic-bezier(.3, 0, .4, 1) infinite; }
+.rb[data-mood="excited"] .rb-shadow { animation: rb-hop-shadow .8s cubic-bezier(.3, 0, .4, 1) infinite; }
+.rb[data-mood="excited"] .rb-head   { animation: rb-wiggle 1.6s ease-in-out infinite; }
+.rb[data-mood="excited"] .rb-glint  { animation: rb-glint .8s ease-in-out infinite; }
+.rb[data-mood="excited"].is-boop .rb-body { animation: rb-hop .8s cubic-bezier(.3, 0, .4, 1) infinite, rb-boop .6s ease-out; }
+
+@keyframes rb-hop {
+    0%, 100% { translate: 0 0;     scale: 1.07 .93; }
+    18%      { translate: 0 -7px;  scale: .97 1.04; }
+    50%      { translate: 0 -22px; scale: 1 1; }
+    82%      { translate: 0 -5px;  scale: .98 1.03; }
+}
+@keyframes rb-hop-shadow {
+    0%, 100% { scale: 1.06; opacity: .6; }
+    50%      { scale: .62;  opacity: .26; }
+}
+@keyframes rb-wiggle {
+    0%, 100% { rotate: 0deg; }
+    25%      { rotate: -4deg; }
+    75%      { rotate: 4deg; }
+}
+@keyframes rb-glint { 0%, 100% { scale: 1; } 50% { scale: 1.25; } }
+
+/* ---------- login / sign-up pop-ups: the robot appears beside the form ---------- */
+.auth-robot {
+    position: fixed;
+    z-index: 1210;                       /* above the pop-up (1200) */
+    left: 0; top: 0;
+    line-height: 0;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity .2s ease, visibility 0s linear .2s;
+}
+.auth-robot .rb { filter: drop-shadow(0 16px 24px rgba(0, 0, 0, .55)); }
+.auth-robot.is-in {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: opacity .2s ease;
+    animation: auth-pop .65s cubic-bezier(.2, 1.5, .4, 1) both;
+}
+.auth-robot:not(.is-in) .rb, .auth-robot:not(.is-in) .rb * { animation-play-state: paused !important; }
+@keyframes auth-pop {
+    from { opacity: 0; scale: .45; translate: var(--fx, 50px) var(--fy, 10px); }
+    to   { opacity: 1; scale: 1;   translate: 0 0; }
+}
+@media (max-width: 600px) { .auth-robot .rb { width: 100px; height: auto; } }
+
+@media (prefers-reduced-motion: reduce) {
+    .rb *, .rb { animation: none !important; transition: none !important; }
+}
