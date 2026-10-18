@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/deco.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/robot.css') }}">
 <style>
     /* ==========================================================================
        LANDING PAGE — premium redesign. Everything is scoped under .lp so it
@@ -137,15 +138,15 @@
     .lp-trust i { color: var(--lp-accent-hi); font-size: 18px; }
 
     /* hero visual: layered product preview */
-    .lp-stage { position: relative; height: 470px; }
+    .lp-stage { position: relative; height: 560px; }
     .lp-card {
         position: absolute; border-radius: var(--lp-radius); padding: 22px;
         border: 1px solid var(--lp-line);
         background: color-mix(in srgb, var(--bg-color) 82%, var(--text-color) 6%);
         box-shadow: 0 40px 80px -36px rgba(0, 0, 0, .7), inset 0 1px 0 color-mix(in srgb, var(--text-color) 14%, transparent);
     }
-    .lp-card-main { left: 4%; top: 52px; width: 78%; z-index: 3; animation: lp-float 7s ease-in-out infinite; }
-    .lp-card-back { right: 0; top: 190px; width: 62%; z-index: 2; transform: rotate(4deg); opacity: .96; animation: lp-float 8.5s ease-in-out -2s infinite; }
+    .lp-card-main { left: 4%; top: 142px; width: 78%; z-index: 3; animation: lp-float 7s ease-in-out infinite; }
+    .lp-card-back { right: 0; top: 282px; width: 62%; z-index: 2; transform: rotate(4deg); opacity: .96; animation: lp-float 8.5s ease-in-out -2s infinite; }
     .lp-toast {
         position: absolute; right: 2%; top: 4px; z-index: 4; display: flex; align-items: center; gap: 10px;
         padding: 10px 16px 10px 12px; border-radius: 14px; font-size: 13px; font-weight: 600;
@@ -184,6 +185,10 @@
     .lp-near b { flex: 1; font-weight: 600; }
     .lp-near span { color: var(--text-muted); font-size: 12.5px; }
     .lp-preview-note { position: absolute; left: 6%; bottom: 0; font-size: 11.5px; color: var(--text-muted); opacity: .8; }
+
+    /* the wondering robot hovers above the booking card */
+    .lp-robot { position: absolute; left: 43%; top: -2px; transform: translateX(-50%); z-index: 5; line-height: 0; }
+    .lp-robot .rb { filter: drop-shadow(0 18px 26px rgba(0, 0, 0, .45)); }
 
     @keyframes lp-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -10px; } }
 
@@ -360,7 +365,8 @@
         .lp-search > i { display: none; }
         .lp-search input { flex: 1 1 100%; padding: 8px 6px; }
         .lp-search .lp-btn { width: 100%; }
-        .lp-stage { height: 420px; }
+        .lp-stage { height: 500px; }
+        .lp-robot .rb { width: 118px; height: auto; }
         .lp-card-main { width: 92%; left: 0; }
         .lp-card-back { width: 74%; top: 220px; }
         .lp-tiles { grid-template-columns: 1fr; }
@@ -401,6 +407,7 @@
 {% endblock %}
 
 {% block content %}
+{% from 'partials/robot.html' import robot %}
 <div class="index-con lp" id="mainCon">
 
     {# ===================== HERO ===================== #}
@@ -441,6 +448,7 @@
 
             {# product preview (illustration) #}
             <div class="lp-stage" aria-hidden="true">
+                <div class="lp-robot">{{ robot('neutral', 150, follow=False, wander=True) }}</div>
                 <div class="lp-toast"><i class='bx bx-check'></i> Request sent</div>
 
                 <div class="lp-card lp-card-main">
@@ -695,6 +703,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/robot.js') }}"></script>
 
 <script>
     const mapCenterOnUser = true;
