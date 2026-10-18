@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout — Getwheelz{% endblock %}
+
+{% block content %}
+<style>
+    .checkout-page { max-width: 980px; margin: 0 auto; padding: 24px 16px 60px; }
+    .co-back { display: inline-block; margin-bottom: 14px; font-size: 14px; color: var(--text-muted); text-decoration: none; }
+    .co-back:hover { color: var(--main-color); }
+    .checkout-page h1 { margin: 0 0 16px; }
+    .co-demo { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 20px; padding: 12px 14px; border-radius: 10px;
+        font-size: 13.5px; line-height: 1.55; color: #ffc107; background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.35); }
+    .co-demo code { padding: 1px 6px; border-radius: 5px; background: rgba(128, 128, 128, 0.25); color: inherit; font-size: 12.5px; }
+    .co-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+    .co-card { padding: 22px; border-radius: 14px; background: var(--second-bg); border: 1px solid rgba(128, 128, 128, 0.28); }
+    .co-card h2 { margin: 0 0 14px; font-size: 1.1rem; }
+    .co-alert { margin-bottom: 16px; padding: 11px 13px; border-radius: 9px; font-size: 14px; color: #ff8a80;
+        background: rgba(239, 83, 80, 0.12); border: 1px solid rgba(239, 83, 80, 0.4); }
+
+    .co-methods { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+    .co-methods input { position: absolute; opacity: 0; pointer-events: none; }
+    .co-tab { flex: 1; min-width: 96px; padding: 11px 8px; text-align: center; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600;
+        border: 1px solid rgba(128, 128, 128, 0.4); transition: background-color 0.15s ease, border-color 0.15s ease; }
+    .co-tab:hover { background: rgba(128, 128, 128, 0.15); }
+    .co-methods input:checked + .co-tab { border-color: var(--main-color); background: rgba(199, 69, 92, 0.16); color: var(--main-color); }
+    .co-methods input:focus-visible + .co-tab { outline: 2px solid var(--main-color); outline-offset: 2px; }
+
+    .co-field { margin-bottom: 14px; }
+    .co-field label { display: block; margin-bottom: 6px; font-size: 13.5px; font-weight: 600; }
+    .co-field input, .co-field select { width: 100%; height: 44px; padding: 0 14px; border-radius: 10px; font-size: 15px;
+        border: 1px solid rgba(128, 128, 128, 0.4); background: rgba(128, 128, 128, 0.1); color: var(--text-color); }
+    .co-field select option { background: var(--second-bg); color: var(--text-color); }
+    .co-field input:focus, .co-field select:focus { outline: none; border-color: var(--main-color); box-shadow: 0 0 0 3px rgba(199, 69, 92, 0.25); }
+    .co-field.has-error input, .co-field.has-error select { border-color: #ef5350; }
+    .co-err { margin: 5px 0 0; font-size: 12.5px; color: #ef5350; }
+    .co-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .co-hint { margin: -4px 0 14px; font-size: 12.5px; color: var(--text-muted); }
+
+    .co-summary { position: sticky; top: 100px; }
+    .co-line { display: flex; justify-content: space-between; gap: 14px; padding: 9px 0; font-size: 14px; border-bottom: 1px solid rgba(128, 128, 128, 0.2); }
+    .co-line span:first-child { color: var(--text-muted); }
+    .co-line span:last-child { text-align: right; font-weight: 600; }
+    .co-total { display: flex; justify-content: space-between; align-items: baseline; margin: 16px 0 6px; font-size: 1.15rem; font-weight: 700; }
+    .co-total strong { font-size: 1.6rem; color: var(--main-color); }
+    .co-note { margin: 0 0 16px; font-size: 12.5px; color: var(--text-muted); }
+    .co-pay { width: 100%; height: 48px; border: none; border-radius: 11px; font-size: 16px; font-weight: 700; color: #fff; cursor: pointer;
+        background: var(--main-color); transition: filter 0.15s ease; }
+    .co-pay:hover:not(:disabled), .co-pay:focus-visible { filter: brightness(1.12); }
+    .co-pay:disabled { opacity: 0.7; cursor: progress; }
+    .co-secure { margin-top: 12px; text-align: center; font-size: 12px; color: var(--text-muted); }
+
+    @media (max-width: 800px) {
+        .co-grid { grid-template-columns: 1fr; }
+        .co-summary { position: static; order: -1; }
+    }
+</style>
+
+<section class="booking-page checkout-page">
+    <a class="co-back" href="{{ url_for('bookings.my_bookings') }}">&larr; Back to my bookings</a>
+    <h1>Checkout</h1>
+
+    <div class="co-demo">
+        <i class='bx bx-info-circle'></i>
+        <div>
+            <strong>Demo payment: no real money is charged.</strong>
+            Use card <code>4242 4242 4242 4242</code> with any future expiry and any CVV.
+            The card <code>4000 0000 0000 0002</code> or UPI ID <code>fail@upi</code> shows a declined payment.
+        </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('bookings.pay', b_id=booking.b_id) }}" id="payForm" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="expected_amount" value="{{ expected_amount }}">
+
+        <div class="co-grid">
+            {# ---------------- payment method ---------------- #}
+            <div class="co-card">
+                <h2>Payment method</h2>
+
+                {% if message %}<div class="co-alert" role="alert">{{ message }}</div>{% endif %}
+
+                <div class="co-methods" role="radiogroup" aria-label="Payment method">
+                    <input type="radio" name="method" id="m-card" value="card" {% if form.method == 'card' or not form.method %}checked{% endif %}>
+                    <label class="co-tab" for="m-card"><i class='bx bx-credit-card'></i> Card</label>
+                    <input type="radio" name="method" id="m-upi" value="upi" {% if form.method == 'upi' %}checked{% endif %}>
+                    <label class="co-tab" for="m-upi"><i class='bx bx-mobile-alt'></i> UPI</label>
+                    <input type="radio" name="method" id="m-net" value="netbanking" {% if form.method == 'netbanking' %}checked{% endif %}>
+                    <label class="co-tab" for="m-net"><i class='bx bxs-bank'></i> Net banking</label>
+                </div>
+
+                <div id="panel-card">
+                    <div class="co-field {% if errors.name %}has-error{% endif %}">
+                        <label for="c-name">Name on card</label>
+                        <input type="text" id="c-name" name="name" value="{{ form.name or '' }}" maxlength="60" autocomplete="cc-name" placeholder="As shown on the card">
+                        {% if errors.name %}<p class="co-err">{{ errors.name }}</p>{% endif %}
+                    </div>
+                    <div class="co-field {% if errors.number %}has-error{% endif %}">
+                        <label for="c-number">Card number</label>
+                        <input type="text" id="c-number" name="number" inputmode="numeric" maxlength="23" autocomplete="cc-number" placeholder="1234 5678 9012 3456">
+                        {% if errors.number %}<p class="co-err">{{ errors.number }}</p>{% endif %}
+                    </div>
+                    <div class="co-row">
+                        <div class="co-field {% if errors.expiry %}has-error{% endif %}">
+                            <label for="c-expiry">Expiry</label>
+                            <input type="text" id="c-expiry" name="expiry" value="{{ form.expiry or '' }}" inputmode="numeric" maxlength="5" autocomplete="cc-exp" placeholder="MM/YY">
+                            {% if errors.expiry %}<p class="co-err">{{ errors.expiry }}</p>{% endif %}
+                        </div>
+                        <div class="co-field {% if errors.cvv %}has-error{% endif %}">
+                            <label for="c-cvv">CVV</label>
+                            <input type="password" id="c-cvv" name="cvv" inputmode="numeric" maxlength="4" autocomplete="cc-csc" placeholder="•••">
+                            {% if errors.cvv %}<p class="co-err">{{ errors.cvv }}</p>{% endif %}
+                        </div>
+                    </div>
+                    <p class="co-hint">For your safety the card number and CVV are never saved, and are not filled back in if a payment fails.</p>
+                </div>
+
+                <div id="panel-upi" hidden>
+                    <div class="co-field {% if errors.upi %}has-error{% endif %}">
+                        <label for="u-id">UPI ID</label>
+                        <input type="text" id="u-id" name="upi" value="{{ form.upi or '' }}" maxlength="100" autocomplete="off" autocapitalize="none" placeholder="name@bank">
+                        {% if errors.upi %}<p class="co-err">{{ errors.upi }}</p>{% endif %}
+                    </div>
+                    <p class="co-hint">In this demo the request is approved instantly.</p>
+                </div>
+
+                <div id="panel-netbanking" hidden>
+                    <div class="co-field {% if errors.bank %}has-error{% endif %}">
+                        <label for="n-bank">Choose your bank</label>
+                        <select id="n-bank" name="bank">
+                            <option value="">Select a bank</option>
+                            {% for bank in banks %}
+                            <option value="{{ bank }}" {% if form.bank == bank %}selected{% endif %}>{{ bank }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if errors.bank %}<p class="co-err">{{ errors.bank }}</p>{% endif %}
+                    </div>
+                    <p class="co-hint">In this demo you are not sent to a real bank page.</p>
+                </div>
+            </div>
+
+            {# ---------------- order summary ---------------- #}
+            <aside class="co-card co-summary">
+                <h2>Order summary</h2>
+                <div class="co-line"><span>Workshop</span><span>{{ booking.workshop_name }}</span></div>
+                <div class="co-line"><span>Service</span><span>{{ booking.s_name }}</span></div>
+                <div class="co-line"><span>Appointment</span><span>{{ booking.requested_time.strftime('%d %b %Y, %I:%M %p') }}</span></div>
+                {% if booking.mechanic_name %}
+                <div class="co-line"><span>Mechanic</span><span>{{ booking.mechanic_name }}</span></div>
+                {% endif %}
+
+                <div class="co-total"><span>Total</span><strong>{{ due_label }}</strong></div>
+                <p class="co-note">
+                    {% if is_estimate %}Estimated from the service's listed price ({{ booking.price_range }}). The workshop can set the final bill before you pay.
+                    {% else %}Final bill set by the workshop.{% endif %}
+                </p>
+
+                <button type="submit" class="co-pay" id="payBtn">Pay {{ due_label }}</button>
+                <p class="co-secure"><i class='bx bx-lock-alt'></i> Demo checkout. Nothing is charged.</p>
+            </aside>
+        </div>
+    </form>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        var form = document.getElementById('payForm');
+        var panels = { card: 'panel-card', upi: 'panel-upi', netbanking: 'panel-netbanking' };
+
+        // show only the chosen method; fields of the other methods are switched off so they are not sent
+        function show(method) {
+            Object.keys(panels).forEach(function (key) {
+                var panel = document.getElementById(panels[key]);
+                panel.hidden = key !== method;
+                panel.querySelectorAll('input, select').forEach(function (el) { el.disabled = key !== method; });
+            });
+        }
+        var checked = form.querySelector('input[name="method"]:checked');
+        show(checked ? checked.value : 'card');
+        form.querySelectorAll('input[name="method"]').forEach(function (radio) {
+            radio.addEventListener('change', function () { show(radio.value); });
+        });
+
+        // friendly typing: groups of 4 for the card number, MM/YY for the expiry, digits only for the CVV
+        var number = document.getElementById('c-number');
+        number.addEventListener('input', function () {
+            number.value = number.value.replace(/\D/g, '').slice(0, 19).replace(/(.{4})/g, '$1 ').trim();
+        });
+        var expiry = document.getElementById('c-expiry');
+        expiry.addEventListener('input', function () {
+            var digits = expiry.value.replace(/\D/g, '').slice(0, 4);
+            expiry.value = digits.length > 2 ? digits.slice(0, 2) + '/' + digits.slice(2) : digits;
+        });
+        var cvv = document.getElementById('c-cvv');
+        cvv.addEventListener('input', function () { cvv.value = cvv.value.replace(/\D/g, '').slice(0, 4); });
+
+        // one click only, so a double click can never pay twice
+        form.addEventListener('submit', function () {
+            var button = document.getElementById('payBtn');
+            button.disabled = true;
+            button.textContent = 'Processing payment…';
+        });
+        window.addEventListener('pageshow', function () {   // Back button
+            var button = document.getElementById('payBtn');
+            button.disabled = false;
+            button.textContent = 'Pay {{ due_label }}';
+        });
+    })();
+</script>
+{% endblock %}

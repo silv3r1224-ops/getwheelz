@@ -7,6 +7,11 @@
 {{ super() }}
 
 <style>
+    /* keep the bookings table inside its card on ordinary laptop screens */
+    #bookings .admin-table th, #bookings .admin-table td { padding-left: 10px; padding-right: 10px; }
+    .bill-input { width: 84px; }
+    .assign-form select.assign-select { max-width: 120px; }
+    .pay-sub { display: block; max-width: 150px; margin-top: 4px; font-size: 12px; line-height: 1.35; color: var(--text-muted); }
     /* Owner Dashboard Styles */
     .owner-hero-card {
         background: var(--second-bg);
@@ -861,6 +866,7 @@
                             <th>Requested Time</th>
                             <th>Status</th>
                             <th>Assigned Mechanic</th>
+                            <th>Payment</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -894,6 +900,27 @@
                                 {% endif %}
                                 {% elif b.status == 'completed' and b.mechanic_name %}
                                 <strong>{{ b.mechanic_name }}</strong>
+                                {% else %}
+                                <span style="color: var(--text-muted); font-size: 13px;">&mdash;</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if b.is_paid %}
+                                <span class="status-badge status-completed">Paid {{ b.paid_label }}</span>
+                                <small class="pay-sub">{{ b.paid_detail }}</small>
+                                {% elif b.status in ('confirmed', 'completed') %}
+                                <form method="POST" action="{{ url_for('bookings.set_bill', b_id=b.b_id) }}"
+                                    class="inline-form assign-form">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="number" name="amount" class="assign-select bill-input" min="1" max="1000000"
+                                        step="0.01" inputmode="decimal" value="{{ b.bill_value }}"
+                                        placeholder="{{ b.due_label or 'Bill ₹' }}" aria-label="Bill amount in rupees">
+                                    <button type="submit" class="mini-btn confirm">Save</button>
+                                </form>
+                                <small class="pay-sub">
+                                    {% if b.due_label %}Customer pays {{ b.due_label }}{% if b.due_is_estimate %} (estimate){% endif %}
+                                    {% else %}Set a bill so the customer can pay{% endif %}
+                                </small>
                                 {% else %}
                                 <span style="color: var(--text-muted); font-size: 13px;">&mdash;</span>
                                 {% endif %}

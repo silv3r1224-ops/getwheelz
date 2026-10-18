@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Receipt {{ booking.reference }} — Getwheelz{% endblock %}
+
+{% block content %}
+<style>
+    .receipt-page { max-width: 560px; margin: 0 auto; padding: 24px 16px 60px; }
+    .rc-card { padding: 28px 26px; border-radius: 16px; background: var(--second-bg); border: 1px solid rgba(128, 128, 128, 0.28); }
+    .rc-head { text-align: center; padding-bottom: 18px; border-bottom: 1px dashed rgba(128, 128, 128, 0.45); }
+    .rc-tick { display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; margin-bottom: 10px;
+        border-radius: 50%; font-size: 1.9rem; color: #4caf7d; background: rgba(76, 175, 125, 0.16); }
+    .rc-head h1 { margin: 0 0 4px; font-size: 1.4rem; }
+    .rc-head p { margin: 0; font-size: 13.5px; color: var(--text-muted); }
+    .rc-amount { margin: 18px 0 4px; text-align: center; font-size: 2rem; font-weight: 800; }
+    .rc-line { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; font-size: 14.5px; border-bottom: 1px solid rgba(128, 128, 128, 0.2); }
+    .rc-line span:first-child { color: var(--text-muted); }
+    .rc-line span:last-child { text-align: right; font-weight: 600; word-break: break-word; }
+    .rc-foot { margin: 16px 0 0; font-size: 12.5px; text-align: center; color: var(--text-muted); }
+    .rc-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
+    .rc-btn { padding: 10px 20px; border-radius: 10px; font-size: 14.5px; font-weight: 600; text-decoration: none; cursor: pointer;
+        border: 1px solid rgba(128, 128, 128, 0.45); background: transparent; color: var(--text-color); }
+    .rc-btn.primary { border-color: transparent; background: var(--main-color); color: #fff; }
+    @media print {
+        header, nav, footer, .navbar, .flash-container, .rc-actions { display: none !important; }
+        body { background: #fff !important; color: #000 !important; }
+        .rc-card { border: 1px solid #999; box-shadow: none; background: #fff; color: #000; }
+        .rc-line span:first-child, .rc-head p, .rc-foot { color: #444; }
+    }
+</style>
+
+<section class="booking-page receipt-page">
+    <div class="rc-card">
+        <div class="rc-head">
+            <div class="rc-tick"><i class='bx bx-check'></i></div>
+            <h1>Payment successful</h1>
+            <p>Receipt {{ booking.reference }}</p>
+        </div>
+
+        <div class="rc-amount">{{ paid_label }}</div>
+
+        <div class="rc-line"><span>Paid on</span><span>{{ booking.paid_at.strftime('%d %b %Y, %I:%M %p') }}</span></div>
+        <div class="rc-line"><span>Method</span><span>{{ {'card': 'Card', 'upi': 'UPI', 'netbanking': 'Net banking'}[booking.paid_method] }}{% if booking.paid_detail %} · {{ booking.paid_detail }}{% endif %}</span></div>
+        <div class="rc-line"><span>Workshop</span><span>{{ booking.workshop_name }}</span></div>
+        <div class="rc-line"><span>Service</span><span>{{ booking.s_name }}</span></div>
+        <div class="rc-line"><span>Appointment</span><span>{{ booking.requested_time.strftime('%d %b %Y, %I:%M %p') }}</span></div>
+        {% if booking.mechanic_name %}
+        <div class="rc-line"><span>Mechanic</span><span>{{ booking.mechanic_name }}</span></div>
+        {% endif %}
+
+        <p class="rc-foot">Demo receipt. No real payment was made and this is not a tax invoice.</p>
+    </div>
+
+    <div class="rc-actions">
+        <button type="button" class="rc-btn primary" onclick="window.print()"><i class='bx bx-printer'></i> Print receipt</button>
+        <a class="rc-btn" href="{{ url_for('bookings.my_bookings') }}">Back to my bookings</a>
+    </div>
+</section>
+{% endblock %}

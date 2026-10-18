@@ -10,6 +10,7 @@
     <link rel="icon" href="{{ url_for('static', filename='logo/getwheelz.png')}}">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     {% block head %}{% endblock %}
+    {% if not session.get('user_id') %}<link rel="stylesheet" href="{{ url_for('static', filename='css/robot.css') }}">{% endif %}
 </head>
 
 <body>
@@ -36,9 +37,16 @@
     {% include 'partials/footer.html' %}
     {% endif %}
 
+    {# signed-out visitors: an excited robot appears beside the login / sign-up pop-ups #}
+    {% if not session.get('user_id') %}
+    {% from 'partials/robot.html' import robot %}
+    <div class="auth-robot" id="authRobot" aria-hidden="true">{{ robot('excited', 150, follow=False) }}</div>
+    <script src="{{ url_for('static', filename='js/robot.js') }}" defer></script>
+    {% endif %}
+
     <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/header.js') }}" defer></script>
-    <script src="{{ url_for('static', filename='js/ajax-forms.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/stay-put.js') }}" defer></script>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     {% block scripts %}{% endblock %}
