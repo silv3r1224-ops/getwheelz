@@ -1,0 +1,99 @@
+{# GetWheelz robot mascot.
+Use: {% from 'partials/robot.html' import robot %}
+{{ robot('working', 140) }}
+Args: mood neutral | happy | excited | working | strained
+size width in pixels (height follows)
+skin '' (cyan) | lime | amber | violet
+follow True makes the eyes follow the cursor
+wander True makes it look around by itself, as if wondering (use with follow=False)
+id optional element id so JS or a form can target this robot
+Needs: css/robot.css in the page head and js/robot.js before </body>. #}
+{% macro robot(mood='neutral', size=160, skin='', follow=True, id='', label='GetWheelz robot', wander=False) -%}
+<svg class="rb" data-mood="{{ mood }}" data-base-mood="{{ mood }}" {% if skin %} data-skin="{{ skin }}" {% endif %}{% if
+    follow %} data-follow{% endif %}{% if wander %} data-wander{% endif %}{% if id %} id="{{ id }}" {% endif %}
+    width="{{ size }}" height="{{ (size * 260 / 240) | round | int }}" viewBox="0 0 240 260" role="img"
+    aria-label="{{ label }}">
+    <ellipse class="rb-shadow" cx="120" cy="238" rx="64" ry="9" />
+    <g class="rb-body">
+        <g class="rb-head">
+            <path class="rb-shell"
+                d="M120 26 A86 86 0 0 1 204.5 96 Q196 112 204.5 128 A86 86 0 0 1 120 198 A86 86 0 0 1 35.5 128 Q44 112 35.5 96 A86 86 0 0 1 120 26Z" />
+            <g class="rb-accents">
+                <path d="M80 31 L84 60" />
+                <path d="M160 31 L156 60" />
+                <path d="M84 164 L80 192" />
+                <path d="M156 164 L160 192" />
+            </g>
+            <rect class="rb-visor" x="54" y="60" width="132" height="104" rx="24" />
+            <g class="rb-face">
+                <g class="rb-m rb-m-neutral">
+                    <g class="rb-eyes">
+                        <rect x="92" y="92" width="14" height="34" rx="7" />
+                        <rect x="134" y="92" width="14" height="34" rx="7" />
+                    </g>
+                    <rect x="108" y="139" width="24" height="6" rx="3" />
+                </g>
+                <g class="rb-m rb-m-happy">
+                    <path class="rb-stroke" d="M89 114 Q99 92 109 114" />
+                    <path class="rb-stroke" d="M131 114 Q141 92 151 114" />
+                    <path class="rb-stroke" d="M104 134 Q120 154 136 134" />
+                </g>
+                <g class="rb-m rb-m-strained">
+                    <path class="rb-stroke" d="M90 94 L110 108 L90 122" />
+                    <path class="rb-stroke" d="M150 94 L130 108 L150 122" />
+                    <path class="rb-stroke rb-zig"
+                        d="M94 146 L102 136 L110 148 L118 136 L126 148 L134 136 L142 148 L146 140" />
+                </g>
+                <g class="rb-m rb-m-excited">
+                    <g class="rb-eyes">
+                        <rect x="89" y="86" width="20" height="44" rx="10" />
+                        <rect x="131" y="86" width="20" height="44" rx="10" />
+                        <circle class="rb-glint" cx="96" cy="98" r="4.5" />
+                        <circle class="rb-glint" cx="138" cy="98" r="4.5" />
+                        <circle class="rb-glint sm" cx="102" cy="110" r="2.2" />
+                        <circle class="rb-glint sm" cx="144" cy="110" r="2.2" />
+                    </g>
+                    <circle class="rb-blush" cx="78" cy="142" r="7" />
+                    <circle class="rb-blush" cx="162" cy="142" r="7" />
+                    <path class="rb-open" d="M101 136 Q120 168 139 136 Z" />
+                </g>
+                <g class="rb-m rb-m-working">
+                    <g class="rb-motion">
+                        <path class="rb-stroke thin" d="M66 90 L78 78" />
+                        <path class="rb-stroke thin" d="M62 106 L76 96" />
+                        <path class="rb-stroke thin" d="M80 72 L88 64" />
+                    </g>
+                    <g transform="translate(132 152) scale(.9) translate(-120 -152)">
+                        <g class="rb-hammer">
+                            <rect class="rb-outline" x="116" y="102" width="8" height="50" rx="3" />
+                            <rect class="rb-outline" x="94" y="76" width="52" height="28" rx="5" />
+                        </g>
+                    </g>
+                    <g class="rb-sparks">
+                        <path class="rb-stroke thin" d="M96 118 L86 126" />
+                        <path class="rb-stroke thin" d="M92 110 L80 108" />
+                        <path class="rb-stroke thin" d="M102 124 L98 136" />
+                    </g>
+                </g>
+            </g>
+        </g>
+        <g class="rb-sparkles">
+            <g transform="translate(208 54)">
+                <path class="sp s1" d="M0 -15 Q2 -2 15 0 Q2 2 0 15 Q-2 2 -15 0 Q-2 -2 0 -15Z" />
+            </g>
+            <g transform="translate(32 74) scale(.65)">
+                <path class="sp s2" d="M0 -15 Q2 -2 15 0 Q2 2 0 15 Q-2 2 -15 0 Q-2 -2 0 -15Z" />
+            </g>
+            <g transform="translate(186 24) scale(.45)">
+                <path class="sp s3" d="M0 -15 Q2 -2 15 0 Q2 2 0 15 Q-2 2 -15 0 Q-2 -2 0 -15Z" />
+            </g>
+        </g>
+        <g class="rb-thumb">
+            <rect x="174" y="168" width="44" height="36" rx="10" />
+            <path d="M182 170 L182 148 Q182 138 194 138 Q206 138 206 148 L206 170Z" />
+            <path class="rb-stroke thin" d="M184 180 L208 180" />
+            <path class="rb-stroke thin" d="M184 190 L208 190" />
+        </g>
+    </g>
+</svg>
+{%- endmacro %}
