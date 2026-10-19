@@ -1,0 +1,211 @@
+/* ==========================================================================
+   Bigger pop-up cards: Login, Sign up and the owner's Add / Edit Service forms.
+   (the service forms reuse the .login-modal / .login-form classes)
+   Loaded after style.css and scrollbar.css so it wins over their smaller sizes.
+   ========================================================================== */
+
+.login-modal,
+.signup-modal {
+    width: min(580px, 94vw);
+    max-height: 92vh;
+    max-height: 92dvh;
+    padding: 14px;
+    border-radius: 18px;
+}
+
+.login-form,
+.signup-form {
+    gap: 18px;
+    padding: 34px 40px;
+}
+
+.login-form h2,
+.signup-form h2 {
+    font-size: 2.1rem;
+    margin-bottom: 4px;
+}
+
+.login-form p,
+.signup-form p {
+    font-size: 17px;
+}
+
+.login-form input,
+.login-form select,
+.signup-form input,
+.signup-form select {
+    height: 54px;
+    padding: 0 16px;
+    font-size: 17px;
+    border-radius: 12px;
+}
+
+.login-form input::placeholder,
+.signup-form input::placeholder {
+    font-size: 16px;
+}
+
+.login-form .fw-btn-con,
+.signup-form .fw-btn-con {
+    width: min(100%, 24rem);
+    max-width: 100%;
+    height: 3.5rem;
+    font-size: 18px;
+}
+
+.login-form .ggl-btn,
+.signup-form .ggl-btn {
+    height: 54px;
+    font-size: 20px;
+    border-radius: 12px;
+}
+
+/* shorter screens: still bigger than before, and the card scrolls if it has to */
+@media (max-height: 760px) {
+
+    .login-form,
+    .signup-form {
+        gap: 12px;
+        padding: 24px 32px;
+    }
+
+    .login-form h2,
+    .signup-form h2 {
+        font-size: 1.8rem;
+    }
+
+    .login-form input,
+    .login-form select,
+    .signup-form input,
+    .signup-form select,
+    .login-form .ggl-btn,
+    .signup-form .ggl-btn {
+        height: 48px;
+    }
+
+    .login-form .fw-btn-con,
+    .signup-form .fw-btn-con {
+        height: 3.1rem;
+    }
+}
+
+/* phones: use nearly the whole width */
+@media (max-width: 600px) {
+
+    .login-modal,
+    .signup-modal {
+        width: calc(100% - 24px);
+        max-width: none;
+        padding: 6px;
+    }
+
+    .login-form,
+    .signup-form {
+        gap: 12px;
+        padding: 22px 18px;
+    }
+
+    .login-form h2,
+    .signup-form h2 {
+        font-size: 1.7rem;
+    }
+
+    .login-form p,
+    .signup-form p {
+        font-size: 16px;
+    }
+
+    .login-form input,
+    .login-form select,
+    .signup-form input,
+    .signup-form select,
+    .login-form .ggl-btn,
+    .signup-form .ggl-btn {
+        height: 50px;
+        font-size: 16px;
+    }
+
+    .login-form .fw-btn-con,
+    .signup-form .fw-btn-con {
+        width: 100%;
+    }
+}
+
+/* ---------- inline message inside the Login / Sign up form (the pop-up stays open) ---------- */
+.auth-msg {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    font-size: 15px;
+    line-height: 1.4;
+    text-align: left;
+}
+
+.auth-msg[hidden] {
+    display: none;
+}
+
+.auth-msg i {
+    font-size: 20px;
+    line-height: 1.1;
+}
+
+.auth-msg.is-error {
+    color: #ff8b8b;
+    background: rgba(239, 68, 68, .12);
+    border: 1px solid rgba(239, 68, 68, .55);
+}
+
+.auth-msg.is-ok {
+    color: #5be08f;
+    background: rgba(34, 197, 94, .12);
+    border: 1px solid rgba(34, 197, 94, .55);
+}
+
+body.light .auth-msg.is-error {
+    color: #b42318;
+}
+
+body.light .auth-msg.is-ok {
+    color: #15803d;
+}
+
+.login-form.is-shake,
+.signup-form.is-shake {
+    animation: auth-shake .4s ease;
+}
+
+@keyframes auth-shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    20% {
+        transform: translateX(-9px);
+    }
+
+    40% {
+        transform: translateX(8px);
+    }
+
+    60% {
+        transform: translateX(-5px);
+    }
+
+    80% {
+        transform: translateX(3px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .login-form.is-shake,
+    .signup-form.is-shake {
+        animation: none;
+    }
+}

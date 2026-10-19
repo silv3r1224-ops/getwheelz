@@ -827,11 +827,21 @@
                         </form>
                     </div>
                     <div class="owner-heading-info">
-                        <h1>{{ workshop.name }}</h1>
+                        <h1>{{ workshop.name }}
+                            <span class="oc-badge {{ 'oc-open' if workshop.is_open else 'oc-closed' }}">{{ 'Open' if workshop.is_open else 'Closed' }}</span>
+                        </h1>
                         <p class="owner-address-badge"><i class='bx bx-map-pin'></i> {{ workshop.address }}</p>
                     </div>
                 </div>
                 <div class="owner-top-actions">
+                    <button type="button" class="mini-btn neutral" data-open-edit-workshop
+                        data-action="{{ url_for('dashboard.edit_workshop') }}"
+                        data-name="{{ workshop.name }}" data-address="{{ workshop.address or '' }}"
+                        data-contact="{{ workshop.contact_no or '' }}"
+                        data-lat="{{ workshop.latitude if workshop.latitude is not none else '' }}"
+                        data-lng="{{ workshop.longitude if workshop.longitude is not none else '' }}">
+                        <i class='bx bx-edit'></i> Edit Details
+                    </button>
                     <button type="button" id="add-service-btn" class="mini-btn confirm" data-open-add-service>
                         <i class='bx bx-plus'></i> Add Service
                     </button>
@@ -876,6 +886,27 @@
                     <strong>{{ stats.total_mechanics }} / {{ stats.capacity }}</strong>
                 </div>
             </div>
+        </div>
+
+        <!-- Open / Closed Widget -->
+        <div class="capacity-bar-widget">
+            <div class="capacity-desc">
+                <i class='bx bx-store-alt' aria-hidden="true"></i>
+                <div>
+                    <h4>Workshop Status</h4>
+                    <p>Customers see whether your workshop is open or closed right now.</p>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('dashboard.update_open_status') }}" class="oc-toggle-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" name="is_open" value="1"
+                    class="oc-choice to-open {% if workshop.is_open %}is-current{% endif %}"
+                    {% if workshop.is_open %}aria-pressed="true"{% else %}aria-pressed="false"{% endif %}>Open</button>
+                <button type="submit" name="is_open" value="0"
+                    class="oc-choice to-closed {% if not workshop.is_open %}is-current{% endif %}"
+                    {% if not workshop.is_open %}aria-pressed="true"{% else %}aria-pressed="false"{% endif %}>Closed</button>
+            </form>
         </div>
 
         <!-- Capacity Control Widget -->
@@ -1002,7 +1033,7 @@
                                         <option value="" {% if not b.assigned_m_id %}selected{% endif %}>Unassigned</option>
                                         {% for m in mechanics %}
                                         <option value="{{ m.m_id }}" {% if b.assigned_m_id == m.m_id %}selected{% endif %}>
-                                            {{ m.name }}{% if m.leave_pending %} (leaving){% endif %}
+                                            {{ m.name }}{% if m.leave_pending %} (leaving){% endif %}{% if m.active_stat == 'inactive' %} (inactive){% endif %}
                                         </option>
                                         {% endfor %}
                                     </select>
@@ -1274,7 +1305,7 @@
                             <td>
                                 <span
                                     class="status-badge {% if m.active_stat == 'active' %}status-confirmed{% else %}status-pending{% endif %}">
-                                    {{ m.active_stat }}
+                                    {% if m.active_stat == 'active' %}Active for work now{% else %}Absent / inactive{% endif %}
                                 </span>
                                 {% if m.leave_pending %}<span class="status-badge status-cancelled">Leave
                                     requested</span>{% endif %}
@@ -1339,13 +1370,13 @@
     <div class="fw-modal-panel">
         <header class="fw-modal-header">
             <div>
-                <h2 id="cwTitle">Set up your workshop</h2>
+                <h2 id="cwTitle">{{ 'Edit workshop details' if workshop else 'Set up your workshop' }}</h2>
                 <p>Tell customers who you are and where to find you.</p>
             </div>
             <button type="button" class="fw-modal-close" data-close aria-label="Close">&times;</button>
         </header>
 
-        <form method="POST" action="{{ url_for('dashboard.create_workshop') }}" id="createWorkshopForm" novalidate>
+        <form method="POST" action="{{ url_for('dashboard.create_workshop') }}" id="createWorkshopForm" data-mode="{{ 'edit' if workshop else 'create' }}" novalidate>
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" id="latitude" name="latitude">
             <input type="hidden" id="longitude" name="longitude">
@@ -1391,7 +1422,7 @@
 
             <footer class="fw-modal-footer">
                 <button type="button" class="fw-btn-ghost" data-close>Cancel</button>
-                <button type="submit" class="fw-btn-primary" id="cwSubmit">Create workshop</button>
+                <button type="submit" class="fw-btn-primary" id="cwSubmit">{{ 'Save changes' if workshop else 'Create workshop' }}</button>
             </footer>
         </form>
     </div>

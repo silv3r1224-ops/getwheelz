@@ -6,11 +6,17 @@
 {% include 'partials/px_head.html' %}
 {% endblock %}
 
+{% from 'partials/robot.html' import robot %}
 {% block content %}
 <div class="px">
     <section class="px-confirm" style="padding-bottom: 80px;">
         <div class="px-wrap px-narrow">
-            <div class="px-check"><i class='bx bx-check'></i></div>
+            {# NEO hammering on the left, NEO tightening a screw on the right: the booking is being worked on #}
+            <div class="neo-duo">
+                {{ robot('working', 130, follow=False, label='NEO working with a hammer') }}
+                <div class="px-check"><i class='bx bx-check'></i></div>
+                {{ robot('screwing', 130, follow=False, label='NEO tightening a screw') }}
+            </div>
             <h1 class="px-title" style="margin-top: 0;">Booking <span class="grad">requested.</span></h1>
             <p class="px-lead" style="margin: 0 auto;">Your request is with the workshop. You will see it move to Confirmed under My Bookings once they accept.</p>
 

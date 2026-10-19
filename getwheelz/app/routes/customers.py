@@ -13,12 +13,12 @@ def home():
         with conn.cursor() as cur:
             # latitude/longitude let the page show how far each workshop is from the visitor
             cur.execute("""
-                SELECT w.w_id, w.name, w.address, w.photo_path, w.latitude, w.longitude,
+                SELECT w.w_id, w.name, w.address, w.photo_path, w.latitude, w.longitude, w.is_open,
                 array_agg(DISTINCT sc.s_name) FILTER (WHERE sc.s_name IS NOT NULL) AS service_names
                 FROM workshop w
                 LEFT JOIN service s ON s.w_id = w.w_id
                 LEFT JOIN service_catalog sc ON sc.sc_id = s.sc_id
-                GROUP BY w.w_id, w.name, w.address, w.photo_path, w.latitude, w.longitude
+                GROUP BY w.w_id, w.name, w.address, w.photo_path, w.latitude, w.longitude, w.is_open
                 ORDER BY w.w_id DESC
                 LIMIT 10
             """)

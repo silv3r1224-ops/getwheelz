@@ -4,10 +4,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // Dismiss flash messages after four seconds; pause while the user hovers.
     document.querySelectorAll(".flash-message").forEach((message) => {
         let timer;
+        const row = message.closest(".flash-item") || message; // NEO + message leave together
         const dismiss = () => {
-            message.style.opacity = "0";
-            message.style.transform = "translateX(40px)";
-            window.setTimeout(() => message.remove(), 300);
+            row.style.opacity = "0";
+            row.style.transform = "translateX(40px)";
+            window.setTimeout(() => row.remove(), 300);
         };
         const start = () => {
             window.clearTimeout(timer);

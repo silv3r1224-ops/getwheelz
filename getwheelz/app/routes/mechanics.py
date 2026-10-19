@@ -336,6 +336,31 @@ def request_leave():
     return redirect(url_for('mechanics.home'))
 
 
+@mechanics_bp.route('/status', methods=['POST'])
+@role_required('mechanic')
+def set_status():
+    """A mechanic marks themselves 'active' (active for work now) or 'inactive' (absent)."""
+    status = request.form.get('status')
+    if status not in ('active', 'inactive'):
+        abort(400)
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE mechanic SET active_stat = %s WHERE u_id = %s",
+                        (status, session['user_id']))
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+    flash('You are now shown as active for work.' if status == 'active'
+          else 'You are now shown as absent / inactive.', 'success')
+    return redirect(url_for('mechanics.home'))
+
+
 @mechanics_bp.route('/booking/<int:booking_id>/complete', methods=['POST'])
 @role_required('mechanic')
 def complete_job(booking_id):

@@ -1,7 +1,7 @@
 {# NEO, the GetWheelz robot mascot.
 Use: {% from 'partials/robot.html' import robot %}
 {{ robot('working', 140) }}
-Args: mood neutral | happy | excited | working | strained
+Args: mood neutral | happy | excited | wave | working | screwing | strained
 size width in pixels (height follows)
 skin '' (cyan) | lime | amber | violet
 follow True makes the eyes follow the cursor
@@ -59,6 +59,31 @@ roam=False) -%}
                     <circle class="rb-blush" cx="162" cy="142" r="7" />
                     <path class="rb-open" d="M101 136 Q120 168 139 136 Z" />
                 </g>
+                <g class="rb-m rb-m-wave">
+                    <g class="rb-eyes">
+                        <rect x="92" y="92" width="14" height="34" rx="7" />
+                        <rect x="134" y="92" width="14" height="34" rx="7" />
+                    </g>
+                    <path class="rb-stroke" d="M102 138 Q120 154 138 138" />
+                </g>
+                <g class="rb-m rb-m-screwing">
+                    <!-- a screw being tightened: the slot turns, the screwdriver presses in, turns, lifts and resets -->
+                    <circle class="rb-outline" cx="98" cy="128" r="19" />
+                    <g class="rb-screw-slot">
+                        <path class="rb-stroke" d="M86 128 L110 128" />
+                    </g>
+                    <path class="rb-stroke thin rb-turn" d="M70 112 A32 32 0 0 1 90 94" />
+                    <path class="rb-stroke thin rb-turn" d="M72 150 A32 32 0 0 1 66 130" />
+                    <g transform="translate(98 124) rotate(35)">
+                        <g class="rb-driver">
+                            <rect class="rb-outline" x="-2.5" y="-34" width="5" height="34" rx="1.5" />
+                            <rect class="rb-outline" x="-9" y="-68" width="18" height="36" rx="7" />
+                            <path class="rb-stroke thin" d="M-9 -58 L9 -58" />
+                            <path class="rb-stroke thin" d="M-9 -50 L9 -50" />
+                            <path class="rb-stroke thin" d="M-9 -42 L9 -42" />
+                        </g>
+                    </g>
+                </g>
                 <g class="rb-m rb-m-working">
                     <g class="rb-motion">
                         <path class="rb-stroke thin" d="M66 90 L78 78" />
@@ -88,6 +113,30 @@ roam=False) -%}
             </g>
             <g transform="translate(186 24) scale(.45)">
                 <path class="sp s3" d="M0 -15 Q2 -2 15 0 Q2 2 0 15 Q-2 2 -15 0 Q-2 -2 0 -15Z" />
+            </g>
+        </g>
+        <g class="rb-hand" transform="translate(233 200) scale(1.3)">
+            <g class="rb-wave">
+                <g class="rim">
+                    <rect x="-17" y="-42" width="34" height="42" rx="13" />
+                    <rect x="-17" y="-66" width="7.6" height="30" rx="3.8" />
+                    <rect x="-8" y="-72" width="7.6" height="36" rx="3.8" />
+                    <rect x="1" y="-69" width="7.6" height="33" rx="3.8" />
+                    <rect x="10" y="-62" width="7.6" height="28" rx="3.8" />
+                    <rect x="-31" y="-34" width="14" height="28" rx="7" transform="rotate(-24 -24 -20)" />
+                </g>
+                <g class="fillp">
+                    <rect x="-17" y="-42" width="34" height="42" rx="13" />
+                    <rect x="-17" y="-66" width="7.6" height="30" rx="3.8" />
+                    <rect x="-8" y="-72" width="7.6" height="36" rx="3.8" />
+                    <rect x="1" y="-69" width="7.6" height="33" rx="3.8" />
+                    <rect x="10" y="-62" width="7.6" height="28" rx="3.8" />
+                    <rect x="-31" y="-34" width="14" height="28" rx="7" transform="rotate(-24 -24 -20)" />
+                </g>
+            </g>
+            <g class="rb-wavelines">
+                <path class="rb-stroke thin" d="M28 -80 Q38 -66 28 -52" />
+                <path class="rb-stroke thin" d="M38 -90 Q54 -66 38 -42" />
             </g>
         </g>
         <g class="rb-thumb">

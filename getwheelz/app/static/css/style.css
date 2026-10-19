@@ -6353,3 +6353,91 @@ body.fw-scroll-lock {
         padding: 32px 20px 24px;
     }
 }
+
+/* ==========================================================================
+   Open / Closed (workshops) and Active / Inactive (mechanics) indicators
+   ========================================================================== */
+.oc-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.oc-badge::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.oc-open {
+    background: rgba(46, 204, 113, 0.16);
+    color: #2ecc71;
+}
+
+.oc-closed {
+    background: rgba(231, 76, 60, 0.16);
+    color: #e74c3c;
+}
+
+.oc-inactive {
+    background: rgba(149, 165, 166, 0.18);
+    color: #95a5a6;
+}
+
+.oc-toggle-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.oc-toggle-form .oc-choice {
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: transparent;
+    color: inherit;
+    padding: 9px 18px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.oc-toggle-form .oc-choice:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.oc-toggle-form .oc-choice.is-current.to-active,
+.oc-toggle-form .oc-choice.is-current.to-open {
+    background: rgba(46, 204, 113, 0.18);
+    border-color: #2ecc71;
+    color: #2ecc71;
+}
+
+.oc-toggle-form .oc-choice.is-current.to-inactive,
+.oc-toggle-form .oc-choice.is-current.to-closed {
+    background: rgba(231, 76, 60, 0.16);
+    border-color: #e74c3c;
+    color: #e74c3c;
+}
+
+.oc-notice {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 10px 0 0;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    background: rgba(231, 76, 60, 0.12);
+    color: #e74c3c;
+}

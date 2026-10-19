@@ -1,6 +1,6 @@
 /* ==========================================================================
    Scrollbars
-   1) The site scrollbar: crimson-to-cyan thumb on a black track (dark theme)
+   1) The site scrollbar: crimson thumb with a thin cyan line in the middle, on a black track (dark theme)
       or a white track (light theme). Follows the theme toggle automatically.
    2) The login / sign-up pop-ups: no visible scrollbar at all. They still
       scroll with the wheel or touch on very short screens, and the form is
@@ -14,7 +14,7 @@
     --sb-crimson-hi: #ff5a7c;
     --sb-cyan: #27c4f2;
     --sb-cyan-hi: #62dcff;
-    --sb-size: 12px;
+    --sb-size: 16px;
 }
 /* light theme: the toggle puts a "light" class on <body> */
 :root:has(body.light) {
@@ -33,18 +33,28 @@
     min-height: 48px;
     border-radius: 999px;
     border: 3px solid var(--sb-track);           /* makes the thumb look inset */
-    background: linear-gradient(180deg, var(--sb-crimson) 0%, #a8305e 50%, var(--sb-cyan) 100%);
+    /* solid crimson thumb with a thin cyan line down the middle.
+       The line is shorter than the thumb and narrower than it, so it never touches an edge or an end. */
+    background:
+        linear-gradient(var(--sb-cyan), var(--sb-cyan)) center / 2px calc(100% - 16px) no-repeat,
+        var(--sb-crimson);
 }
 ::-webkit-scrollbar-thumb:horizontal {
     min-width: 48px;
     min-height: 0;
-    background: linear-gradient(90deg, var(--sb-crimson) 0%, #a8305e 50%, var(--sb-cyan) 100%);
+    background:
+        linear-gradient(var(--sb-cyan), var(--sb-cyan)) center / calc(100% - 16px) 2px no-repeat,
+        var(--sb-crimson);
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, var(--sb-crimson-hi) 0%, var(--sb-crimson) 45%, var(--sb-cyan-hi) 100%);
+    background:
+        linear-gradient(var(--sb-cyan-hi), var(--sb-cyan-hi)) center / 2px calc(100% - 16px) no-repeat,
+        var(--sb-crimson-hi);
 }
 ::-webkit-scrollbar-thumb:horizontal:hover {
-    background: linear-gradient(90deg, var(--sb-crimson-hi) 0%, var(--sb-crimson) 45%, var(--sb-cyan-hi) 100%);
+    background:
+        linear-gradient(var(--sb-cyan-hi), var(--sb-cyan-hi)) center / calc(100% - 16px) 2px no-repeat,
+        var(--sb-crimson-hi);
 }
 ::-webkit-scrollbar-corner { background: var(--sb-track); }
 

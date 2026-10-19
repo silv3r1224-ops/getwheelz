@@ -186,6 +186,16 @@
     .lp-near span { color: var(--text-muted); font-size: 12.5px; }
     .lp-preview-note { position: absolute; left: 6%; bottom: 0; font-size: 11.5px; color: var(--text-muted); opacity: .8; }
 
+    /* NEO waves hello beside the services heading */
+    .lp-head-row { display: flex; align-items: center; gap: 46px; flex-wrap: wrap; margin-bottom: 58px; }
+    .lp .lp-head-row .lp-section-head { margin-bottom: 0; }
+    .lp-wave { flex: none; line-height: 0; padding: 18px 40px 0 6px; }
+    .lp-wave .rb { filter: drop-shadow(0 16px 24px rgba(0, 0, 0, .45)); }
+    @media (max-width: 760px) {
+        .lp-head-row { gap: 26px; margin-bottom: 40px; }
+        .lp-wave .rb { width: 124px; height: auto; }
+    }
+
     /* NEO floats around above the booking card, drifting through 3D space */
     .lp-robot { position: absolute; left: 43%; top: -2px; transform: translateX(-50%); z-index: 5; line-height: 0; }
     .lp-robot .rb { filter: drop-shadow(0 18px 26px rgba(0, 0, 0, .45)); }
@@ -501,10 +511,13 @@
     {# ===================== SERVICES ===================== #}
     <section class="lp-services reveal">
         <div class="lp-wrap">
-            <div class="lp-section-head">
-                <span class="lp-eyebrow"><i class='bx bx-cog'></i> Services</span>
-                <h2>Whatever your vehicle needs, start here.</h2>
-                <p>Pick a service and see the workshops that offer it, nearest first.</p>
+            <div class="lp-head-row">
+                <div class="lp-section-head">
+                    <span class="lp-eyebrow"><i class='bx bx-cog'></i> Services</span>
+                    <h2>Whatever your vehicle needs, start here.</h2>
+                    <p>Pick a service and see the workshops that offer it, nearest first.</p>
+                </div>
+                <div class="lp-wave">{{ robot('wave', 150, follow=True) }}</div>
             </div>
             <div class="lp-tiles">
                 {% for svc in catalog_services[:10] %}

@@ -1,13 +1,13 @@
 // NEO, the GetWheelz robot: eye-tracking, idle looking around, 3D roaming, click reactions and a tiny API.
 //
-//   GWRobot.setMood(el, 'working')          switch mood (neutral | happy | excited | working | strained)
+//   GWRobot.setMood(el, 'working')          switch mood (neutral | happy | excited | wave | working | screwing | strained)
 //   GWRobot.flash(el, 'happy', 1600)        show a mood briefly, then return to the base mood
 //   <form data-robot="#myRobot" data-robot-on-submit="working">   robot reacts when the form is sent
 //
 (function () {
     if (window.GWRobot) return;   // loaded twice (e.g. by the page and by base.html): run only once
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const MOODS = ['neutral', 'happy', 'excited', 'working', 'strained'];
+    const MOODS = ['neutral', 'happy', 'excited', 'wave', 'working', 'screwing', 'strained'];
     const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
     let lastMove = 0;
 

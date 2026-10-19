@@ -47,7 +47,8 @@ CREATE TABLE workshop (
     longitude  DOUBLE PRECISION,
     contact_no VARCHAR(20),
     photo_path VARCHAR(255),
-    capacity   INTEGER NOT NULL DEFAULT 5 CHECK (capacity BETWEEN 1 AND 100)
+    capacity   INTEGER NOT NULL DEFAULT 5 CHECK (capacity BETWEEN 1 AND 100),
+    is_open    BOOLEAN NOT NULL DEFAULT TRUE  -- owner's Open / Closed switch, shown to customers
 );
 
 CREATE TABLE mechanic (
@@ -55,7 +56,7 @@ CREATE TABLE mechanic (
     u_id               INTEGER NOT NULL UNIQUE REFERENCES users(u_id) ON DELETE CASCADE,
     w_id               INTEGER REFERENCES workshop(w_id) ON DELETE SET NULL,
     experience_yrs     INTEGER,
-    active_stat        VARCHAR(20) DEFAULT 'active',
+    active_stat        VARCHAR(20) DEFAULT 'active',  -- 'active' (active for work now) or 'inactive' (absent)
     leave_requested_at TIMESTAMP,
     leave_reason       TEXT,
     leave_rejected_at  TIMESTAMP
@@ -101,7 +102,8 @@ CREATE TABLE booking (
     s_id           INTEGER NOT NULL REFERENCES service(s_id),  -- no CASCADE: a service with bookings cannot be removed
     requested_time TIMESTAMP NOT NULL,
     status         VARCHAR(20) DEFAULT 'pending'
-                   CHECK (status IN ('pending', 'confirmed', 'completed', 'cancelled'))
+                   CHECK (status IN ('pending', 'confirmed', 'completed', 'cancelled')),
+    assigned_m_id  INTEGER REFERENCES mechanic(m_id) ON DELETE SET NULL  -- mechanic the owner assigned the job to
 );
 
 CREATE TABLE feedback (
@@ -121,6 +123,7 @@ CREATE INDEX idx_mechanic_workshop ON mechanic (w_id);
 CREATE INDEX idx_service_workshop  ON service (w_id);
 CREATE INDEX idx_booking_customer  ON booking (c_id);
 CREATE INDEX idx_booking_workshop  ON booking (w_id);
+CREATE INDEX idx_booking_mechanic  ON booking (assigned_m_id);
 CREATE INDEX idx_join_request_workshop ON join_request (w_id);
 
 -- ---------------------------------------------------------------

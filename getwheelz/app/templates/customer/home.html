@@ -91,7 +91,7 @@
                                 </div>
                             </div>
                             <div class="px-wcard-body">
-                                <h3>{{ w.name }}</h3>
+                                <h3>{{ w.name }} <span class="oc-badge {{ 'oc-open' if w.is_open else 'oc-closed' }}">{{ 'Open' if w.is_open else 'Closed' }}</span></h3>
                                 <p class="px-addr"><i class='bx bx-map'></i><span>{{ w.address or 'Address not listed' }}</span></p>
                                 {% if w.service_names %}
                                 <div class="px-tags">

@@ -34,7 +34,7 @@ def new(w_id):
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT w_id, name, address FROM workshop WHERE w_id = %s", (w_id,)
+                "SELECT w_id, name, address, is_open FROM workshop WHERE w_id = %s", (w_id,)
             )
             workshop = cur.fetchone()
             if workshop is None:

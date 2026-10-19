@@ -51,13 +51,13 @@ def search():
     try:
         with conn.cursor() as cur:
             cur.execute(f"""
-                SELECT w.w_id, w.name, w.address, w.latitude, w.longitude, w.photo_path,
+                SELECT w.w_id, w.name, w.address, w.latitude, w.longitude, w.photo_path, w.is_open,
                        array_agg(DISTINCT sc.s_name) FILTER (WHERE sc.s_name IS NOT NULL) AS service_names
                 FROM workshop w
                 LEFT JOIN service s ON s.w_id = w.w_id
                 LEFT JOIN service_catalog sc ON sc.sc_id = s.sc_id
                 {where}
-                GROUP BY w.w_id, w.name, w.address, w.latitude, w.longitude, w.photo_path
+                GROUP BY w.w_id, w.name, w.address, w.latitude, w.longitude, w.photo_path, w.is_open
             """, params)
             rows = cur.fetchall()
     finally:
@@ -96,7 +96,7 @@ def nearby():
     cur = conn.cursor()
     cur.execute("""
         SELECT * FROM (
-            SELECT w.w_id, w.name, w.address, w.photo_path,
+            SELECT w.w_id, w.name, w.address, w.photo_path, w.is_open,
                    6371 * acos(LEAST(1, GREATEST(-1,
                        cos(radians(%s)) * cos(radians(w.latitude))
                        * cos(radians(w.longitude) - radians(%s))
@@ -118,6 +118,7 @@ def nearby():
         'name': r['name'],
         'address': r['address'],
         'photo_url': r['photo_path'],
+        'is_open': r['is_open'],
         'distance_km': round(r['distance_km'], 1),
     } for r in rows])
 

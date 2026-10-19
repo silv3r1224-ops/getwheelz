@@ -23,6 +23,7 @@
                 <div class="px-banner-body">
                     <h1>{{ workshop.name }}</h1>
                     <div class="px-meta">
+                        <span class="oc-badge {{ 'oc-open' if workshop.is_open else 'oc-closed' }}">{{ 'Open now' if workshop.is_open else 'Closed right now' }}</span>
                         <span><i class='bx bx-map'></i> {{ workshop.address or 'Address not listed' }}</span>
                         {% if workshop.contact_no %}<span><i class='bx bx-phone'></i> {{ workshop.contact_no }}</span>{% endif %}
                         <span><i class='bx bx-wrench'></i> {{ services | length }} service{{ '' if services | length == 1 else 's' }}</span>

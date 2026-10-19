@@ -105,3 +105,141 @@
         if (event.key === "Escape") closeAuthModals();
     });
 })();
+
+// Login / sign-up pop-ups: submit in the background so the pop-up STAYS OPEN when something is wrong
+// (wrong email or password, passwords that do not match, ...). The problem is shown inside the form,
+// the fields keep what was typed, and NEO looks strained. Only a successful login leaves the page.
+(() => {
+    const FORMS = "#loginModal form, #signUpModal form";
+    if (!window.fetch || !window.FormData) return; // very old browser: the normal form post still works
+
+    const loginModal = document.getElementById("loginModal");
+    const signUpModal = document.getElementById("signUpModal");
+
+    function box(form) {
+        let el = form.querySelector(".auth-msg");
+        if (!el) {
+            el = document.createElement("div");
+            el.className = "auth-msg";
+            el.setAttribute("role", "alert");
+            el.hidden = true;
+            form.insertBefore(el, form.querySelector(".fw-btn-con") || null);
+        }
+        return el;
+    }
+
+    function neo(mood) {
+        const svg = document.querySelector("#authRobot .rb");
+        if (!svg || !window.GWRobot) return;
+        window.dispatchEvent(new Event("resize")); // the form just got taller: let NEO re-position itself
+        window.GWRobot.flash(svg, mood, 2600);
+    }
+
+    function show(form, kind, text) {
+        const el = box(form);
+        el.className = "auth-msg is-" + kind;
+        el.replaceChildren();
+        const icon = document.createElement("i");
+        icon.className = "bx " + (kind === "ok" ? "bx-check-circle" : "bx-error-circle");
+        const span = document.createElement("span");
+        span.textContent = text;
+        el.append(icon, span);
+        el.hidden = false;
+        if (kind === "error") {
+            form.classList.remove("is-shake");
+            void form.offsetWidth; // restart the shake
+            form.classList.add("is-shake");
+        }
+        neo(kind === "ok" ? "happy" : "strained");
+    }
+
+    function clearAll() {
+        document.querySelectorAll(FORMS).forEach((f) => {
+            const el = f.querySelector(".auth-msg");
+            if (el) el.hidden = true;
+            f.classList.remove("is-shake");
+        });
+    }
+
+    // moving between Login and Sign Up by hand starts with a clean slate
+    document.addEventListener("click", (e) => {
+        if (e.target instanceof Element && e.target.closest("[data-login], [data-signup]")) clearAll();
+    });
+
+    document.addEventListener("submit", async (e) => {
+        const form = e.target;
+        if (!(form instanceof HTMLFormElement) || !form.matches(FORMS)) return;
+        e.preventDefault();
+        form.setAttribute("data-no-stay", ""); // stay-put.js must not remember a scroll position for these
+
+        const isLogin = Boolean(form.closest("#loginModal"));
+        const button = form.querySelector('button[type="submit"]');
+        const label = button ? button.textContent : "";
+        if (button) {
+            button.disabled = true;
+            button.textContent = isLogin ? "Signing in…" : "Creating account…";
+        }
+        const reset = () => {
+            if (!button) return;
+            button.disabled = false;
+            button.textContent = label;
+        };
+        const el = form.querySelector(".auth-msg");
+        if (el) el.hidden = true;
+
+        let res = null;
+        let data = null;
+        try {
+            res = await fetch(form.action, {
+                method: "POST",
+                body: new FormData(form),
+                credentials: "same-origin",
+                headers: { "X-Requested-With": "fetch", Accept: "application/json" },
+            });
+            try { data = await res.json(); } catch (err) { /* not JSON: handled below */ }
+        } catch (err) {
+            reset();
+            show(form, "error", "Could not reach the server. Check your connection and try again.");
+            return;
+        }
+
+        if (data && data.ok && data.redirect) {
+            window.location.assign(data.redirect); // logged in: the button stays disabled while the page changes
+            return;
+        }
+
+        reset();
+
+        if (data && data.ok) {
+            // account created: move to the login form, with the email already filled in
+            const email = form.querySelector('input[name="email"]');
+            const loginForm = loginModal && loginModal.querySelector("form");
+            form.reset();
+            clearAll();
+            if (loginForm) {
+                const loginEmail = loginForm.querySelector('input[name="email"]');
+                if (loginEmail && email) loginEmail.value = email.value || loginEmail.value;
+                loginModal.classList.add("show");
+                signUpModal && signUpModal.classList.remove("show");
+                show(loginForm, "ok", data.message || "Account created. Please log in.");
+                const pw = loginForm.querySelector('input[name="password"]');
+                // the pop-up watcher in robot.js runs after this, so give NEO's mood a moment
+                setTimeout(() => { neo("happy"); pw && pw.focus(); }, 60);
+            }
+            return;
+        }
+
+        let text = data && data.error;
+        if (!text) {
+            if (res && res.status === 429) text = "Too many attempts. Please wait a minute and try again.";
+            else if (res && res.status === 400) text = "Your session expired. Please refresh the page and try again.";
+            else text = "Something went wrong. Please try again.";
+        }
+        show(form, "error", text);
+
+        if (isLogin) {
+            const pw = form.querySelector('input[name="password"]');
+            if (pw) { pw.value = ""; pw.focus(); }
+        }
+    });
+})();

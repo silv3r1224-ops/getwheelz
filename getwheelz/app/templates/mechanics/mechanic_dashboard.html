@@ -46,6 +46,23 @@
             </div>
         </header>
 
+        {# ---------------- my availability ---------------- #}
+        <section class="admin-section wp-panel" id="mStatus">
+            <h2>My Availability
+                <span class="oc-badge {{ 'oc-open' if mechanic.active_stat == 'active' else 'oc-inactive' }}">
+                    {{ 'Active for work now' if mechanic.active_stat == 'active' else 'Absent / inactive' }}
+                </span>
+            </h2>
+            <p class="leave-text">Let the owner and your team know whether you are available to take jobs.</p>
+            <form method="POST" action="{{ url_for('mechanics.set_status') }}" class="oc-toggle-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" name="status" value="active"
+                    class="oc-choice to-active {% if mechanic.active_stat == 'active' %}is-current{% endif %}">Active for work now</button>
+                <button type="submit" name="status" value="inactive"
+                    class="oc-choice to-inactive {% if mechanic.active_stat != 'active' %}is-current{% endif %}">Absent / inactive</button>
+            </form>
+        </section>
+
         {# ---------------- leave status banners ---------------- #}
         {% if leave_pending %}
         <div class="notice-card notice-warn">
@@ -230,6 +247,9 @@
                         {% if t.experience_yrs %}{{ t.experience_yrs }} yr{{ '' if t.experience_yrs == 1 else 's' }}
                         experience{% else %}Experience not listed{% endif %}
                     </p>
+                    <span class="oc-badge {{ 'oc-open' if t.active_stat == 'active' else 'oc-inactive' }}">
+                        {{ 'Active' if t.active_stat == 'active' else 'Absent' }}
+                    </span>
                     <small class="view-profile-hint">View profile</small>
                 </div>
                 {% endfor %}

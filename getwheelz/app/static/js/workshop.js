@@ -2,7 +2,9 @@
 
 const createWorkshopModal = document.getElementById('createWorkshopModal');
 const createWorkshopForm = document.getElementById('createWorkshopForm');
-const createWorkshopTriggers = document.querySelectorAll('#create-workshop-btn, [data-open-create-workshop]');
+const createWorkshopTriggers = document.querySelectorAll('#create-workshop-btn, [data-open-create-workshop], [data-open-edit-workshop]');
+const SUBMIT_LABELS = { create: ['Create workshop', 'Creating…'], edit: ['Save changes', 'Saving…'] };
+let workshopMode = createWorkshopForm && createWorkshopForm.dataset.mode ? createWorkshopForm.dataset.mode : 'create';
 
 let pinMap = null;
 let pinMarker = null;
@@ -90,12 +92,31 @@ function initPinMap() {
     pinMap.on('click', (e) => setPin(e.latlng.lat, e.latlng.lng));
 }
 
+// Edit mode: fill the form from the Edit Details button's data-* attributes and put the pin where it is now.
+function fillFromWorkshop(btn) {
+    createWorkshopForm.action = btn.dataset.action;
+    document.getElementById('cwName').value = btn.dataset.name || '';
+    document.getElementById('cwAddress').value = btn.dataset.address || '';
+    document.getElementById('cwContact').value = btn.dataset.contact || '';
+    ['cwName', 'cwAddress', 'cwContact'].forEach((id) => clearFieldError(id, id + 'Error'));
+    clearLocationError();
+
+    const lat = parseFloat(btn.dataset.lat);
+    const lng = parseFloat(btn.dataset.lng);
+    if (!isNaN(lat) && !isNaN(lng)) {
+        pinMap.setView([lat, lng], 16);
+        setPin(lat, lng);
+    }
+}
+
 function openCreateWorkshop(opener) {
     if (!createWorkshopModal) return;
     createWorkshopOpener = opener || null;
     createWorkshopModal.classList.add('show');
     document.body.classList.add('fw-scroll-lock');
     initPinMap();
+    workshopMode = opener && opener.hasAttribute('data-open-edit-workshop') ? 'edit' : 'create';
+    if (workshopMode === 'edit') fillFromWorkshop(opener);
     // Leaflet must re-measure once the container is actually visible.
     setTimeout(() => pinMap && pinMap.invalidateSize(), 120);
     const first = document.getElementById('cwName');
@@ -199,14 +220,14 @@ if (createWorkshopModal && createWorkshopForm) {
 
         const submit = document.getElementById('cwSubmit');
         submit.disabled = true; // prevent double submits
-        submit.textContent = 'Creating…';
+        submit.textContent = SUBMIT_LABELS[workshopMode][1];
     });
 
     // If the person comes back with the browser's Back button, don't leave the button stuck.
     window.addEventListener('pageshow', () => {
         const submit = document.getElementById('cwSubmit');
         submit.disabled = false;
-        submit.textContent = 'Create workshop';
+        submit.textContent = SUBMIT_LABELS[workshopMode][0];
     });
 }
 

@@ -13,6 +13,9 @@
             <a class="px-chip" href="{{ url_for('workshops.selected', w_id=workshop.w_id) }}"><i class='bx bx-arrow-back'></i> Back to workshop</a>
             <h1 class="px-title">Book a service at <span class="grad">{{ workshop.name }}</span></h1>
             <p class="px-lead"><i class='bx bx-map'></i> {{ workshop.address or 'Address not listed' }}</p>
+            {% if not workshop.is_open %}
+            <p class="oc-notice"><i class='bx bx-info-circle'></i> This workshop is closed right now. You can still send a request for a later time.</p>
+            {% endif %}
         </div>
     </section>
 

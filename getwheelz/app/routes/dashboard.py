@@ -872,7 +872,7 @@ def owner():
         abort(403)
 
     cur.execute(
-        "SELECT w_id, name, address, contact_no, photo_path, capacity FROM workshop WHERE o_id = %s",
+        "SELECT w_id, name, address, contact_no, latitude, longitude, photo_path, capacity, is_open FROM workshop WHERE o_id = %s",
         (owner_row["o_id"],),
     )
     workshop = cur.fetchone()
@@ -1566,6 +1566,68 @@ def create_workshop():
     return redirect(url_for("dashboard.owner"))
 
 
+@dashboard_bp.route("/owner/edit-workshop", methods=["POST"])
+@role_required("owner")
+def edit_workshop():
+    """Let an owner change their own workshop's name, address, phone number and map pin."""
+    name = " ".join((request.form.get("name") or "").split())
+    address = " ".join((request.form.get("address") or "").split())
+    contact_no = (request.form.get("contact_no") or "").strip() or None
+    error = None
+
+    if not name or len(name) > 150:
+        error = "Please enter your workshop name (up to 150 characters)."
+    elif not address or len(address) > 300:
+        error = "Please enter your workshop address (up to 300 characters)."
+    elif contact_no and not re.fullmatch(r"[0-9+()\-\s]{6,20}", contact_no):
+        error = "Please enter a valid contact number."
+
+    latitude = longitude = None
+    raw_lat = (request.form.get("latitude") or "").strip()
+    raw_lng = (request.form.get("longitude") or "").strip()
+    if not error:
+        try:
+            latitude, longitude = float(raw_lat), float(raw_lng)
+            if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
+                raise ValueError
+        except ValueError:
+            error = "That map location is not valid. Please set your pin again."
+
+    if error:
+        flash(error, "error")
+        return redirect(url_for("dashboard.owner"))
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        # The WHERE clause ties the update to the signed-in owner's own workshop only.
+        cur.execute(
+            """
+            UPDATE workshop w
+            SET name = %s, address = %s, contact_no = %s, latitude = %s, longitude = %s
+            FROM owner o
+            WHERE w.o_id = o.o_id AND o.u_id = %s
+            """,
+            (name, address, contact_no, latitude, longitude, session["user_id"]),
+        )
+        updated = cur.rowcount
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        logging.exception("Failed to edit workshop for user_id=%s", session.get("user_id"))
+        flash("Could not save your changes. Please try again.", "error")
+        return redirect(url_for("dashboard.owner"))
+    finally:
+        cur.close()
+        conn.close()
+
+    if updated:
+        flash("Workshop details updated.", "success")
+    else:
+        flash("You do not have a workshop to edit.", "error")
+    return redirect(url_for("dashboard.owner"))
+
+
 # upload workshop photo for owner
 @dashboard_bp.route("/owner/upload-photo", methods=["POST"])
 @role_required("owner")
@@ -1727,6 +1789,39 @@ def update_capacity():
 
     cur.close()
     conn.close()
+    return redirect(url_for("dashboard.owner"))
+
+
+@dashboard_bp.route("/owner/open-status", methods=["POST"])
+@role_required("owner")
+def update_open_status():
+    """Owner switches the workshop between Open and Closed (customers see this)."""
+    is_open = request.form.get("is_open") == "1"
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE workshop SET is_open = %s
+                WHERE o_id = (SELECT o_id FROM owner WHERE u_id = %s)
+            """,
+                (is_open, session["user_id"]),
+            )
+            changed = cur.rowcount
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+    if not changed:
+        flash("Create your workshop first.", "error")
+    elif is_open:
+        flash("Your workshop is now shown as Open.", "success")
+    else:
+        flash("Your workshop is now shown as Closed.", "success")
     return redirect(url_for("dashboard.owner"))
 
 

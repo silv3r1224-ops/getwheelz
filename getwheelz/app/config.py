@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -11,6 +12,10 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
     SESSION_COOKIE_SECURE = os.environ.get('COOKIE_SECURE') == '1'
+
+    # Stay logged in after the browser is closed: the login cookie lasts this many days and is
+    # renewed every time the person uses the site (so it only expires after that long of NOT visiting).
+    PERMANENT_SESSION_LIFETIME = timedelta(days=int(os.environ.get('SESSION_DAYS', '30')))
 
     DB_HOST = os.environ.get('DB_HOST', 'localhost')
     DB_PORT = os.environ.get('DB_PORT', '5432')

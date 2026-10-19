@@ -11,7 +11,8 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/scrollbar.css') }}">
     {% block head %}{% endblock %}
-    {% if not session.get('user_id') %}<link rel="stylesheet" href="{{ url_for('static', filename='css/robot.css') }}">{% endif %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/robot.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modals.css') }}">
 </head>
 
 <body>
@@ -20,11 +21,18 @@
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         <div class="flash-container">
+            {% from 'partials/robot.html' import robot %}
             {% for category, message in messages %}
-            <div class="flash-message flash-{{ category }}">
-                <i class="bx {{ 'bx-check-circle' if category == 'success' else 'bx-error-circle' }}"></i>
-                <span>{{ message }}</span>
-                <button type="button" class="flash-close" aria-label="Close message">&times;</button>
+            {# NEO sits to the left of every message: happy on success, strained on anything else (errors) #}
+            <div class="flash-item">
+                <div class="flash-robot" aria-hidden="true">
+                    {{ robot('happy' if category == 'success' else 'strained', 64, follow=False, label='NEO') }}
+                </div>
+                <div class="flash-message flash-{{ category }}">
+                    <i class="bx {{ 'bx-check-circle' if category == 'success' else 'bx-error-circle' }}"></i>
+                    <span>{{ message }}</span>
+                    <button type="button" class="flash-close" aria-label="Close message">&times;</button>
+                </div>
             </div>
             {% endfor %}
         </div>
@@ -42,8 +50,9 @@
     {% if not session.get('user_id') %}
     {% from 'partials/robot.html' import robot %}
     <div class="auth-robot" id="authRobot" aria-hidden="true">{{ robot('excited', 150, follow=False) }}</div>
-    <script src="{{ url_for('static', filename='js/robot.js') }}" defer></script>
     {% endif %}
+    {# robot.js runs for everyone now: the flash messages use NEO #}
+    <script src="{{ url_for('static', filename='js/robot.js') }}" defer></script>
 
     <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/header.js') }}" defer></script>
@@ -57,11 +66,12 @@
         (function () {
             document.querySelectorAll('.flash-message').forEach(function (message) {
                 var timer;
+                var row = message.closest('.flash-item') || message;
                 function dismiss() {
-                    message.style.opacity = '0';
-                    message.style.transform = 'translateX(40px)';
+                    row.style.opacity = '0';
+                    row.style.transform = 'translateX(40px)';
                     setTimeout(function () {
-                        message.remove();
+                        row.remove();
                     }, 300);
                 }
                 function start() {
