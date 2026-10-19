@@ -7,9 +7,13 @@
 {% endblock %}
 
 {% block content %}
+<style>
+    .px-pay-note { font-size: 12px; opacity: 0.7; }
+</style>
 {% set upcoming = bookings | selectattr('status', 'in', ['pending', 'confirmed']) | list %}
 {% set done = bookings | selectattr('status', 'equalto', 'completed') | list %}
 {% set cancelled = bookings | selectattr('status', 'equalto', 'cancelled') | list %}
+{% set to_pay = bookings | selectattr('to_pay') | list %}
 <div class="px">
     <section class="px-hero" style="padding-bottom: 0;">
         <div class="px-wrap">
@@ -26,6 +30,7 @@
                 <div class="px-seg" role="tablist" aria-label="Filter bookings" id="booking-filter">
                     <button type="button" class="active" data-filter="all">All ({{ bookings | length }})</button>
                     <button type="button" data-filter="upcoming">Upcoming ({{ upcoming | length }})</button>
+                    {% if to_pay %}<button type="button" data-filter="topay">To pay ({{ to_pay | length }})</button>{% endif %}
                     <button type="button" data-filter="completed">Completed ({{ done | length }})</button>
                     <button type="button" data-filter="cancelled">Cancelled ({{ cancelled | length }})</button>
                 </div>
@@ -34,7 +39,7 @@
 
             <div class="px-list" id="booking-list">
                 {% for b in bookings %}
-                <article class="px-card px-booking" data-group="{{ 'upcoming' if b.status in ('pending', 'confirmed') else b.status }}">
+                <article class="px-card px-booking" data-group="{{ 'upcoming' if b.status in ('pending', 'confirmed') else b.status }}" data-pay="{{ 1 if b.to_pay else 0 }}">
                     <div class="px-date">
                         <b>{{ b.requested_time.strftime('%d') }}</b>
                         <span>{{ b.requested_time.strftime('%b') }}</span>
@@ -53,6 +58,9 @@
 
                     <div class="px-booking-side">
                         <span class="px-badge {{ b.status }}">{{ b.status }}</span>
+                        {% if b.paid_reference %}
+                        <span class="px-badge confirmed" title="Receipt {{ b.paid_reference }}">Paid {{ b.paid_label }}</span>
+                        {% endif %}
                         <div class="px-booking-actions">
                             {% if b.status == 'pending' %}
                             <form method="POST" action="{{ url_for('bookings.cancel', b_id=b.b_id) }}"
@@ -63,6 +71,16 @@
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="px-ghost sm danger">Cancel</button>
                             </form>
+                            {% endif %}
+                            {% if b.paid_reference %}
+                            <a href="{{ url_for('bookings.receipt', b_id=b.b_id) }}" class="px-ghost sm"><i class='bx bx-receipt'></i> Receipt</a>
+                            {% elif b.status in ('confirmed', 'completed') %}
+                            {% if b.due_label %}
+                            <a href="{{ url_for('bookings.pay', b_id=b.b_id) }}" class="px-btn sm"><i class='bx bx-credit-card'></i> Pay {{ b.due_label }}</a>
+                            {% if b.due_is_estimate %}<span class="px-pay-note">estimate</span>{% endif %}
+                            {% else %}
+                            <span class="px-pay-note">Bill pending</span>
+                            {% endif %}
                             {% endif %}
                             <a href="{{ url_for('workshops.selected', w_id=b.w_id) }}" class="px-ghost sm">View workshop</a>
                         </div>
@@ -104,7 +122,7 @@
             const f = btn.dataset.filter;
             let shown = 0;
             list.querySelectorAll('.px-booking').forEach((card) => {
-                const show = f === 'all' || card.dataset.group === f;
+                const show = f === 'all' || (f === 'topay' ? card.dataset.pay === '1' : card.dataset.group === f);
                 card.hidden = !show;
                 if (show) shown++;
             });

@@ -138,6 +138,9 @@ def confirmation(b_id):
     cur.close()
     conn.close()
 
+    if booking is None:
+        abort(404)
+
     return render_template("bookings/confirmation.html", booking=booking)
 
 
@@ -153,8 +156,8 @@ def my_bookings():
     cur.execute(
         """
         SELECT b.b_id, b.requested_time, b.status, w.name AS workshop_name, w.w_id, sc.s_name,
-               mu.name AS mechanic_name, b.amount, s.price_range,
-               p.reference AS paid_reference, p.amount AS paid_amount
+        mu.name AS mechanic_name, b.amount, s.price_range,
+        p.reference AS paid_reference, p.amount AS paid_amount
         FROM booking b
         JOIN workshop w ON b.w_id = w.w_id
         JOIN service s ON b.s_id = s.s_id
@@ -167,13 +170,27 @@ def my_bookings():
     """,
         (customer["c_id"],),
     )
-    bookings = cur.fetchall()
+    # DictCursor rows can't take new keys, so work on plain dict copies
+    bookings = [dict(b) for b in cur.fetchall()]
 
     for b in bookings:
         due, source = amount_due(b["amount"], b["price_range"])
-        b["due_label"] = money(due)  # '' when the workshop has not billed yet
+        b["due_label"] = money(due)  # "" when the workshop has not billed yet
         b["due_is_estimate"] = source == "estimate"
         b["paid_label"] = money(b["paid_amount"]) if b["paid_reference"] else ""
+        # confirmed/completed and not paid yet -> shows under the "To pay" filter
+        b["to_pay"] = (not b["paid_reference"]) and b["status"] in (
+            "confirmed",
+            "completed",
+        )
+
+    # Upcoming appointments first (soonest at the top), then history newest-first.
+    upcoming = sorted(
+        (b for b in bookings if b["status"] in ("pending", "confirmed")),
+        key=lambda b: b["requested_time"],
+    )
+    history = [b for b in bookings if b["status"] not in ("pending", "confirmed")]
+    bookings = upcoming + history
 
     cur.close()
     conn.close()
@@ -318,7 +335,11 @@ def pay(b_id):
                 )
 
             flash(
-                "Payment successful." if inserted else "This booking was already paid.",
+                (
+                    "Payment successful."
+                    if inserted
+                    else "This booking was already paid."
+                ),
                 "success",
             )
             return redirect(url_for("bookings.receipt", b_id=b_id))

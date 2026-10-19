@@ -9,6 +9,7 @@
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <link rel="icon" href="{{ url_for('static', filename='logo/getwheelz.png')}}">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/scrollbar.css') }}">
     {% block head %}{% endblock %}
     {% if not session.get('user_id') %}<link rel="stylesheet" href="{{ url_for('static', filename='css/robot.css') }}">{% endif %}
 </head>

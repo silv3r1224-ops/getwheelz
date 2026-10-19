@@ -1,4 +1,4 @@
-// GetWheelz robot: eye-tracking, idle looking around, click reactions and a tiny API.
+// NEO, the GetWheelz robot: eye-tracking, idle looking around, 3D roaming, click reactions and a tiny API.
 //
 //   GWRobot.setMood(el, 'working')          switch mood (neutral | happy | excited | working | strained)
 //   GWRobot.flash(el, 'happy', 1600)        show a mood briefly, then return to the base mood
@@ -77,6 +77,59 @@
         const target = document.querySelector(form.getAttribute('data-robot'));
         setMood(target, form.getAttribute('data-robot-on-submit'));
     });
+
+    // ---------- roam: NEO floats around in 3D space ----------
+    // Elements with data-roam get a smooth, endlessly varying path made from a few slow sine waves:
+    //   x / y     drift around (in % of NEO's own size, so it scales with it)
+    //   scale     moves closer to / farther from you
+    //   rotateY/X turns and nods toward the direction of travel (needs perspective, added below)
+    //   rotateZ   leans into the turns like a little drone
+    // The face slides toward where NEO is heading, and every few seconds it glances straight at you.
+    (function roam() {
+        if (reduce || !('IntersectionObserver' in window)) return;
+        const live = new Set();            // roaming robots currently on screen
+        let raf = 0;
+
+        function frame(now) {
+            const t = now / 1000;
+            live.forEach((el) => {
+                const w = t + (parseFloat(el.dataset.roamPhase) || 0);
+                const x = 70 * Math.sin(0.31 * w) + 34 * Math.sin(0.57 * w + 1.3);
+                const y = 38 + 36 * Math.sin(0.43 * w + 0.6) + 20 * Math.sin(0.71 * w + 2.1);
+                const vx = 70 * 0.31 * Math.cos(0.31 * w) + 34 * 0.57 * Math.cos(0.57 * w + 1.3);
+                const vy = 36 * 0.43 * Math.cos(0.43 * w + 0.6) + 20 * 0.71 * Math.cos(0.71 * w + 2.1);
+                const s = 1 + 0.15 * Math.sin(0.37 * w + 2.2);
+                const yaw = clamp(vx * 0.8, -34, 34);
+                const pitch = clamp(vy * 0.22, -7, 7);
+                const roll = clamp(vx * 0.14, -8, 8) + 2 * Math.sin(1.3 * w);
+
+                // every ~9 s NEO turns its eyes to look right at you for a moment
+                const c = w % 9;
+                const glance = c > 6.2 && c < 7.8 ? Math.sin(((c - 6.2) / 1.6) * Math.PI) : 0;
+                const lead = 1 - glance;
+
+                el.style.transform =
+                    'translate(' + x.toFixed(2) + '%, ' + y.toFixed(2) + '%) scale(' + s.toFixed(3) + ') ' +
+                    'perspective(800px) rotateY(' + yaw.toFixed(2) + 'deg) rotateX(' + (-pitch).toFixed(2) + 'deg) ' +
+                    'rotateZ(' + roll.toFixed(2) + 'deg)';
+                el.style.setProperty('--lx', ((yaw / 34) * 9 * lead).toFixed(2));
+                el.style.setProperty('--ly', ((pitch / 7) * 5 * lead + 1.2 * Math.sin(2.1 * w)).toFixed(2));
+            });
+            raf = live.size ? requestAnimationFrame(frame) : 0;
+        }
+
+        const io = new IntersectionObserver((entries) => {
+            entries.forEach((e) => (e.isIntersecting ? live.add(e.target) : live.delete(e.target)));
+            if (live.size && !raf) raf = requestAnimationFrame(frame);
+        });
+        const watch = () => document.querySelectorAll('.rb[data-roam]').forEach((el) => {
+            if (el.dataset.roamReady) return;
+            el.dataset.roamReady = '1';
+            io.observe(el);
+        });
+        watch();
+        document.addEventListener('DOMContentLoaded', watch);
+    })();
 
     // ---------- login / sign-up pop-ups: an excited robot appears next to the form ----------
     // base.html adds <div id="authRobot"> for signed-out visitors. We watch the two pop-ups, and when one

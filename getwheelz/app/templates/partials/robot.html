@@ -1,4 +1,4 @@
-{# GetWheelz robot mascot.
+{# NEO, the GetWheelz robot mascot.
 Use: {% from 'partials/robot.html' import robot %}
 {{ robot('working', 140) }}
 Args: mood neutral | happy | excited | working | strained
@@ -6,13 +6,15 @@ size width in pixels (height follows)
 skin '' (cyan) | lime | amber | violet
 follow True makes the eyes follow the cursor
 wander True makes it look around by itself, as if wondering (use with follow=False)
+roam True makes NEO float around in 3D space (use with follow=False)
 id optional element id so JS or a form can target this robot
 Needs: css/robot.css in the page head and js/robot.js before </body>. #}
-{% macro robot(mood='neutral', size=160, skin='', follow=True, id='', label='GetWheelz robot', wander=False) -%}
+{% macro robot(mood='neutral', size=160, skin='', follow=True, id='', label='NEO, the GetWheelz robot', wander=False,
+roam=False) -%}
 <svg class="rb" data-mood="{{ mood }}" data-base-mood="{{ mood }}" {% if skin %} data-skin="{{ skin }}" {% endif %}{% if
-    follow %} data-follow{% endif %}{% if wander %} data-wander{% endif %}{% if id %} id="{{ id }}" {% endif %}
-    width="{{ size }}" height="{{ (size * 260 / 240) | round | int }}" viewBox="0 0 240 260" role="img"
-    aria-label="{{ label }}">
+    follow %} data-follow{% endif %}{% if wander %} data-wander{% endif %}{% if roam %} data-roam{% endif %}{% if id %}
+    id="{{ id }}" {% endif %} width="{{ size }}" height="{{ (size * 260 / 240) | round | int }}" viewBox="0 0 240 260"
+    role="img" aria-label="{{ label }}">
     <ellipse class="rb-shadow" cx="120" cy="238" rx="64" ry="9" />
     <g class="rb-body">
         <g class="rb-head">

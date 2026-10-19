@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timedelta
+from decimal import Decimal
 from flask import (
     Blueprint,
     render_template,
@@ -23,6 +24,7 @@ from app.utils import (
     decode_uid,
     decode_wid,
 )
+from app.payments import amount_due, money
 
 dashboard_bp = Blueprint("dashboard", __name__)
 
@@ -876,6 +878,7 @@ def owner():
     workshop = cur.fetchone()
 
     bookings = []
+    booking_summary = None
     services = []
     mechanics = []
     pending_requests = []
@@ -896,7 +899,9 @@ def owner():
         cur.execute(
             """
             SELECT b.b_id, b.requested_time, b.status, u.name AS customer_name, sc.s_name,
-            b.assigned_m_id, mu.name AS mechanic_name
+            b.assigned_m_id, mu.name AS mechanic_name, b.amount, s.price_range,
+            pay.amount AS paid_amount, pay.method AS paid_method, pay.detail AS paid_detail,
+            pay.paid_at AS paid_at
             FROM booking b
             JOIN customer c ON b.c_id = c.c_id
             JOIN users u ON c.u_id = u.u_id
@@ -904,16 +909,81 @@ def owner():
             JOIN service_catalog sc ON s.sc_id = sc.sc_id
             LEFT JOIN mechanic bm ON b.assigned_m_id = bm.m_id
             LEFT JOIN users mu ON bm.u_id = mu.u_id
+            LEFT JOIN payment pay ON pay.b_id = b.b_id
             WHERE b.w_id = %s
             ORDER BY b.requested_time DESC
         """,
             (workshop["w_id"],),
         )
-        bookings = cur.fetchall()
+        # DictCursor rows can't take new keys, so work on plain dict copies
+        bookings = [dict(b) for b in cur.fetchall()]
+
+        # what the customer will pay (the bill if set, else an estimate), and payment status.
+        # Everything the bookings table filters/sorts on is worked out here, once, on the server
+        # (so "today" and "this month" follow the server's clock, not the browser's).
+        now = datetime.now()
+        today = now.date()
+        this_week = today.isocalendar()[:2]
+        collected_month = Decimal("0")
+        awaiting = Decimal("0")
+        awaiting_count = 0
+        booking_counts = dict.fromkeys(
+            ("all", "active", "pending", "unpaid", "paid", "history"), 0
+        )
+
+        for b in bookings:
+            due, source = amount_due(b["amount"], b["price_range"])
+            b["due_label"] = money(due)
+            b["due_is_estimate"] = source == "estimate"
+            b["bill_value"] = f"{b['amount']:.2f}" if b["amount"] is not None else ""
+            b["is_paid"] = b["paid_amount"] is not None
+            b["paid_label"] = money(b["paid_amount"])
+
+            day = b["requested_time"].date()
+            periods = []
+            if day == today:
+                periods.append("today")
+            if day.isocalendar()[:2] == this_week:
+                periods.append("week")
+            if (day.year, day.month) == (today.year, today.month):
+                periods.append("month")
+            b["periods"] = " ".join(periods)
+            b["is_today"] = day == today
+            b["ts"] = int(b["requested_time"].timestamp())
+            # a booking can only be paid once the workshop has confirmed it
+            b["is_unpaid"] = (not b["is_paid"]) and b["status"] in (
+                "confirmed",
+                "completed",
+            )
+
+            booking_counts["all"] += 1
+            if b["status"] in ("pending", "confirmed"):
+                booking_counts["active"] += 1
+            else:
+                booking_counts["history"] += 1
+            if b["status"] == "pending":
+                booking_counts["pending"] += 1
+            if b["is_paid"]:
+                booking_counts["paid"] += 1
+                paid_at = b["paid_at"]
+                if paid_at and (paid_at.year, paid_at.month) == (today.year, today.month):
+                    collected_month += b["paid_amount"]
+            elif b["is_unpaid"]:
+                booking_counts["unpaid"] += 1
+                if due is not None:
+                    awaiting += due
+                    awaiting_count += 1
+
+        booking_summary = {
+            "collected_month": money(collected_month),
+            "awaiting": money(awaiting),
+            "awaiting_count": awaiting_count,
+            "counts": booking_counts,
+        }
 
         cur.execute(
             """
-            SELECT s.s_id, sc.s_name, s.price_range, s.duration,
+            SELECT s.s_id, s.sc_id, sc.s_name, s.price_range, s.duration,
             (SELECT COUNT(*) FROM booking b WHERE b.s_id = s.s_id) AS booking_count
             FROM service s
             JOIN service_catalog sc ON s.sc_id = sc.sc_id
@@ -975,6 +1045,7 @@ def owner():
         "dashboard/owner.html",
         workshop=workshop,
         bookings=bookings,
+        booking_summary=booking_summary,
         services=services,
         mechanics=mechanics,
         stats=stats,
@@ -982,7 +1053,6 @@ def owner():
         pending_requests=pending_requests,
         leave_requests=leave_requests,
     )
-
 
 @dashboard_bp.route("/owner/mechanic/<token>")
 @role_required("owner")
@@ -1330,7 +1400,7 @@ def update_booking_status(booking_id, action):
         ),
         "success" if changed else "error",
     )
-    return redirect(url_for("dashboard.owner"))
+    return redirect(url_for("dashboard.owner") + "#bookings")
 
 
 @dashboard_bp.route("/owner/booking/<int:booking_id>/assign", methods=["POST"])

@@ -12,6 +12,77 @@
     .bill-input { width: 84px; }
     .assign-form select.assign-select { max-width: 120px; }
     .pay-sub { display: block; max-width: 150px; margin-top: 4px; font-size: 12px; line-height: 1.35; color: var(--text-muted); }
+    /* ---- Custom dropdown (Add Service pop-up) ---- */
+    .gw-select { position: relative; width: 100%; }
+    .gw-select-btn { width: 100%; height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        padding: 0 12px; border-radius: 8px; border: 1px solid var(--main-color); cursor: pointer; font: inherit; font-size: 15px;
+        color: var(--text-color); background: rgba(255, 255, 255, 0.05); text-align: left;
+        transition: box-shadow .25s ease, border-color .25s ease; }
+    .gw-select-btn:focus-visible, .gw-select.open .gw-select-btn { outline: none; border-color: #fff7cc; box-shadow: 0 0 0 3px rgba(191, 93, 111, 0.25); }
+    .gw-select-btn.is-invalid { border-color: #ef5350; box-shadow: 0 0 0 3px rgba(239, 83, 80, 0.22); }
+    .gw-select-btn:disabled { opacity: .55; cursor: not-allowed; }
+    .gw-select-btn i { font-size: 20px; color: var(--text-muted); transition: transform .2s ease; }
+    .gw-select.open .gw-select-btn i { transform: rotate(180deg); }
+    .gw-select-value.placeholder { color: var(--text-muted); }
+    .gw-select-list { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 30; margin: 0; padding: 6px;
+        list-style: none; max-height: 264px; overflow-y: auto; text-align: left; border-radius: 12px; background: var(--second-bg);
+        border: 1px solid color-mix(in srgb, var(--text-color) 16%, transparent); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+        animation: gwSelIn .14s ease; }
+    .gw-select-list[hidden] { display: none; }
+    @keyframes gwSelIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+    .gw-opt { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; cursor: pointer; font-size: 14px; color: var(--text-color); }
+    .gw-opt .ico { width: 28px; height: 28px; flex-shrink: 0; display: grid; place-items: center; border-radius: 8px; font-size: 16px;
+        background: rgba(199, 69, 92, 0.16); color: var(--main-color); }
+    .gw-opt.is-active { background: color-mix(in srgb, var(--main-color) 16%, transparent); }
+    .gw-opt.is-selected { font-weight: 600; }
+    .gw-opt .tick { margin-left: auto; color: var(--main-color); font-size: 18px; }
+    .gw-opt.is-added { cursor: not-allowed; opacity: .6; }
+    .gw-opt.is-added .ico { background: rgba(76, 175, 80, 0.16); color: #66bb6a; }
+    .gw-pill { margin-left: auto; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700;
+        background: rgba(76, 175, 80, 0.18); color: #66bb6a; }
+    .gw-group { padding: 10px 10px 4px; font-size: 11px; letter-spacing: .6px; text-transform: uppercase; color: var(--text-muted); }
+    .gw-native { position: absolute; left: 50%; bottom: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
+    /* ---- Bookings: filter bar, summary, table helpers ---- */
+    .bk-summary { display: flex; gap: 10px; flex-wrap: wrap; }
+    .bk-sum { padding: 8px 14px; border-radius: 12px; font-size: 12px; line-height: 1.3; color: var(--text-muted);
+        background: color-mix(in srgb, var(--text-color) 6%, transparent);
+        border: 1px solid color-mix(in srgb, var(--text-color) 10%, transparent); }
+    .bk-sum b { display: block; font-size: 16px; color: var(--text-color); }
+    .bk-toolbar { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+    .bk-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+    .bk-chip { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; cursor: pointer;
+        font: inherit; font-size: 13px; font-weight: 600; color: var(--text-muted);
+        background: color-mix(in srgb, var(--text-color) 5%, transparent);
+        border: 1px solid color-mix(in srgb, var(--text-color) 12%, transparent);
+        transition: background .15s, color .15s, transform .15s; }
+    .bk-chip:hover { transform: translateY(-1px); color: var(--text-color); }
+    .bk-chip .n { min-width: 20px; padding: 1px 7px; border-radius: 999px; font-size: 11px; text-align: center;
+        background: color-mix(in srgb, var(--text-color) 10%, transparent); }
+    .bk-chip.active { background: var(--main-color); border-color: transparent; color: #fff; }
+    .bk-chip.active .n { background: rgba(255, 255, 255, 0.25); }
+    .bk-chip.attn:not(.active) .n { background: rgba(255, 193, 7, 0.22); color: #ffc107; }
+    .bk-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .bk-search { position: relative; flex: 1 1 220px; max-width: 360px; }
+    .bk-search i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+    .bk-search input { width: 100%; height: 38px; padding: 0 12px 0 36px; border-radius: 10px; font: inherit; font-size: 14px;
+        color: var(--text-color); background: color-mix(in srgb, var(--text-color) 5%, transparent);
+        border: 1px solid var(--border-soft); }
+    .bk-controls select.assign-select { height: 38px; max-width: none; border-radius: 10px; font-size: 14px; }
+    .bk-reset { background: none; border: 0; padding: 4px 6px; font: inherit; font-size: 13px; cursor: pointer;
+        color: var(--main-color); text-decoration: underline; }
+    .bk-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 14px;
+        font-size: 13px; color: var(--text-muted); }
+    .bk-empty { text-align: center; padding: 36px 12px; color: var(--text-muted); }
+    .bk-empty i { display: block; font-size: 2.2rem; margin-bottom: 6px; opacity: .7; }
+    .bk-empty b { display: block; color: var(--text-color); margin-bottom: 4px; }
+    .bk-id { color: var(--text-muted); font-size: 13px; white-space: nowrap; }
+    .bk-today { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700;
+        background: rgba(199, 69, 92, 0.18); color: #ff7a9b; vertical-align: middle; }
+    .bk-row-pending td:first-child { box-shadow: inset 3px 0 0 #ffc107; }
+    .owner-stat-card[data-bk-filter] { cursor: pointer; }
+    .bk-row[hidden], #bkTableWrap[hidden], .bk-empty[hidden], .bk-foot [hidden], .bk-controls [hidden] { display: none !important; }
+
     /* Owner Dashboard Styles */
     .owner-hero-card {
         background: var(--second-bg);
@@ -761,7 +832,7 @@
                     </div>
                 </div>
                 <div class="owner-top-actions">
-                    <button id="add-service-btn" class="mini-btn confirm">
+                    <button type="button" id="add-service-btn" class="mini-btn confirm" data-open-add-service>
                         <i class='bx bx-plus'></i> Add Service
                     </button>
                 </div>
@@ -769,7 +840,7 @@
         </article>
         <!-- KPI Stats Cards -->
         <div class="owner-stats-container">
-            <div class="owner-stat-card">
+            <div class="owner-stat-card" data-bk-filter="all" role="button" tabindex="0" title="Show all bookings">
                 <div class="owner-stat-icon">
                     <i class='bx bx-calendar-event'></i>
                 </div>
@@ -778,7 +849,7 @@
                     <strong>{{ stats.total_bookings }}</strong>
                 </div>
             </div>
-            <div class="owner-stat-card accent">
+            <div class="owner-stat-card accent" data-bk-filter="pending" role="button" tabindex="0" title="Show bookings waiting for you">
                 <div class="owner-stat-icon">
                     <i class='bx bx-time-five'></i>
                 </div>
@@ -854,13 +925,51 @@
         <section class="admin-section" id="bookings">
             <div class="section-header-row">
                 <h2><i class='bx bx-calendar-check'></i> Bookings</h2>
+                {% if booking_summary and bookings %}
+                <div class="bk-summary">
+                    <div class="bk-sum"><b>{{ booking_summary.collected_month }}</b>Collected this month</div>
+                    <div class="bk-sum" title="Bills you set, or an estimate from your listed price">
+                        <b>{{ booking_summary.awaiting }}</b>Awaiting payment ({{ booking_summary.awaiting_count }})
+                    </div>
+                </div>
+                {% endif %}
             </div>
             {% if bookings %}
-            <div class="admin-table-wrapper">
+            {% set bc = booking_summary.counts %}
+            <div class="bk-toolbar" id="bkToolbar">
+                <div class="bk-chips" role="tablist" aria-label="Filter bookings">
+                    <button type="button" class="bk-chip active" data-bk-chip="active">Active <span class="n" data-n="active">{{ bc.active }}</span></button>
+                    <button type="button" class="bk-chip attn" data-bk-chip="pending">Needs action <span class="n" data-n="pending">{{ bc.pending }}</span></button>
+                    <button type="button" class="bk-chip" data-bk-chip="unpaid">Unpaid <span class="n" data-n="unpaid">{{ bc.unpaid }}</span></button>
+                    <button type="button" class="bk-chip" data-bk-chip="paid">Paid <span class="n" data-n="paid">{{ bc.paid }}</span></button>
+                    <button type="button" class="bk-chip" data-bk-chip="history">History <span class="n" data-n="history">{{ bc.history }}</span></button>
+                    <button type="button" class="bk-chip" data-bk-chip="all">All <span class="n" data-n="all">{{ bc.all }}</span></button>
+                </div>
+                <div class="bk-controls">
+                    <label class="bk-search">
+                        <i class='bx bx-search'></i>
+                        <input type="search" id="bkSearch" placeholder="Search customer, service or mechanic"
+                            aria-label="Search bookings" autocomplete="off">
+                    </label>
+                    <select id="bkPeriod" class="assign-select" aria-label="Appointment date">
+                        <option value="any">Any date</option>
+                        <option value="today">Today</option>
+                        <option value="week">This week</option>
+                        <option value="month">This month</option>
+                    </select>
+                    <select id="bkSort" class="assign-select" aria-label="Sort bookings">
+                        <option value="soonest">Soonest first</option>
+                        <option value="latest">Latest first</option>
+                        <option value="customer">Customer A&ndash;Z</option>
+                    </select>
+                    <button type="button" class="bk-reset" id="bkReset" hidden>Clear filters</button>
+                </div>
+            </div>
+            <div class="admin-table-wrapper" id="bkTableWrap">
                 <table class="admin-table">
                     <thead>
                         <tr>
-                            <th>S.No</th>
+                            <th>#</th>
                             <th>Customer</th>
                             <th>Service</th>
                             <th>Requested Time</th>
@@ -872,11 +981,15 @@
                     </thead>
                     <tbody>
                         {% for b in bookings %}
-                        <tr>
-                            <td>{{ loop.index }}</td>
+                        <tr class="bk-row{% if b.status == 'pending' %} bk-row-pending{% endif %}"
+                            data-status="{{ b.status }}" data-paid="{{ 1 if b.is_paid else 0 }}"
+                            data-unpaid="{{ 1 if b.is_unpaid else 0 }}" data-periods="{{ b.periods }}"
+                            data-ts="{{ b.ts }}" data-customer="{{ b.customer_name | lower }}"
+                            data-search="{{ (b.customer_name ~ ' ' ~ b.s_name ~ ' ' ~ (b.mechanic_name or '') ~ ' #' ~ b.b_id) | lower }}">
+                            <td class="bk-id">#{{ b.b_id }}</td>
                             <td><strong>{{ b.customer_name }}</strong></td>
                             <td>{{ b.s_name }}</td>
-                            <td>{{ b.requested_time.strftime('%d %b %Y, %I:%M %p') }}</td>
+                            <td>{{ b.requested_time.strftime('%d %b %Y, %I:%M %p') }}{% if b.is_today %}<span class="bk-today">Today</span>{% endif %}</td>
                             <td><span class="status-badge status-{{ b.status }}">{{ b.status }}</span></td>
                             <td>
                                 {% if b.status == 'confirmed' %}
@@ -958,6 +1071,15 @@
                     </tbody>
                 </table>
             </div>
+            <div class="bk-empty" id="bkEmpty" hidden>
+                <i class='bx bx-calendar-x'></i>
+                <b id="bkEmptyTitle">Nothing here</b>
+                <span id="bkEmptyText">No bookings match these filters.</span>
+            </div>
+            <div class="bk-foot" id="bkFoot">
+                <span id="bkCount"></span>
+                <button type="button" class="mini-btn neutral" id="bkMore" hidden>Show more</button>
+            </div>
             {% else %}
             <p class="no-results">No bookings received yet.</p>
             {% endif %}
@@ -966,7 +1088,7 @@
         <section class="admin-section" id="services">
             <div class="section-header-row">
                 <h2><i class='bx bx-wrench'></i> Services Offered</h2>
-                <button class="mini-btn confirm" onclick="document.getElementById('add-service-btn').click();">
+                <button type="button" class="mini-btn confirm" data-open-add-service>
                     <i class='bx bx-plus'></i> New Service
                 </button>
             </div>
@@ -1178,15 +1300,26 @@
     <form method="POST" action="{{ url_for('dashboard.add_service') }}" class="login-form">
 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <h2>Add a Service</h2>
+        {# services this workshop already offers are listed separately and can't be picked again #}
+        {% set added_ids = services | map(attribute='sc_id') | list %}
+        {% set available = service_catalog | rejectattr('sc_id', 'in', added_ids) | list %}
+        {% set already = service_catalog | selectattr('sc_id', 'in', added_ids) | list %}
         <select name="sc_id" required>
-            <option value="" disabled selected>Select a service</option>
-            {% for c in service_catalog %}
-            <option value="{{ c.sc_id }}">{{ c.s_name }}</option>
+            <option value="" disabled selected>{{ 'Select a service' if available else "You've added every service" }}</option>
+            {% for c in available %}
+            <option value="{{ c.sc_id }}" data-label="{{ c.s_name }}">{{ c.s_name }}</option>
             {% endfor %}
+            {% if already %}
+            <optgroup label="Already added">
+                {% for c in already %}
+                <option value="{{ c.sc_id }}" data-label="{{ c.s_name }}" disabled>&#10003; {{ c.s_name }} &mdash; already added</option>
+                {% endfor %}
+            </optgroup>
+            {% endif %}
         </select>
-        <input type="text" name="price_range" placeholder="Price Range (e.g. ₹500–800)">
-        <input type="text" name="duration" placeholder="Duration (e.g. 1–2 hours)">
-        <button type="submit" class="fw-btn-con"><span class="fw-btn">Add Service</span></button>
+        <input type="text" name="price_range" placeholder="Price Range (e.g. ₹500–800)" maxlength="50">
+        <input type="text" name="duration" placeholder="Duration (e.g. 1–2 hours)" maxlength="50">
+        <button type="submit" class="fw-btn-con" {% if not available %}disabled style="opacity:.5;cursor:not-allowed"{% endif %}><span class="fw-btn">Add Service</span></button>
     </form>
 </div>
 <!-- Modal: Edit Service -->
@@ -1304,10 +1437,226 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/owner-bookings.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/workshop.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/customer-home.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/admin.js') }}" defer></script>
 <script>
+    // Add / edit service pop-ups: blur the dashboard behind them (same look as the login pop-up)
+    // and close on a click outside the card or Esc.
+    (function () {
+        var layout = document.getElementById('adminLayout');
+        var modals = ['addServiceModal', 'editServiceModal']
+            .map(function (id) { return document.getElementById(id); })
+            .filter(Boolean);
+        if (!layout || !modals.length) return;
+
+        var openedAt = 0;
+        var pressStartedInside = false;
+        function anyOpen() {
+            return modals.some(function (m) { return m.classList.contains('show'); });
+        }
+        function close() {
+            modals.forEach(function (m) { m.classList.remove('show'); });
+        }
+
+        // Whoever opens or closes a pop-up, the blur follows its "show" class.
+        var observer = new MutationObserver(function () {
+            var open = anyOpen();
+            if (open && !layout.classList.contains('pop')) openedAt = Date.now();
+            layout.classList.toggle('pop', open);
+        });
+        modals.forEach(function (m) { observer.observe(m, { attributes: true, attributeFilter: ['class'] }); });
+
+        document.addEventListener('pointerdown', function (e) {
+            pressStartedInside = modals.some(function (m) { return m.contains(e.target); });
+        });
+        // every "Add Service" / "+ New Service" button opens the same pop-up
+        var addModal = document.getElementById('addServiceModal');
+        document.addEventListener('click', function (e) {
+            var opener = e.target.closest && e.target.closest('[data-open-add-service]');
+            if (opener && addModal) {
+                openedAt = Date.now();
+                addModal.classList.add('show');
+                layout.classList.add('pop');
+                var first = addModal.querySelector('.gw-select-btn, select');
+                if (first && first.focus) first.focus({ preventScroll: true });
+            }
+        });
+        document.addEventListener('click', function (e) {
+            if (!anyOpen() || pressStartedInside) return;
+            if (modals.some(function (m) { return m.contains(e.target); })) return;
+            // the click that opened the pop-up is still bubbling up: don't close it straight away
+            if (Date.now() - openedAt < 300) return;
+            close();
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') close();
+        });
+    })();
+
+    // Styled dropdown for the "Add a Service" pop-up. The real <select> stays in the form (hidden),
+    // so submitting works as before; this just draws a nicer list on top of it.
+    (function () {
+        var select = document.querySelector('#addServiceModal select[name="sc_id"]');
+        if (!select) return;
+        var form = select.form;
+        var placeholder = select.options[0] ? select.options[0].textContent : 'Select a service';
+
+        var wrap = document.createElement('div');
+        wrap.className = 'gw-select';
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'gw-select-btn';
+        btn.setAttribute('aria-haspopup', 'listbox');
+        btn.setAttribute('aria-expanded', 'false');
+        var valueEl = document.createElement('span');
+        valueEl.className = 'gw-select-value placeholder';
+        valueEl.textContent = placeholder;
+        var chevron = document.createElement('i');
+        chevron.className = 'bx bx-chevron-down';
+        btn.appendChild(valueEl);
+        btn.appendChild(chevron);
+        var list = document.createElement('ul');
+        list.className = 'gw-select-list';
+        list.setAttribute('role', 'listbox');
+        list.hidden = true;
+
+        function icon(name) {
+            var s = document.createElement('span');
+            s.className = 'ico';
+            var i = document.createElement('i');
+            i.className = 'bx ' + name;
+            s.appendChild(i);
+            return s;
+        }
+
+        var items = [];
+        var addedHeader = false;
+        Array.prototype.forEach.call(select.options, function (o) {
+            if (o.value === '') return;
+            var label = o.getAttribute('data-label') || o.textContent;
+            if (o.disabled && !addedHeader) {
+                addedHeader = true;
+                var h = document.createElement('li');
+                h.className = 'gw-group';
+                h.setAttribute('role', 'presentation');
+                h.textContent = 'Already added';
+                list.appendChild(h);
+            }
+            var li = document.createElement('li');
+            li.className = 'gw-opt' + (o.disabled ? ' is-added' : '');
+            li.setAttribute('role', 'option');
+            li.setAttribute('aria-selected', 'false');
+            if (o.disabled) {
+                li.setAttribute('aria-disabled', 'true');
+                li.title = 'You already offer this service';
+            }
+            li.appendChild(icon(o.disabled ? 'bx-check-circle' : 'bx-wrench'));
+            var text = document.createElement('span');
+            text.textContent = label;
+            li.appendChild(text);
+            if (o.disabled) {
+                var pill = document.createElement('span');
+                pill.className = 'gw-pill';
+                pill.textContent = 'Added';
+                li.appendChild(pill);
+            } else {
+                var tick = document.createElement('i');
+                tick.className = 'bx bx-check tick';
+                tick.hidden = true;
+                li.appendChild(tick);
+            }
+            list.appendChild(li);
+            items.push({ value: o.value, label: label, disabled: o.disabled, el: li });
+        });
+
+        select.parentNode.insertBefore(wrap, select);
+        wrap.appendChild(btn);
+        wrap.appendChild(list);
+        wrap.appendChild(select);
+        select.classList.add('gw-native');
+        select.tabIndex = -1;
+        select.setAttribute('aria-hidden', 'true');
+
+        var enabled = items.filter(function (it) { return !it.disabled; });
+        if (!enabled.length) btn.disabled = true;
+
+        var active = -1;
+        function setActive(i) {
+            active = i;
+            items.forEach(function (it, n) { it.el.classList.toggle('is-active', n === i); });
+            if (i >= 0 && items[i].el.scrollIntoView) items[i].el.scrollIntoView({ block: 'nearest' });
+        }
+        function isOpen() { return !list.hidden; }
+        function open() {
+            if (btn.disabled) return;
+            list.hidden = false;
+            wrap.classList.add('open');
+            btn.setAttribute('aria-expanded', 'true');
+            var sel = items.findIndex(function (it) { return it.value === select.value; });
+            setActive(sel >= 0 ? sel : items.findIndex(function (it) { return !it.disabled; }));
+        }
+        function close() {
+            list.hidden = true;
+            wrap.classList.remove('open');
+            btn.setAttribute('aria-expanded', 'false');
+            setActive(-1);
+        }
+        function choose(it) {
+            if (it.disabled) return;
+            select.value = it.value;
+            valueEl.textContent = it.label;
+            valueEl.classList.remove('placeholder');
+            btn.classList.remove('is-invalid');
+            items.forEach(function (x) {
+                var on = x === it;
+                x.el.setAttribute('aria-selected', on ? 'true' : 'false');
+                x.el.classList.toggle('is-selected', on);
+                var tick = x.el.querySelector('.tick');
+                if (tick) tick.hidden = !on;
+            });
+            close();
+            btn.focus();
+        }
+        function move(step) {
+            var n = active;
+            do { n += step; } while (n >= 0 && n < items.length && items[n].disabled);
+            if (n >= 0 && n < items.length) setActive(n);
+        }
+
+        btn.addEventListener('click', function () { isOpen() ? close() : open(); });
+        btn.addEventListener('keydown', function (e) {
+            if (!isOpen()) {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); open(); }
+                return;
+            }
+            if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); }   // closes the list, not the pop-up
+            else if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
+            else if (e.key === 'Home') { e.preventDefault(); setActive(items.findIndex(function (it) { return !it.disabled; })); }
+            else if (e.key === 'End') {
+                e.preventDefault();
+                for (var n = items.length - 1; n >= 0; n--) { if (!items[n].disabled) { setActive(n); break; } }
+            }
+            else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (active >= 0) choose(items[active]); }
+            else if (e.key === 'Tab') close();
+        });
+        items.forEach(function (it, n) {
+            it.el.addEventListener('mousedown', function (e) { e.preventDefault(); });   // keep focus on the button
+            it.el.addEventListener('mouseenter', function () { if (!it.disabled) setActive(n); });
+            it.el.addEventListener('click', function () { choose(it); });
+        });
+        document.addEventListener('click', function (e) { if (isOpen() && !wrap.contains(e.target)) close(); });
+
+        // the real <select> is hidden, so when nothing is chosen show our own prompt instead of the browser's
+        select.addEventListener('invalid', function (e) {
+            e.preventDefault();
+            btn.classList.add('is-invalid');
+            open();
+        });
+    })();
+
     // Edit-service modal
     (function () {
         var modal = document.getElementById('editServiceModal');

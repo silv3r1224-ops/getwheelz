@@ -1,8 +1,8 @@
 /* ==========================================================================
-   GetWheelz robot mascot: an animated SVG character.
+   NEO, the GetWheelz robot mascot: an animated SVG character.
    Use through the Jinja macro in templates/partials/robot.html.
 
-   Moods (data-mood):  neutral | happy | working | strained
+   Moods (data-mood):  neutral | happy | excited | working | strained
    Skins (data-skin):  (cyan default) | lime | amber | violet
    Everything moves with CSS; robot.js adds eye-tracking, blinking variety and
    click reactions. Honors prefers-reduced-motion.
@@ -179,6 +179,15 @@
     to   { opacity: 1; scale: 1;   translate: 0 0; }
 }
 @media (max-width: 600px) { .auth-robot .rb { width: 100px; height: auto; } }
+
+/* ---------- roam: NEO floats around in 3D space ----------
+   robot('neutral', 150, follow=False, roam=True)
+   robot.js moves the whole robot along a smooth, never-repeating path (position, depth,
+   3D turn, lean) and shifts the face toward where it is heading, so it looks like a
+   little drone drifting around and glancing at you now and then.                     */
+.rb[data-roam] { will-change: transform; transform-origin: 50% 50%; }
+.rb[data-roam] .rb-face { transition: none; }          /* JS updates it every frame */
+.rb[data-roam] .rb-shadow { opacity: 0; animation: none; }   /* nothing to cast a shadow on in open air */
 
 @media (prefers-reduced-motion: reduce) {
     .rb *, .rb { animation: none !important; transition: none !important; }
