@@ -90,6 +90,7 @@
 {% endblock %}
 
 {% block content %}
+{% from 'partials/robot.html' import neo_ico %}
 {% if mt == 'customer_manager' %}
     {% set noun = 'customer' %}{% set nouns = 'customers' %}{% set role_name = 'customer' %}
 {% elif mt == 'owner_workshop_manager' %}
@@ -259,13 +260,13 @@
                     </tbody>
                 </table>
                 <div class="sa-empty" id="saNoMatch" hidden>
-                    <i class='bx bx-search-alt'></i>
+                    {{ neo_ico('neutral', 76, 'violet') }}
                     No {{ noun }} matches your search.
                 </div>
             </div>
             {% else %}
             <div class="sa-empty">
-                <i class='bx bx-group'></i>
+                {{ neo_ico('neutral', 84, 'lime') }}
                 No {{ nouns }} yet.
             </div>
             {% endif %}
@@ -308,7 +309,7 @@
                 </table>
             </div>
             {% else %}
-            <div class="sa-empty"><i class='bx bx-buildings'></i> No workshops listed yet.</div>
+            <div class="sa-empty">{{ neo_ico('neutral', 84, 'amber') }} No workshops listed yet.</div>
             {% endif %}
         </section>
         {% endif %}

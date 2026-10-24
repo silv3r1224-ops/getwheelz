@@ -19,10 +19,12 @@
 {% endblock %}
 
 {% block content %}
+{% from 'partials/robot.html' import neo_ico %}
 {% set term_names = terms | map('lower') | list %}
 <div class="px index-con" id="mainCon">
 
     <section class="px-hero" style="padding-bottom: 6px;">
+        <div class="neo-side" aria-hidden="true">{{ neo_ico('neutral', 170, 'violet') }}</div>
         <div class="px-wrap">
             <span class="px-eyebrow"><i class='bx bx-search-alt'></i> Find a workshop</span>
             <h1 class="px-title">
@@ -40,9 +42,9 @@
             </form>
 
             {% if catalog_services %}
-            <div class="px-chips" style="margin-top: 16px;">
-                <a class="px-chip {% if not terms %}active{% endif %}" href="{{ url_for('workshops.search', lat=user_lat, lng=user_lng) }}">All services</a>
-                {% for svc in catalog_services[:10] %}
+            <div class="px-chips" style="margin-top: 16px;" data-more="10">
+                <a class="px-chip {% if not terms %}active{% endif %}" data-more-skip href="{{ url_for('workshops.search', lat=user_lat, lng=user_lng) }}">All services</a>
+                {% for svc in catalog_services %}
                 <a class="px-chip {% if svc.name | lower in term_names %}active{% endif %}"
                     href="{{ url_for('workshops.search', service=svc.name, lat=user_lat, lng=user_lng) }}">{{ svc.name }}</a>
                 {% endfor %}
@@ -84,7 +86,7 @@
                             {% if w.service_names %}
                             <div class="px-tags">
                                 {% for s in w.service_names[:3] %}<span class="px-tag">{{ s }}</span>{% endfor %}
-                                {% if w.service_names | length > 3 %}<span class="px-tag">+{{ w.service_names | length - 3 }}</span>{% endif %}
+                                {% if w.service_names | length > 3 %}<span class="px-tag">+{{ w.service_names | length - 3 }} more&hellip;</span>{% endif %}
                             </div>
                             {% endif %}
                         </div>
@@ -102,7 +104,7 @@
             </div>
             {% else %}
             <div class="px-card px-empty">
-                <i class='bx bx-search-alt'></i>
+                {{ neo_ico('neutral', 100, 'violet') }}
                 <h3>No workshops found</h3>
                 <p>{% if terms %}No workshop offers "{{ terms | join(', ') }}" yet. Try another service or browse everything.{% else %}No workshops are listed yet.{% endif %}</p>
                 <a class="px-btn sm" href="{{ url_for('workshops.search', lat=user_lat, lng=user_lng) }}">Show all workshops</a>

@@ -7,10 +7,12 @@
 {% endblock %}
 
 {% block content %}
+{% from 'partials/robot.html' import neo_ico %}
 <div class="px">
 
     {# ===================== HERO ===================== #}
     <section class="px-hero">
+        <div class="neo-side" aria-hidden="true">{{ neo_ico('wave', 176, '', wander=False) }}</div>
         <div class="px-wrap">
             <span class="px-eyebrow"><i class='bx bxs-hand'></i> Welcome back</span>
             <h1 class="px-title">Hello, <span class="grad">{{ session.user_name }}</span>.<br>What does your vehicle need?</h1>
@@ -25,9 +27,9 @@
             </form>
 
             {% if catalog_services %}
-            <div class="px-chips" style="margin-top: 16px;">
-                <span class="px-count">Browse by service:</span>
-                {% for svc in catalog_services[:8] %}
+            <div class="px-chips" style="margin-top: 16px;" data-more="8">
+                <span class="px-count" data-more-skip>Browse by service:</span>
+                {% for svc in catalog_services %}
                 <a class="px-chip" href="{{ url_for('workshops.search', service=svc.name) }}">{{ svc.name }}</a>
                 {% endfor %}
             </div>
@@ -96,7 +98,7 @@
                                 {% if w.service_names %}
                                 <div class="px-tags">
                                     {% for service in w.service_names[:3] %}<span class="px-tag">{{ service }}</span>{% endfor %}
-                                    {% if w.service_names | length > 3 %}<span class="px-tag">+{{ w.service_names | length - 3 }}</span>{% endif %}
+                                    {% if w.service_names | length > 3 %}<span class="px-tag">+{{ w.service_names | length - 3 }} more&hellip;</span>{% endif %}
                                 </div>
                                 {% endif %}
                                 <div class="px-wcard-foot">View workshop <i class='bx bx-right-arrow-alt'></i></div>
@@ -108,7 +110,7 @@
                 </div>
                 {% else %}
                 <div class="px-empty">
-                    <i class='bx bx-store'></i>
+                    {{ neo_ico('neutral', 96, 'amber') }}
                     <h3>No workshops yet</h3>
                     <p>Workshops will appear here as soon as owners list them.</p>
                 </div>
@@ -145,8 +147,8 @@
                     <p>Pick what your vehicle needs and see who offers it.</p>
                 </div>
             </div>
-            <div class="px-tiles">
-                {% for svc in catalog_services[:12] %}
+            <div class="px-tiles" data-more="12">
+                {% for svc in catalog_services %}
                 {% set n = svc.name | lower %}
                 {% set icon = 'bx-cog' if 'engine' in n
                     else 'bx-bolt-circle' if ('electr' in n or 'battery' in n)

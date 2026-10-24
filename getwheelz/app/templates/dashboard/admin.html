@@ -3,6 +3,7 @@
 {% block title %}Admin Dashboard — Getwheelz{% endblock %}
 
 {% block content %}
+{% from 'partials/robot.html' import neo_ico %}
 <div class="admin-layout" id="adminLayout">
 
     <aside class="admin-sidebar" id="sideBar">
@@ -56,6 +57,7 @@
                     <span id="adminDate"></span>
                 </p>
             </div>
+            <div class="neo-corner">{{ neo_ico('working', 120, '', wander=False) }}</div>
 
             <div class="admin-hero-actions">
                 {% set unread = (feedback_list or []) | rejectattr('is_read') | list | length %}
@@ -147,7 +149,7 @@
                     </tbody>
                 </table>
                 {% elif searched %}
-                <p class="no-results">No record found.</p>
+                <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'violet') }}No record found.</p>
                 {% endif %}
             </div>
             {% endif %}
@@ -187,7 +189,7 @@
                 </tbody>
             </table>
             {% else %}
-            <p class="no-results">No customers yet.</p>
+            <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'violet') }}No customers yet.</p>
             {% endif %}
         </div>
 
@@ -225,7 +227,7 @@
                 </tbody>
             </table>
             {% else %}
-            <p class="no-results">No owners yet.</p>
+            <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'violet') }}No owners yet.</p>
             {% endif %}
         </div>
 
@@ -263,7 +265,7 @@
                 </tbody>
             </table>
             {% else %}
-            <p class="no-results">No mechanics yet.</p>
+            <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'violet') }}No mechanics yet.</p>
             {% endif %}
         </div>
 
@@ -298,7 +300,7 @@
                 </tbody>
             </table>
             {% else %}
-            <p class="no-results">No workshops listed yet.</p>
+            <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'violet') }}No workshops listed yet.</p>
             {% endif %}
         </div>
 
@@ -329,7 +331,7 @@
                 {% endfor %}
             </div>
             {% else %}
-            <p class="no-results">No messages yet.</p>
+            <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'violet') }}No messages yet.</p>
             {% endif %}
         </div>
     </main>

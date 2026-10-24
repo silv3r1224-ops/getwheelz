@@ -4,9 +4,11 @@
 
 {% block head %}
 {% include 'partials/px_head.html' %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/px-people.css') }}">
 {% endblock %}
 
 {% block content %}
+{% from 'partials/robot.html' import neo_ico %}
 {% set has_coords = workshop.latitude is not none and workshop.longitude is not none %}
 <div class="px index-con" id="mainCon">
     <section class="px-section" style="padding-top: 36px; padding-bottom: 80px;">
@@ -27,6 +29,7 @@
                         <span><i class='bx bx-map'></i> {{ workshop.address or 'Address not listed' }}</span>
                         {% if workshop.contact_no %}<span><i class='bx bx-phone'></i> {{ workshop.contact_no }}</span>{% endif %}
                         <span><i class='bx bx-wrench'></i> {{ services | length }} service{{ '' if services | length == 1 else 's' }}</span>
+                        {% if completed_jobs %}<span><i class='bx bx-check-circle'></i> {{ completed_jobs }} job{{ '' if completed_jobs == 1 else 's' }} completed</span>{% endif %}
                     </div>
                     <div class="px-banner-actions">
                         <span class="px-dist"><i class='bx bx-navigation'></i><span class="px-dist-text"></span></span>
@@ -44,10 +47,11 @@
             </header>
 
             <div class="px-body-grid">
+                <div class="px-col">
                 {# ---------------- services ---------------- #}
                 <div class="px-card px-panel">
                     <h2>{% if mech %}Services this workshop offers{% else %}Services offered{% endif %}</h2>
-                    <div class="px-svc-list">
+                    <div class="px-svc-list" data-more="6" data-more-block>
                         {% for service in services %}
                         <div class="px-svc">
                             <div>
@@ -64,12 +68,49 @@
                         </div>
                         {% else %}
                         <div class="px-empty" style="padding: 26px 10px;">
-                            <i class='bx bx-wrench'></i>
+                            {{ neo_ico('neutral', 78, 'lime') }}
                             <p style="margin-bottom: 0;">This workshop hasn't listed any services yet.</p>
                         </div>
                         {% endfor %}
                     </div>
                 </div>
+
+                {# ---------------- owner ---------------- #}
+                {% if owner %}
+                <div class="px-card px-panel" id="owner">
+                    <h2>Workshop owner</h2>
+                    <div class="px-people">
+                        <a class="px-person" href="{{ url_for('workshops.person', token=owner.u_id | utoken) }}">
+                            <span class="px-av">{% if owner.profile_picture %}<img src="{{ url_for('static', filename=owner.profile_picture) }}" alt="{{ owner.name }}">{% else %}{{ owner.name[:1] | upper }}{% endif %}</span>
+                            <h3>{{ owner.name }}</h3>
+                            <span class="px-role"><i class='bx bxs-crown'></i> Owner</span>
+                            {% if owner.since %}<small>Member since {{ owner.since.strftime('%b %Y') }}</small>{% endif %}
+                            <span class="px-hint">View profile</span>
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+
+                {# ---------------- team ---------------- #}
+                <div class="px-card px-panel" id="team">
+                    <h2>Meet the team <span class="px-count">{{ team | length }}</span></h2>
+                    {% if team %}
+                    <div class="px-people" data-more="6" data-more-label="mechanics">
+                        {% for m in team %}
+                        <a class="px-person" href="{{ url_for('workshops.person', token=m.u_id | utoken) }}">
+                            <span class="px-av">{% if m.profile_picture %}<img src="{{ url_for('static', filename=m.profile_picture) }}" alt="{{ m.name }}">{% else %}{{ m.name[:1] | upper }}{% endif %}</span>
+                            <h3>{{ m.name }}</h3>
+                            <small><i class='bx bx-medal'></i> {% if m.experience_yrs %}{{ m.experience_yrs }} yr{{ '' if m.experience_yrs == 1 else 's' }} experience{% else %}Experience not listed{% endif %}</small>
+                            {% if m.active_stat %}<span class="px-state {{ 'on' if m.active_stat | lower in ['active', 'available'] }}">{{ m.active_stat }}</span>{% endif %}
+                            <span class="px-hint">View profile</span>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="px-note" style="margin: 0;">No mechanics have joined this workshop yet.</p>
+                    {% endif %}
+                </div>
+                </div>{# /px-col #}
 
                 {# ---------------- sidebar ---------------- #}
                 <aside class="px-side">

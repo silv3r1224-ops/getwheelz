@@ -7,6 +7,7 @@
 {% endblock %}
 
 {% block content %}
+{% from 'partials/robot.html' import neo_ico %}
 <style>
     .px-pay-note { font-size: 12px; opacity: 0.7; }
 </style>
@@ -16,6 +17,7 @@
 {% set to_pay = bookings | selectattr('to_pay') | list %}
 <div class="px">
     <section class="px-hero" style="padding-bottom: 0;">
+        <div class="neo-side" aria-hidden="true">{{ neo_ico('screwing', 170, 'lime', wander=False) }}</div>
         <div class="px-wrap">
             <span class="px-eyebrow"><i class='bx bx-calendar-check'></i> My bookings</span>
             <h1 class="px-title">Your <span class="grad">appointments.</span></h1>
@@ -90,13 +92,13 @@
             </div>
 
             <div class="px-card px-empty" id="booking-empty" hidden>
-                <i class='bx bx-calendar-x'></i>
+                {{ neo_ico('neutral', 84, 'violet') }}
                 <h3>Nothing here</h3>
                 <p>No bookings match this filter.</p>
             </div>
             {% else %}
             <div class="px-card px-empty" style="margin-top: 12px;">
-                <i class='bx bx-calendar-plus'></i>
+                {{ neo_ico('wave', 110, '', wander=False) }}
                 <h3>No bookings yet</h3>
                 <p>When you book a service it shows up here, with its status from request to completion.</p>
                 <a class="px-btn sm" href="{{ url_for('workshops.search') }}">Find a workshop</a>

@@ -1,4 +1,6 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, session
+from flask import Blueprint, render_template, redirect, url_for, request, flash, session, current_app, jsonify
+import logging
+from app import limiter
 from app.db import get_db_connection
 
 main_bp = Blueprint('main', __name__)
@@ -55,24 +57,76 @@ def about():
     return render_template('about.html')
 
 @main_bp.route('/contact', methods=['GET', 'POST'])
+@limiter.limit("5 per minute; 20 per hour", methods=["POST"])
 def contact():
     if request.method == 'POST':
-        name = request.form['name']
-        email = request.form['email']
-        subject = request.form.get('subject')
-        message = request.form['message']
+        # trim and cap everything to the size of its database column
+        name = ' '.join(request.form.get('name', '').split())[:100]
+        email = request.form.get('email', '').strip()[:100]
+        subject = ' '.join(request.form.get('subject', '').split())[:150] or None
+        message = request.form.get('message', '').strip()[:2000]
+
+        if not name or not message or '@' not in email or any(ch.isspace() for ch in email):
+            flash('Please enter your name, a valid email and a message.', 'error')
+            return redirect(url_for('main.contact'))
 
         conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute(
-            "INSERT INTO feedback (name, email, subject, message) VALUES (%s, %s, %s, %s)",
-            (name, email, subject, message)
-        )
-        conn.commit()
-        cur.close()
-        conn.close()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO feedback (name, email, subject, message) VALUES (%s, %s, %s, %s)",
+                    (name, email, subject, message)
+                )
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            logging.exception('Could not save a contact message')
+            flash('Something went wrong and your message was not sent. Please try again.', 'error')
+            return redirect(url_for('main.contact'))
+        finally:
+            conn.close()
 
         flash('Message sent — thank you for reaching out!', 'success')
         return redirect(url_for('main.contact'))
 
-    return render_template('contact.html')
+    # signed-in visitors do not have to retype their name and email
+    prefill = {}
+    if session.get('user_id'):
+        conn = get_db_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT name, email FROM users WHERE u_id = %s", (session['user_id'],))
+                row = cur.fetchone()
+                if row:
+                    prefill = {'name': row['name'], 'email': row['email']}
+        finally:
+            conn.close()
+
+    cfg = current_app.config
+    return render_template(
+        'contact.html',
+        prefill=prefill,
+        contact_email=cfg.get('CONTACT_EMAIL'),
+        contact_phone=cfg.get('CONTACT_PHONE'),
+        contact_location=cfg.get('CONTACT_LOCATION'),
+    )
+
+
+@main_bp.route('/tour/done', methods=['POST'])
+def tour_done():
+    """NEO's first-login tour was finished or skipped: remember it so it is not shown again."""
+    if 'user_id' not in session:
+        return jsonify(ok=False), 401
+    try:
+        conn = get_db_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("UPDATE users SET tour_seen = TRUE WHERE u_id = %s", (session['user_id'],))
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception:
+        logging.exception('Could not save tour_seen')
+        return jsonify(ok=False), 500
+    session['tour_seen'] = True
+    return jsonify(ok=True)

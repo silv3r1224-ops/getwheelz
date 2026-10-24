@@ -158,7 +158,7 @@
 
 .rb-face {
     translate: calc(var(--lx, 0) * 1px) calc(var(--ly, 0) * 1px);
-    transition: translate .16s ease-out;
+    transition: translate .05s ease-out;
 }
 
 .rb-head {
@@ -976,5 +976,243 @@
 
     34% {
         rotate: 1.6deg;
+    }
+}
+
+/* ==========================================================================
+   NEO as decoration: empty states, heroes, corners, footer, error pages.
+   Use {{ neo_ico('mood', size, 'skin') }} (templates/partials/robot.html).
+   Varieties in use: neutral NEO wondering (amber / violet / lime skins), wave,
+   happy, working, plus the cyan default.
+   ========================================================================== */
+.neo-ico {
+    display: inline-block;
+    line-height: 0;
+    vertical-align: middle;
+}
+
+.neo-ico .rb {
+    filter: drop-shadow(0 10px 14px rgba(0, 0, 0, .4));
+}
+
+/* empty states: NEO takes the place of the icon above the heading */
+:is(.px-empty, .cat-empty, .sa-empty, .bk-empty) .neo-ico {
+    display: block;
+    margin: 0 auto 6px;
+}
+
+:is(.px-empty, .cat-empty, .sa-empty, .bk-empty) .neo-ico .rb {
+    margin: 0 auto;
+    opacity: 1;
+}
+
+/* one-line "nothing here" notes: a small NEO beside the text */
+.no-results.neo-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.no-results.neo-note[hidden] {
+    display: none;
+}
+
+.no-results.neo-note .neo-ico .rb {
+    filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .35));
+}
+
+/* page heroes (About, Contact) and the receipt */
+.neo-hero,
+.neo-rc,
+.neo-auth {
+    display: flex;
+    justify-content: center;
+    margin: 0 auto 10px;
+}
+
+.neo-rc {
+    margin-bottom: 4px;
+}
+
+/* sign-in helper pages: NEO sits where the lock icon used to be */
+.neo-auth {
+    margin-bottom: 0;
+}
+
+/* owner welcome screen */
+.neo-owner {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 6px;
+}
+
+/* a flex hero (admin overview): NEO is the last item, pushed to the right edge */
+.neo-corner {
+    flex: none;
+    margin-left: auto;
+    line-height: 0;
+}
+
+/* footer: NEO sits on the top edge of the footer, waving at whoever scrolled this far */
+.site-footer {
+    position: relative;
+}
+
+.footer-neo {
+    position: absolute;
+    right: clamp(16px, 7vw, 110px);
+    bottom: calc(100% - 6px);
+    line-height: 0;
+    z-index: 2;
+}
+
+@media (max-width: 760px) {
+    .neo-corner {
+        display: none;
+    }
+
+    .footer-neo .rb {
+        width: 70px;
+        height: auto;
+    }
+}
+
+@media (max-width: 520px) {
+    .neo-hero .rb {
+        width: 92px;
+        height: auto;
+    }
+
+    :is(.px-empty, .cat-empty, .sa-empty, .bk-empty) .neo-ico .rb {
+        width: 76px;
+        height: auto;
+    }
+}
+
+/* ---------- error pages (404 / 403 / 500): standalone, so they still work if the database is down ---------- */
+.neo-err {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 32px 20px;
+    background: radial-gradient(circle at 50% 18%, rgba(214, 86, 112, .16), transparent 55%), #08080a;
+    color: #f4f4f6;
+    font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    text-align: center;
+}
+
+.neo-err-box {
+    max-width: 460px;
+}
+
+.neo-err-box .rb {
+    margin: 0 auto 4px;
+    filter: drop-shadow(0 18px 26px rgba(0, 0, 0, .6));
+}
+
+.neo-err-code {
+    margin: 6px 0 0;
+    font-size: clamp(3.4rem, 12vw, 5.4rem);
+    font-weight: 800;
+    letter-spacing: .04em;
+    line-height: 1;
+    background: linear-gradient(135deg, #27c4f2, #ff3d6e);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.neo-err h1 {
+    margin: 10px 0 8px;
+    font-size: 1.5rem;
+}
+
+.neo-err p.neo-err-text {
+    margin: 0 0 22px;
+    color: rgba(255, 255, 255, .66);
+    line-height: 1.6;
+}
+
+.neo-err-btn {
+    display: inline-block;
+    padding: 11px 24px;
+    border-radius: 12px;
+    background: #ff3d6e;
+    color: #fff;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.neo-err-btn:hover {
+    filter: brightness(1.1);
+}
+
+/* ---------- NEO on the customer, profile and dashboard screens ---------- */
+
+/* small NEO at the end of a heading */
+.neo-h {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    margin: -16px 0 -16px 8px;
+    line-height: 0;
+}
+
+/* customer page heroes: NEO stands on the right-hand side, beside the heading plate */
+.px-hero>.neo-side {
+    position: absolute;
+    right: clamp(16px, 5vw, 96px);
+    top: 36px;
+    z-index: 1;
+    line-height: 0;
+}
+
+.px-hero>.neo-side .rb {
+    filter: drop-shadow(0 18px 26px rgba(0, 0, 0, .5));
+}
+
+@media (max-width: 1100px) {
+    .px-hero>.neo-side {
+        display: none;
+    }
+}
+
+/* profile page: NEO waves from the cover photo area (skin follows the account role) */
+.px-profile-card {
+    position: relative;
+}
+
+/* positioned on the card (not the cover), so the cover never paints over the name and avatar that overlap it */
+.neo-cover {
+    position: absolute;
+    right: clamp(14px, 4vw, 48px);
+    top: 24px;
+    z-index: 1;
+    line-height: 0;
+    pointer-events: none;
+}
+
+@media (max-width: 520px) {
+    .neo-cover .rb {
+        width: 84px;
+        height: auto;
+    }
+}
+
+/* owner dashboard: two NEOs at work in the banner */
+.neo-banner {
+    position: absolute;
+    right: clamp(16px, 5vw, 70px);
+    top: 14px;
+    display: flex;
+    gap: 6px;
+    line-height: 0;
+}
+
+@media (max-width: 760px) {
+    .neo-banner {
+        display: none;
     }
 }

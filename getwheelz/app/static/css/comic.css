@@ -1,0 +1,42 @@
+/* Comic look for everything NEO says: thick ink outlines, hard offset shadows, halftone dots and a speech-bubble tail. */
+:root {
+    --cm-ink: #15131a;
+    --cm-paper: #ffffff;
+    --cm-yellow: #ffd23f;
+    --cm-font: "Comic Neue", "Comic Sans MS", "Chalkboard SE", "Marker Felt", "Segoe Print", cursive, sans-serif;
+    --cm-title-font: "Bangers", "Impact", "Arial Black", sans-serif;
+    --cm-shadow: var(--cm-ink);          /* hard offset shadow of bubbles */
+    --cm-ring: 0 0 0 0 transparent;       /* thin outer outline, only needed on the dark theme */
+    --cm-dots: radial-gradient(rgba(21, 19, 26, .10) 1.3px, transparent 1.7px);
+}
+
+/* ---- flash messages: NEO talks in a speech bubble ---- */
+.flash-item .flash-message {
+    position: relative;
+    background-color: var(--cm-paper);
+    background-image: var(--cm-dots);
+    background-size: 7px 7px;
+    color: var(--cm-ink);
+    font-family: var(--cm-font);
+    border: 3px solid var(--cm-ink);
+    border-radius: 18px 18px 18px 6px;
+    box-shadow: var(--cm-ring), 5px 5px 0 var(--cm-shadow);
+    padding: 12px 14px;
+}
+.flash-item .flash-success { background-color: #d9fbe3; }
+.flash-item .flash-error { background-color: #ffe0e0; }
+.flash-item .flash-message span { font-size: 15px; font-weight: 700; color: var(--cm-ink); }
+.flash-item .flash-message i { color: var(--cm-ink); }
+.flash-item .flash-message button { color: var(--cm-ink); font-weight: 900; }
+.flash-item .flash-message button:hover { color: var(--main-color); }
+/* the tail points back at NEO */
+.flash-item .flash-message::before, .flash-item .flash-message::after {
+    content: ""; position: absolute; bottom: 10px; width: 0; height: 0; border-style: solid; border-color: transparent;
+}
+.flash-item .flash-message::before { left: -19px; border-width: 10px 17px 10px 0; border-right-color: var(--cm-ink); }
+.flash-item .flash-message::after { left: -12px; bottom: 12px; border-width: 8px 13px 8px 0; border-right-color: var(--cm-paper); }
+.flash-item .flash-success::after { border-right-color: #d9fbe3; }
+.flash-item .flash-error::after { border-right-color: #ffe0e0; }
+
+/* on the dark theme black ink would vanish, so bubbles get a white outline and an accent-colour shadow */
+html[data-theme="dark"] { --cm-shadow: var(--main-color); --cm-ring: 0 0 0 2px #fff; }

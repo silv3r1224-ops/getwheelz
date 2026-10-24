@@ -6441,3 +6441,33 @@ body.fw-scroll-lock {
     background: rgba(231, 76, 60, 0.12);
     color: #e74c3c;
 }
+
+
+/* ===== Header profile picture (replaces the user icon once the person has uploaded one) ===== */
+.navbar-right a.nav-profile {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nav-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    border: 2px solid var(--main-color);
+    background: var(--second-bg);
+    transition: border-color 0.2s ease;
+}
+
+.navbar-right a.nav-profile:hover .nav-avatar {
+    border-color: #fff7cc;
+}
+
+@media (max-width: 600px) {
+    .nav-avatar {
+        width: 28px;
+        height: 28px;
+    }
+}

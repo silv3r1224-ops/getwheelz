@@ -1,3 +1,4 @@
+from datetime import datetime
 from flask import abort, Blueprint, render_template, redirect, url_for, session, flash, request
 from app.db import get_db_connection
 from app.utils import role_required, decode_wid, decode_uid
@@ -46,7 +47,7 @@ def home():
             WHERE b.w_id = %s
             ORDER BY b.requested_time DESC
         """, (w_id,))
-        bookings = cur.fetchall()
+        bookings = [dict(b) for b in cur.fetchall()]   # plain dicts, so the filter fields below can be added
 
         cur.execute("""
             SELECT m.m_id, u.u_id, u.name, u.profile_picture, m.experience_yrs, m.active_stat
@@ -74,6 +75,36 @@ def home():
         cur.close()
         conn.close()
 
+        # everything the bookings filter uses is worked out here, once (as on the owner dashboard),
+        # so "today" and "this month" follow the server's clock, not the browser's
+        today = datetime.now().date()
+        this_week = today.isocalendar()[:2]
+        booking_counts = dict.fromkeys(('all', 'todo', 'mine', 'pending', 'confirmed', 'history'), 0)
+        for b in bookings:
+            day = b['requested_time'].date()
+            periods = []
+            if day == today:
+                periods.append('today')
+            if day.isocalendar()[:2] == this_week:
+                periods.append('week')
+            if (day.year, day.month) == (today.year, today.month):
+                periods.append('month')
+            b['periods'] = ' '.join(periods)
+            b['is_today'] = day == today
+            b['ts'] = int(b['requested_time'].timestamp())
+            assigned_to_me = b['assigned_m_id'] == mechanic['m_id']
+            b['is_todo'] = assigned_to_me and b['status'] == 'confirmed'          # still to be done by me
+            b['is_mine'] = assigned_to_me and b['status'] in ('confirmed', 'completed')
+            booking_counts['all'] += 1
+            booking_counts['todo'] += b['is_todo']
+            booking_counts['mine'] += b['is_mine']
+            if b['status'] == 'pending':
+                booking_counts['pending'] += 1
+            elif b['status'] == 'confirmed':
+                booking_counts['confirmed'] += 1
+            else:
+                booking_counts['history'] += 1
+
         # jobs the owner has assigned to this mechanic (cancelled ones are hidden)
         my_jobs = [b for b in bookings
                    if b['assigned_m_id'] == mechanic['m_id']
@@ -90,7 +121,8 @@ def home():
         return render_template('mechanics/mechanic_dashboard.html',
                                 workshop=workshop, bookings=bookings, mechanic=mechanic,
                                 my_jobs=my_jobs, team=team, stats=stats,
-                                leave_pending=leave_pending, leave_rejected=leave_rejected)
+                                leave_pending=leave_pending, leave_rejected=leave_rejected,
+                                booking_counts=booking_counts)
 
     # unassigned: browsable workshop list
     if not mechanic:

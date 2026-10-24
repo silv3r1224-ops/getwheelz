@@ -7,6 +7,7 @@
 {% endblock %}
 
 {% block content %}
+{% from 'partials/robot.html' import neo_ico %}
 <div class="admin-layout" id="adminLayout">
 
     <aside class="admin-sidebar" id="sideBar">
@@ -45,7 +46,9 @@
             {# ===================== PROFILE TAB ===================== #}
             <section class="px-tabpane active" id="profileTab">
                 <article class="px-card px-profile-card" id="profileCard">
-                    <div class="px-cover"></div>
+                    <div class="px-cover">
+                        <div class="neo-cover" aria-hidden="true">{{ neo_ico('wave', 112, ('lime' if user.role == 'owner' else 'amber' if user.role == 'mechanic' else 'violet' if user.role == 'admin' else ''), wander=False) }}</div>
+                    </div>
 
                     <div class="px-prof-head">
                         <div class="px-avatar-wrap">
@@ -190,15 +193,22 @@
             <section class="px-tabpane" id="settingsTab">
                 <div class="px-settings">
                     <article class="px-card">
-                        <h2><i class='bx bx-lock-alt'></i> Change password</h2>
+                        {% if user.password_set %}
+                        <h2><i class='bx bx-lock-alt'></i> Change password <span class="neo-h">{{ neo_ico('screwing', 58, 'lime', wander=False) }}</span></h2>
                         <p class="sub">Use at least 8 characters, and pick something you do not use anywhere else.</p>
+                        {% else %}
+                        <h2><i class='bx bx-lock-alt'></i> Set a password <span class="neo-h">{{ neo_ico('screwing', 58, 'lime', wander=False) }}</span></h2>
+                        <p class="sub">You signed up with Google, so you do not have a password yet. Set one if you also want to log in with your email. Use at least 8 characters.</p>
+                        {% endif %}
                         <form method="POST" action="{{ url_for('dashboard.change_password') }}">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            {% if user.password_set %}
                             <div class="px-field">
                                 <label for="old_pass">Current password</label>
                                 <input class="px-input" type="password" id="old_pass" name="old_pass"
                                     autocomplete="current-password" required>
                             </div>
+                            {% endif %}
                             <div class="px-field">
                                 <label for="new_pass">New password</label>
                                 <input class="px-input" type="password" id="new_pass" name="new_pass"
@@ -209,14 +219,14 @@
                                 <input class="px-input" type="password" id="confirm_pass" name="confirm_pass"
                                     autocomplete="new-password" minlength="8" required>
                             </div>
-                            <div><button type="submit" class="px-btn"><i class='bx bx-key'></i> Update password</button>
+                            <div><button type="submit" class="px-btn"><i class='bx bx-key'></i> {{ 'Update password' if user.password_set else 'Set password' }}</button>
                             </div>
                         </form>
                     </article>
 
                     {% if admin_info.admin_type != 'main' %}
                     <article class="px-card px-danger">
-                        <h2><i class='bx bx-trash'></i> Delete account</h2>
+                        <h2><i class='bx bx-trash'></i> Delete account <span class="neo-h">{{ neo_ico('strained', 58, '', wander=False) }}</span></h2>
                         <p class="sub">
                             Permanently remove your account and its data.
                             {% if user.role == 'customer' %}Your bookings will be deleted with it.
@@ -232,9 +242,15 @@
                             action="{{ url_for('dashboard.delete_account') }}">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <div class="px-field">
+                                {% if user.password_set %}
                                 <label for="del_pass">Enter your password to confirm</label>
                                 <input class="px-input" type="password" id="del_pass" name="password"
                                     autocomplete="current-password" required>
+                                {% else %}
+                                <label for="del_pass">Type DELETE to confirm</label>
+                                <input class="px-input" type="text" id="del_pass" name="confirm_text"
+                                    autocomplete="off" placeholder="DELETE" required>
+                                {% endif %}
                             </div>
                             <div class="px-btn-row">
                                 <button type="submit" class="px-ghost danger"><i class='bx bx-user-x'></i> Yes, delete

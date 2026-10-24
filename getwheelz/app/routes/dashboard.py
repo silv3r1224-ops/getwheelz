@@ -353,9 +353,6 @@ def admin_user_profile(token):
 @login_required
 def delete_account():
     password = request.form.get("password", "")
-    if not password:
-        flash("Please enter your password to delete your account.", "error")
-        return redirect(url_for("dashboard.profile"))
 
     # Admin accounts are managed from the admin panel; deleting one here could lock everyone out.
     if session.get("role") == "admin":
@@ -368,14 +365,27 @@ def delete_account():
 
     try:
         cur.execute(
-            "SELECT password, profile_picture FROM users WHERE u_id = %s",
+            "SELECT password, password_set, profile_picture FROM users WHERE u_id = %s",
             (session["user_id"],),
         )
         user = cur.fetchone()
 
-        if not user or not check_password_hash(user["password"], password):
-            flash("Incorrect password. Your account was not deleted.", "error")
+        if not user:
+            flash("User account not found.", "error")
             return redirect(url_for("dashboard.profile"))
+
+        if user["password_set"]:
+            if not password:
+                flash("Please enter your password to delete your account.", "error")
+                return redirect(url_for("dashboard.profile"))
+            if not check_password_hash(user["password"], password):
+                flash("Incorrect password. Your account was not deleted.", "error")
+                return redirect(url_for("dashboard.profile"))
+        else:
+            # signed up with Google, so there is no password to ask for: they type DELETE instead
+            if request.form.get("confirm_text", "").strip().upper() != "DELETE":
+                flash("Type DELETE to confirm. Your account was not deleted.", "error")
+                return redirect(url_for("dashboard.profile"))
 
         # Don't silently wipe out bookings that people are still counting on.
         cur.execute(
@@ -1834,7 +1844,7 @@ def profile():
 
     cur.execute(
         """
-        SELECT u_id, name, email, role, created_at, profile_picture
+        SELECT u_id, name, email, role, created_at, profile_picture, password_set
         FROM users WHERE u_id = %s
         """,
         (session["user_id"],),
@@ -1900,8 +1910,8 @@ def change_password():
     new_password = request.form.get("new_pass", "")
     confirm_password = request.form.get("confirm_pass", "")
 
-    # Basic validation
-    if not current_password or not new_password or not confirm_password:
+    # Basic validation (the current password is checked below, only for accounts that have one)
+    if not new_password or not confirm_password:
         flash("Please fill in all password fields.", "error")
         return redirect(url_for("dashboard.profile"))
 
@@ -1918,34 +1928,43 @@ def change_password():
 
     try:
         # Get the current password hash
-        cur.execute("SELECT password FROM users WHERE u_id = %s", (session["user_id"],))
+        cur.execute("SELECT name, email, password, password_set FROM users WHERE u_id = %s", (session["user_id"],))
         user = cur.fetchone()
 
         if not user:
             flash("User account not found.", "error")
             return redirect(url_for("dashboard.profile"))
 
-        # Check current password
-        if not check_password_hash(user["password"], current_password):
-            flash("Current password is incorrect.", "error")
-            return redirect(url_for("dashboard.profile"))
+        # Accounts created with Google have no password yet, so there is no current one to check.
+        if user["password_set"]:
+            if not current_password:
+                flash("Please fill in all password fields.", "error")
+                return redirect(url_for("dashboard.profile"))
 
-        # Prevent using the same password
-        if check_password_hash(user["password"], new_password):
-            flash("New password must be different from your current password.", "error")
-            return redirect(url_for("dashboard.profile"))
+            # Check current password
+            if not check_password_hash(user["password"], current_password):
+                flash("Current password is incorrect.", "error")
+                return redirect(url_for("dashboard.profile"))
+
+            # Prevent using the same password
+            if check_password_hash(user["password"], new_password):
+                flash("New password must be different from your current password.", "error")
+                return redirect(url_for("dashboard.profile"))
 
         # Hash the new password using the same method as signup
         new_password_hash = generate_password_hash(new_password)
 
         cur.execute(
-            "UPDATE users SET password = %s WHERE u_id = %s",
+            "UPDATE users SET password = %s, password_set = TRUE WHERE u_id = %s",
             (new_password_hash, session["user_id"]),
         )
 
         conn.commit()
 
-        flash("Password changed successfully.", "success")
+        if user["password_set"]:
+            flash("Password changed successfully.", "success")
+        else:
+            flash("Password set. You can now also log in with your email and password.", "success")
 
     except Exception:
         conn.rollback()
@@ -1984,6 +2003,7 @@ def upload_profile_picture():
         )
 
         conn.commit()
+        session["profile_picture"] = profile_picture_path
         flash("Profile picture updated.", "success")
     else:
         flash("Please upload a valid image (png, jpg, jpeg, webp).", "error")
@@ -2021,6 +2041,7 @@ def remove_profile_picture():
         )
 
         conn.commit()
+        session["profile_picture"] = ""
         flash("Profile picture removed.", "success")
 
     cur.close()

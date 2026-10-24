@@ -2,12 +2,27 @@
 
 {% block title %}Contact Us — Getwheelz{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/static-pages.css') }}">
+{% endblock %}
+
 {% block content %}
+{% from 'partials/robot.html' import neo_ico %}
 <div class="index-con" id="mainCon">
     <section class="static-page">
         <div class="static-page-hero">
-            <h1>Get In Touch</h1>
-            <p>Questions, feedback, or partnership inquiries — we're listening.</p>
+            <div class="sp-hero-icon" aria-hidden="true"><i class='bx bx-message-rounded-dots'></i></div>
+            <div class="sp-hero-text">
+                <span class="sp-eyebrow"><i class='bx bx-message-rounded-dots'></i> Contact</span>
+                <h1>Get <span class="sp-grad">In Touch</span></h1>
+                <p>Questions, feedback, or partnership inquiries — we're listening.</p>
+                <div class="sp-chips">
+                <span><i class='bx bx-help-circle'></i> Questions</span>
+                <span><i class='bx bx-comment-detail'></i> Feedback</span>
+                <span><i class='bx bx-group'></i> Partnerships</span>
+            </div>
+            </div>
+            <div class="neo-hero">{{ neo_ico('happy', 118, 'violet', wander=False) }}</div>
         </div>
 
         <div class="contact-card">
@@ -20,21 +35,23 @@
                         <div class="contact-icon"><i class='bx bx-envelope'></i></div>
                         <div>
                             <h3>Email</h3>
-                            <p>support@getwheelz.com</p>
+                            <p><a href="mailto:{{ contact_email }}">{{ contact_email }}</a></p>
                         </div>
                     </div>
+                    {% if contact_phone %}
                     <div class="contact-info-item">
                         <div class="contact-icon"><i class='bx bx-phone'></i></div>
                         <div>
                             <h3>Phone</h3>
-                            <p>+91 00000 00000</p>
+                            <p><a href="tel:{{ contact_phone|replace(' ', '') }}">{{ contact_phone }}</a></p>
                         </div>
                     </div>
+                    {% endif %}
                     <div class="contact-info-item">
                         <div class="contact-icon"><i class='bx bx-map'></i></div>
                         <div>
                             <h3>Location</h3>
-                            <p>Guwahati, Assam, India</p>
+                            <p>{{ contact_location }}</p>
                         </div>
                     </div>
                 </div>
@@ -49,27 +66,64 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="contact-name">Name</label>
-                        <input type="text" id="contact-name" name="name" placeholder="Your name" required>
+                        <input type="text" id="contact-name" name="name" placeholder="Your name" maxlength="100"
+                            value="{{ prefill.name or '' }}" autocomplete="name" required>
                     </div>
                     <div class="form-group">
                         <label for="contact-email">Email</label>
-                        <input type="email" id="contact-email" name="email" placeholder="you@example.com" required>
+                        <input type="email" id="contact-email" name="email" placeholder="you@example.com" maxlength="100"
+                            value="{{ prefill.email or '' }}" autocomplete="email" required>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label for="contact-subject">Subject</label>
-                    <input type="text" id="contact-subject" name="subject" placeholder="What's this about?">
+                    <input type="text" id="contact-subject" name="subject" placeholder="What's this about?" maxlength="150">
                 </div>
 
                 <div class="form-group">
                     <label for="contact-message">Message</label>
-                    <textarea id="contact-message" name="message" rows="5" placeholder="Tell us more..."
+                    <textarea id="contact-message" name="message" rows="5" placeholder="Tell us more..." maxlength="2000"
                         required></textarea>
                 </div>
 
                 <button type="submit" class="fw-btn-con"><span class="fw-btn">Send Message</span></button>
             </form>
+        </div>
+
+        <div class="faq-section">
+            <div class="sp-head">
+                <span class="sp-icon"><i class='bx bx-help-circle'></i></span>
+                <div class="sp-title">
+                    <h2>Quick answers <span class="neo-h">{{ neo_ico('neutral', 58, 'lime') }}</span></h2>
+                    <p class="sp-sub">Short answers to what people ask most.</p>
+                </div>
+            </div>
+            <details class="faq-item">
+                <summary>How do I book a service?</summary>
+                <p>Find a workshop, choose the service you need and send a booking request for the time you want. The
+                    workshop confirms it, and you can follow its status under My Bookings.</p>
+            </details>
+            <details class="faq-item">
+                <summary>How do I know if a workshop is open?</summary>
+                <p>Every workshop shows an Open or Closed badge in the search results and on its own page. You can still
+                    send a request to a closed workshop for a later time.</p>
+            </details>
+            <details class="faq-item">
+                <summary>I forgot my password.</summary>
+                <p>Choose "Forgot password?" in the login window and we will email you a link to set a new one. If you
+                    signed up with Google, you can simply keep using "Sign in with Google".</p>
+            </details>
+            <details class="faq-item">
+                <summary>I own a workshop. How do I list it?</summary>
+                <p>Sign up as a Workshop Owner, then add your workshop, its services and your opening status from the
+                    owner dashboard. Customers will find you in search.</p>
+            </details>
+            <details class="faq-item">
+                <summary>I am a mechanic. How do I join a workshop?</summary>
+                <p>Sign up as a Mechanic, browse workshops and send a join request. The owner reviews it, and once you
+                    are in you can mark yourself active or absent so the owner knows who is available.</p>
+            </details>
         </div>
     </section>
 </div>
@@ -79,12 +133,15 @@
         <h2>Login</h2>
         <input type="email" name="email" placeholder="Email" required>
         <input type="password" name="password" placeholder="Password" required>
+        <a class="forgot-link" href="{{ url_for('auth.forgot_password') }}">Forgot password?</a>
         <div class="fw-btn-con">
             <button class="fw-btn" type="submit">Login</button>
         </div>
         <p>Don't have an account? <a data-signup="signupBtn">Sign Up</a></p>
-        <p>or</p>
-        <button class="ggl-btn" id="google-login-btn">Login with Google</button>
+        <div class="auth-divider"><span>or</span></div>
+        <a class="ggl-btn" id="google-login-btn" href="{{ url_for('auth.google_login', mode='login') }}">
+            {% include 'partials/google_icon.html' %}<span>Sign in with Google</span>
+        </a>
     </form>
 </div>
 <div class="signup-modal" id="signUpModal">
@@ -104,8 +161,10 @@
             <button class="fw-btn" type="submit">Sign Up</button>
         </div>
         <p>Already have an account? <a data-login="loginBtn">Login</a></p>
-        <p>or</p>
-        <button class="ggl-btn" id="google-signup-btn">Sign Up with Google</button>
+        <div class="auth-divider"><span>or</span></div>
+        <a class="ggl-btn" id="google-signup-btn" href="{{ url_for('auth.google_login', mode='signup') }}">
+            {% include 'partials/google_icon.html' %}<span>Sign up with Google</span>
+        </a>
     </form>
 </div>
 

@@ -51,13 +51,22 @@
 
     // eyes follow the pointer
     if (!reduce) {
-        document.addEventListener('pointermove', (e) => {
-            lastMove = Date.now();
+        // work out the eyes once per frame (not once per mouse event) and react from a shorter distance,
+        // so the eyes snap to the pointer almost instantly
+        let ptr = null, frame = 0;
+        const track = () => {
+            frame = 0;
+            if (!ptr) return;
             all().forEach((el) => {
                 if (!el.hasAttribute('data-follow')) return;
                 const r = el.getBoundingClientRect();
-                look(el, (e.clientX - (r.left + r.width / 2)) / 320, (e.clientY - (r.top + r.height / 2)) / 320);
+                look(el, (ptr.x - (r.left + r.width / 2)) / 170, (ptr.y - (r.top + r.height / 2)) / 170);
             });
+        };
+        document.addEventListener('pointermove', (e) => {
+            lastMove = Date.now();
+            ptr = { x: e.clientX, y: e.clientY };
+            if (!frame) frame = requestAnimationFrame(track);
         }, { passive: true });
 
         // when nobody is moving the pointer (or on touch screens) glance around now and then

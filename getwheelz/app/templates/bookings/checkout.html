@@ -3,6 +3,7 @@
 {% block title %}Checkout — Getwheelz{% endblock %}
 
 {% block content %}
+{% from 'partials/robot.html' import neo_ico %}
 <style>
     .checkout-page { max-width: 980px; margin: 0 auto; padding: 24px 16px 60px; }
     .co-back { display: inline-block; margin-bottom: 14px; font-size: 14px; color: var(--text-muted); text-decoration: none; }
@@ -57,7 +58,7 @@
 
 <section class="booking-page checkout-page">
     <a class="co-back" href="{{ url_for('bookings.my_bookings') }}">&larr; Back to my bookings</a>
-    <h1>Checkout</h1>
+    <h1>Checkout <span class="neo-h">{{ neo_ico('excited', 60, 'amber', wander=False) }}</span></h1>
 
     <div class="co-demo">
         <i class='bx bx-info-circle'></i>

@@ -7,8 +7,10 @@
 {% endblock %}
 
 {% block content %}
+{% from 'partials/robot.html' import neo_ico %}
 <div class="px">
     <section class="px-hero" style="padding-bottom: 0;">
+        <div class="neo-side" aria-hidden="true">{{ neo_ico('working', 170, '', wander=False) }}</div>
         <div class="px-wrap">
             <a class="px-chip" href="{{ url_for('workshops.selected', w_id=workshop.w_id) }}"><i class='bx bx-arrow-back'></i> Back to workshop</a>
             <h1 class="px-title">Book a service at <span class="grad">{{ workshop.name }}</span></h1>
@@ -79,7 +81,7 @@
             </form>
             {% else %}
             <div class="px-card px-empty" style="margin-top: 26px;">
-                <i class='bx bx-wrench'></i>
+                {{ neo_ico('neutral', 100, 'amber') }}
                 <h3>No services to book yet</h3>
                 <p>This workshop hasn't listed any services. Try another workshop.</p>
                 <a class="px-btn sm" href="{{ url_for('workshops.search') }}">Browse workshops</a>

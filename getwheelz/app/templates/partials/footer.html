@@ -1,4 +1,6 @@
+{% from 'partials/robot.html' import neo_ico %}
 <footer class="site-footer">
+    <div class="footer-neo" aria-hidden="true">{{ neo_ico('wave', 96, 'lime', wander=False) }}</div>
     <div class="footer-content">
         <div class="footer-col footer-brand">
             <h4><i class='bx bx-wrench'></i> Getwheelz</h4>
@@ -26,6 +28,9 @@
                 {% for svc in catalog_services[:5] %}
                 <li><a href="{{ url_for('workshops.search', service=svc.name) }}">{{ svc.name }}</a></li>
                 {% endfor %}
+                {% if catalog_services | length > 5 %}
+                <li><a href="{{ url_for('workshops.search') }}">More&hellip;</a></li>
+                {% endif %}
             </ul>
         </div>
 

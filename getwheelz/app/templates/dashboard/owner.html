@@ -6,6 +6,8 @@
 
 {{ super() }}
 
+<link rel="stylesheet" href="{{ url_for('static', filename='css/neo-coach.css') }}">
+
 <style>
     /* keep the bookings table inside its card on ordinary laptop screens */
     #bookings .admin-table th, #bookings .admin-table td { padding-left: 10px; padding-right: 10px; }
@@ -718,6 +720,7 @@
 {% endblock %}
 
 {% block content %}
+{% from 'partials/robot.html' import neo_ico, robot %}
 
 <div class="admin-layout" id="adminLayout">
     <!-- Owner Sidebar -->
@@ -772,7 +775,7 @@
         {% if not workshop %}
         <!-- Welcome empty state when no workshop listed -->
         <section class="owner-welcome">
-            <div class="ow-icon"><i class='bx bx-store-alt'></i></div>
+            <div class="neo-owner">{{ neo_ico('wave', 140, '', wander=False) }}</div>
             <h1>Welcome, Workshop Owner!</h1>
             <p class="ow-lead">Let's get your workshop listed so customers nearby can find and book you.</p>
 
@@ -806,7 +809,9 @@
         {% else %}
         <!-- Workshop Hero Header -->
         <article class="owner-hero-card">
-            <div class="owner-banner"></div>
+            <div class="owner-banner">
+                <div class="neo-banner" aria-hidden="true">{{ neo_ico('working', 96, '', wander=False) }}{{ neo_ico('screwing', 96, 'lime', wander=False) }}</div>
+            </div>
             <div class="owner-hero-body">
                 <div class="owner-details-wrap">
                     <div class="workshop-photo-box">
@@ -955,7 +960,7 @@
         <!-- Bookings Section -->
         <section class="admin-section" id="bookings">
             <div class="section-header-row">
-                <h2><i class='bx bx-calendar-check'></i> Bookings</h2>
+                <h2><i class='bx bx-calendar-check'></i> Bookings <span class="neo-h">{{ neo_ico('happy', 50, 'lime', wander=False) }}</span></h2>
                 {% if booking_summary and bookings %}
                 <div class="bk-summary">
                     <div class="bk-sum"><b>{{ booking_summary.collected_month }}</b>Collected this month</div>
@@ -1103,7 +1108,7 @@
                 </table>
             </div>
             <div class="bk-empty" id="bkEmpty" hidden>
-                <i class='bx bx-calendar-x'></i>
+                {{ neo_ico('neutral', 76, 'amber') }}
                 <b id="bkEmptyTitle">Nothing here</b>
                 <span id="bkEmptyText">No bookings match these filters.</span>
             </div>
@@ -1112,20 +1117,20 @@
                 <button type="button" class="mini-btn neutral" id="bkMore" hidden>Show more</button>
             </div>
             {% else %}
-            <p class="no-results">No bookings received yet.</p>
+            <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'lime') }}No bookings received yet.</p>
             {% endif %}
         </section>
         <!-- Services Section -->
         <section class="admin-section" id="services">
             <div class="section-header-row">
-                <h2><i class='bx bx-wrench'></i> Services Offered</h2>
+                <h2><i class='bx bx-wrench'></i> Services Offered <span class="neo-h">{{ neo_ico('neutral', 50, 'amber') }}</span></h2>
                 <button type="button" class="mini-btn confirm" data-open-add-service>
                     <i class='bx bx-plus'></i> New Service
                 </button>
             </div>
             {% if services %}
             <div class="admin-table-wrapper">
-                <table class="admin-table">
+                <table class="admin-table" data-more="8">
                     <thead>
                         <tr>
                             <th>S.No</th>
@@ -1168,13 +1173,13 @@
                 </table>
             </div>
             {% else %}
-            <p class="no-results">No services added to your workshop yet.</p>
+            <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'lime') }}No services added to your workshop yet.</p>
             {% endif %}
         </section>
         <!-- Joining Requests Section -->
         <section class="admin-section" id="joiningRequests">
             <div class="section-header-row">
-                <h2><i class='bx bx-user-plus'></i> Mechanic Joining Requests</h2>
+                <h2><i class='bx bx-user-plus'></i> Mechanic Joining Requests <span class="neo-h">{{ neo_ico('excited', 50, '', wander=False) }}</span></h2>
             </div>
             {% if pending_requests %}
             <div class="admin-table-wrapper">
@@ -1222,13 +1227,13 @@
                 </table>
             </div>
             {% else %}
-            <p class="no-results">No pending mechanic applications at the moment.</p>
+            <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'lime') }}No pending mechanic applications at the moment.</p>
             {% endif %}
         </section>
         <!-- Mechanics List Section -->
         <section class="admin-section" id="leaveRequests">
             <div class="section-header-row">
-                <h2><i class='bx bx-log-out-circle'></i> Mechanic Leave Requests</h2>
+                <h2><i class='bx bx-log-out-circle'></i> Mechanic Leave Requests <span class="neo-h">{{ neo_ico('neutral', 50, 'violet') }}</span></h2>
             </div>
             {% if leave_requests %}
             <div class="admin-table-wrapper">
@@ -1274,12 +1279,12 @@
                 </table>
             </div>
             {% else %}
-            <p class="no-results">No leave requests at the moment.</p>
+            <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'lime') }}No leave requests at the moment.</p>
             {% endif %}
         </section>
         <section class="admin-section" id="mechanics">
             <div class="section-header-row">
-                <h2><i class='bx bx-group'></i> Workshop Mechanics</h2>
+                <h2><i class='bx bx-group'></i> Workshop Mechanics <span class="neo-h">{{ neo_ico('wave', 50, 'violet', wander=False) }}</span></h2>
             </div>
             {% if mechanics %}
             <div class="admin-table-wrapper">
@@ -1320,7 +1325,7 @@
                 </table>
             </div>
             {% else %}
-            <p class="no-results">No mechanics are currently assigned to this workshop.</p>
+            <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'lime') }}No mechanics are currently assigned to this workshop.</p>
             {% endif %}
         </section>
         {% endif %}
@@ -1365,6 +1370,38 @@
         <button type="submit" class="fw-btn-con"><span class="fw-btn">Save Changes</span></button>
     </form>
 </div>
+<!-- NEO's coach for the create-workshop pop-up and the "add a service" card that follows (js/neo-coach.js) -->
+<div id="neoCoachCfg" data-has-workshop="{{ 'true' if workshop else 'false' }}" hidden></div>
+{% if not workshop %}
+<template id="neoCoachTpl">
+    <div class="nc-coach" aria-live="polite">
+        <div class="nc-bot" aria-hidden="true">{{ robot('wave', 64, follow=False, label='NEO') }}</div>
+        <div class="nc-bubble">
+            <h3 class="nc-title" data-nc-title></h3>
+            <p class="nc-text" data-nc-text></p>
+            <div class="nc-foot">
+                <div class="nc-bar" aria-hidden="true"><span data-nc-fill></span></div>
+                <span class="nc-count" data-nc-count></span>
+                <button type="button" class="nc-hide" data-nc-hide>Hide tips</button>
+            </div>
+        </div>
+    </div>
+</template>
+{% else %}
+<template id="neoNextTpl">
+    <div class="nc-next" role="dialog" aria-live="polite" aria-labelledby="ncNextTitle">
+        <div class="nc-bot" aria-hidden="true">{{ robot('excited', 84, follow=False, label='NEO') }}</div>
+        <div class="nc-bubble">
+            <h3 class="nc-title" id="ncNextTitle">Your workshop is live!</h3>
+            <p class="nc-text">Next, add the services you offer, each with a price range and a duration. Customers search and book by these.</p>
+            <div class="nc-acts">
+                <button type="button" class="nc-btn ghost" data-nc-later>Later</button>
+                <button type="button" class="nc-btn" data-nc-go>Add a service</button>
+            </div>
+        </div>
+    </div>
+</template>
+{% endif %}
 <!-- Modal: Create Workshop -->
 <div class="fw-modal" id="createWorkshopModal" role="dialog" aria-modal="true" aria-labelledby="cwTitle">
     <div class="fw-modal-panel">
@@ -1470,6 +1507,7 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/owner-bookings.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/workshop.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/neo-coach.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/customer-home.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/admin.js') }}" defer></script>
 <script>

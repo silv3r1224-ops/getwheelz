@@ -13,10 +13,32 @@
     {% block head %}{% endblock %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/robot.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/modals.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/comic.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/more.css') }}">
+    {% if session.get('user_id') %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tour.css') }}">
+    {% endif %}
 </head>
 
 <body>
     {% include 'partials/navbar.html' %}
+    {# NEO's message for the navbar "near me" button (header.js clones it when location can't be found) #}
+    {% if session.role not in ['admin', 'owner', 'mechanic'] %}
+    {% from 'partials/robot.html' import robot as neo_robot %}
+    <template id="neoToastTpl">
+        <div class="flash-container" data-neo-toast style="transition: opacity .3s ease, transform .3s ease;">
+            <div class="flash-item">
+                <div class="flash-robot" aria-hidden="true">{{ neo_robot('strained', 64, follow=False, label='NEO') }}</div>
+                <div class="flash-message flash-error">
+                    <i class="bx bx-current-location"></i>
+                    <span></span>
+                    <button type="button" class="flash-close" aria-label="Close message">&times;</button>
+                </div>
+            </div>
+        </div>
+    </template>
+    {% endif %}
     <main>
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -51,12 +73,18 @@
     {% from 'partials/robot.html' import robot %}
     <div class="auth-robot" id="authRobot" aria-hidden="true">{{ robot('excited', 150, follow=False) }}</div>
     {% endif %}
+    {# NEO's guided tour: first login (tour_pending) or when the ? button in the navbar is pressed #}
+    {% if session.get('user_id') %}
+    {% include 'partials/tour.html' %}
+    {% endif %}
     {# robot.js runs for everyone now: the flash messages use NEO #}
     <script src="{{ url_for('static', filename='js/robot.js') }}" defer></script>
 
     <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/distance.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/header.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/stay-put.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/more.js') }}" defer></script>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     {% block scripts %}{% endblock %}

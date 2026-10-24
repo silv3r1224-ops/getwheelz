@@ -25,6 +25,7 @@
     {% endmacro %}
 
     {% block content %}
+{% from 'partials/robot.html' import neo_ico %}
     <div class="admin-layout">
 
         <aside class="admin-sidebar" id="sideBar">
@@ -96,7 +97,7 @@
             <section class="admin-section wp-panel" id="wpServices">
                 <h2>Services Offered</h2>
                 {% if services %}
-                <table class="admin-table">
+                <table class="admin-table" data-more="8">
                     <thead>
                         <tr>
                             <th>S.no</th>
@@ -117,7 +118,7 @@
                     </tbody>
                 </table>
                 {% else %}
-                <p class="no-results">No services listed yet.</p>
+                <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'violet') }}No services listed yet.</p>
                 {% endif %}
             </section>
 
@@ -179,7 +180,7 @@
                     {% endfor %}
                 </div>
                 {% else %}
-                <p class="no-results">No mechanics here yet. You could be the first.</p>
+                <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'violet') }}No mechanics here yet. You could be the first.</p>
                 {% endif %}
             </section>
 
@@ -189,7 +190,7 @@
                 {% if workshop.latitude is not none and workshop.longitude is not none %}
                 <div id="preview-map"></div>
                 {% else %}
-                <p class="no-results">The owner hasn't pinned this workshop on the map.</p>
+                <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'violet') }}The owner hasn't pinned this workshop on the map.</p>
                 {% endif %}
             </section>
 

@@ -166,6 +166,7 @@
 {% endblock %}
 
 {% block content %}
+{% from 'partials/robot.html' import neo_ico %}
 <div class="admin-layout" id="adminLayout">
 
     <aside class="admin-sidebar" id="sideBar">
@@ -304,13 +305,13 @@
                     </tbody>
                 </table>
                 <div class="cat-empty" id="catNoMatch" hidden>
-                    <i class='bx bx-search-alt'></i>
+                    {{ neo_ico('neutral', 76, 'violet') }}
                     No service matches your search.
                 </div>
             </div>
             {% else %}
             <div class="cat-empty">
-                <i class='bx bx-list-ul'></i>
+                {{ neo_ico('wave', 100, '', wander=False) }}
                 No services in the catalog yet. Add the first one above.
             </div>
             {% endif %}

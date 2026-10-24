@@ -1,6 +1,7 @@
 from functools import wraps
 from flask import session, redirect, url_for, abort, current_app, flash
-from itsdangerous import URLSafeSerializer, BadSignature
+import hashlib
+from itsdangerous import URLSafeSerializer, URLSafeTimedSerializer, BadSignature, SignatureExpired
 
 def login_required(f):
     @wraps(f)
@@ -91,3 +92,29 @@ def admin_access_required(*allowed_types, main_only=False):
             return f(*args, **kwargs)
         return decorated_function
     return decorator
+
+
+# ---------- password reset links ----------
+def _password_fingerprint(password_hash):
+    """Short fingerprint of the current password hash: once the password changes, old reset links stop working."""
+    return hashlib.sha256(password_hash.encode()).hexdigest()[:16]
+
+
+def make_reset_token(user_id, password_hash):
+    """Signed, time-limited token for the 'forgot password' link."""
+    s = URLSafeTimedSerializer(current_app.secret_key, salt='password-reset')
+    return s.dumps({'u': int(user_id), 'f': _password_fingerprint(password_hash)})
+
+
+def read_reset_token(token, max_age_seconds):
+    """-> (user_id, fingerprint), or None if the token is edited, invalid or expired."""
+    s = URLSafeTimedSerializer(current_app.secret_key, salt='password-reset')
+    try:
+        data = s.loads(token, max_age=max_age_seconds)
+        return int(data['u']), str(data['f'])
+    except (BadSignature, SignatureExpired, KeyError, ValueError, TypeError):
+        return None
+
+
+def reset_fingerprint_matches(password_hash, fingerprint):
+    return _password_fingerprint(password_hash) == fingerprint

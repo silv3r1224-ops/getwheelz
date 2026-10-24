@@ -11,6 +11,9 @@ CREATE TABLE users (
     password        VARCHAR(255) NOT NULL,
     role            VARCHAR(20)  NOT NULL CHECK (role IN ('customer', 'admin', 'owner', 'mechanic')),
     profile_picture VARCHAR(255),
+    google_id       VARCHAR(64) UNIQUE,  -- Google account id, set when the person signs in with Google
+    password_set    BOOLEAN NOT NULL DEFAULT TRUE,  -- FALSE for accounts created with Google that never chose a password
+    tour_seen       BOOLEAN NOT NULL DEFAULT FALSE, -- FALSE until the person finishes (or skips) NEO's first-login tour
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

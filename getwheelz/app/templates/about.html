@@ -2,16 +2,38 @@
 
 {% block title %}About Us — Getwheelz{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/static-pages.css') }}">
+{% endblock %}
+
 {% block content %}
+{% from 'partials/robot.html' import neo_ico %}
 <div class="index-con" id="mainCon">
     <section class="static-page">
         <div class="static-page-hero">
-            <h1>About Getwheelz</h1>
-            <p>Connecting vehicle owners with trusted mechanics, one booking at a time.</p>
+            <div class="sp-hero-icon" aria-hidden="true"><i class='bx bx-wrench'></i></div>
+            <div class="sp-hero-text">
+                <span class="sp-eyebrow"><i class='bx bx-info-circle'></i> About us</span>
+                <h1>About <span class="sp-grad">Getwheelz</span></h1>
+                <p>Connecting vehicle owners with trusted mechanics, one booking at a time.</p>
+                <div class="sp-chips">
+                <span><i class='bx bx-search-alt'></i> Find workshops</span>
+                <span><i class='bx bx-calendar-check'></i> Book online</span>
+                <span><i class='bx bx-list-check'></i> Track your bookings</span>
+            </div>
+            </div>
+            <div class="neo-hero">{{ neo_ico('wave', 118, '', wander=False) }}</div>
         </div>
 
         <div class="static-page-content">
-            <h2>Our Mission</h2>
+            <div class="sp-head">
+                <span class="sp-icon"><i class='bx bx-flag'></i></span>
+                <div class="sp-title">
+                    <h2>Our Mission</h2>
+                    <p class="sp-sub">Getwheelz keeps finding and booking a mechanic simple.</p>
+                </div>
+                <span class="sp-count"><b>01</b> / 04</span>
+            </div>
             <p>
                 Finding a reliable mechanic shouldn't mean asking around for recommendations or
                 gambling on the nearest garage. Getwheelz was built to make that process simple —
@@ -19,7 +41,14 @@
                 without the back-and-forth.
             </p>
 
-            <h2>What We Offer</h2>
+            <div class="sp-head">
+                <span class="sp-icon"><i class='bx bx-grid-alt'></i></span>
+                <div class="sp-title">
+                    <h2>What We Offer</h2>
+                    <p class="sp-sub">Tools for drivers, workshop owners and mechanics.</p>
+                </div>
+                <span class="sp-count"><b>02</b> / 04</span>
+            </div>
             <div class="about-grid">
                 <div class="about-card">
                     <i class='bx bx-search-alt'></i>
@@ -28,26 +57,71 @@
                 </div>
                 <div class="about-card">
                     <i class='bx bx-calendar-check'></i>
-                    <h3>Book Instantly</h3>
-                    <p>Reserve a service slot directly through the platform — no phone calls needed.</p>
+                    <h3>Book Online</h3>
+                    <p>Send a booking request through the platform and follow its status — no phone calls needed.</p>
                 </div>
                 <div class="about-card">
                     <i class='bx bx-wrench'></i>
                     <h3>For Workshop Owners</h3>
-                    <p>List your services, manage bookings, and grow your customer base online.</p>
+                    <p>List your services, show customers when you are open, and manage booking requests in one place.</p>
                 </div>
                 <div class="about-card">
                     <i class='bx bx-group'></i>
                     <h3>For Mechanics</h3>
-                    <p>Join a workshop that fits your skills and start working through the platform.</p>
+                    <p>Join a workshop that fits your skills and let owners know when you are active for work.</p>
                 </div>
             </div>
 
-            <h2>Get In Touch</h2>
+            <div class="sp-head">
+                <span class="sp-icon"><i class='bx bx-route'></i></span>
+                <div class="sp-title">
+                    <h2>How It Works</h2>
+                    <p class="sp-sub">From searching to a confirmed booking.</p>
+                </div>
+                <span class="sp-count"><b>03</b> / 04</span>
+            </div>
+            <div class="about-steps">
+                <div class="about-step">
+                    <span class="about-step-num">1</span>
+                    <h3>Search</h3>
+                    <p>Pick the service you need and see workshops near you on the map.</p>
+                </div>
+                <div class="about-step">
+                    <span class="about-step-num">2</span>
+                    <h3>Choose</h3>
+                    <p>Check which workshops are open right now and compare what they offer.</p>
+                </div>
+                <div class="about-step">
+                    <span class="about-step-num">3</span>
+                    <h3>Book</h3>
+                    <p>Send a request for a time that suits you and track it from My Bookings.</p>
+                </div>
+            </div>
+
+            <div class="sp-head">
+                <span class="sp-icon"><i class='bx bx-envelope'></i></span>
+                <div class="sp-title">
+                    <h2>Get In Touch</h2>
+                    <p class="sp-sub">We'd love to hear from you.</p>
+                </div>
+                <span class="sp-count"><b>04</b> / 04</span>
+            </div>
             <p>
                 Have questions, feedback, or want to list your workshop? Reach out on our
                 <a href="{{ url_for('main.contact') }}">contact page</a> — we'd love to hear from you.
             </p>
+        </div>
+
+        <div class="about-cta">
+            <div class="neo-cta" aria-hidden="true">{{ neo_ico('excited', 104, 'amber', wander=False) }}</div>
+            <h2>Ready to get started?</h2>
+            <p>Create a free account with your email or Google, or start by looking for a workshop.</p>
+            <div class="about-cta-buttons">
+                <a class="about-cta-btn" href="{{ url_for('workshops.search') }}"><i class='bx bx-search-alt'></i> Find Workshops</a>
+                {% if not session.get('user_id') %}
+                <a class="about-cta-btn ghost" href="#" data-signup="signupBtn"><i class='bx bx-user-plus'></i> Sign Up</a>
+                {% endif %}
+            </div>
         </div>
     </section>
 </div>
@@ -57,12 +131,15 @@
         <h2>Login</h2>
         <input type="email" name="email" placeholder="Email" required>
         <input type="password" name="password" placeholder="Password" required>
+        <a class="forgot-link" href="{{ url_for('auth.forgot_password') }}">Forgot password?</a>
         <div class="fw-btn-con">
             <button class="fw-btn" type="submit">Login</button>
         </div>
         <p>Don't have an account? <a data-signup="signupBtn">Sign Up</a></p>
-        <p>or</p>
-        <button class="ggl-btn" id="google-login-btn">Login with Google</button>
+        <div class="auth-divider"><span>or</span></div>
+        <a class="ggl-btn" id="google-login-btn" href="{{ url_for('auth.google_login', mode='login') }}">
+            {% include 'partials/google_icon.html' %}<span>Sign in with Google</span>
+        </a>
     </form>
 </div>
 <div class="signup-modal" id="signUpModal">
@@ -82,8 +159,10 @@
             <button class="fw-btn" type="submit">Sign Up</button>
         </div>
         <p>Already have an account? <a data-login="loginBtn">Login</a></p>
-        <p>or</p>
-        <button class="ggl-btn" id="google-signup-btn">Sign Up with Google</button>
+        <div class="auth-divider"><span>or</span></div>
+        <a class="ggl-btn" id="google-signup-btn" href="{{ url_for('auth.google_login', mode='signup') }}">
+            {% include 'partials/google_icon.html' %}<span>Sign up with Google</span>
+        </a>
     </form>
 </div>
 {% endblock %}

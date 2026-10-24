@@ -148,3 +148,10 @@ roam=False) -%}
     </g>
 </svg>
 {%- endmacro %}
+
+{# A small decorative NEO for empty states, heroes and corners: {{ neo_ico('wave', 110, 'lime') }}
+Neutral NEO wanders (looks around, as if wondering); every other mood follows the cursor. #}
+{% macro neo_ico(mood='neutral', size=96, skin='', wander=True) -%}
+{% set w = wander and mood == 'neutral' %}
+<span class="neo-ico" aria-hidden="true">{{ robot(mood, size, skin=skin, follow=not w, wander=w, label='NEO') }}</span>
+{%- endmacro %}

@@ -3,6 +3,7 @@
 {% block title %}{{ workshop.name }} — Admin — Getwheelz{% endblock %}
 
 {% block content %}
+{% from 'partials/robot.html' import neo_ico %}
 <div class="admin-layout">
 
     <aside class="admin-sidebar" id="sideBar">
@@ -98,7 +99,7 @@
                 </tbody>
             </table>
             {% else %}
-            <p class="no-results">No services listed yet.</p>
+            <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'lime') }}No services listed yet.</p>
             {% endif %}
         </section>
 
@@ -157,7 +158,7 @@
                 {% endfor %}
             </div>
             {% else %}
-            <p class="no-results">No mechanics in this workshop yet.</p>
+            <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'lime') }}No mechanics in this workshop yet.</p>
             {% endif %}
         </section>
 
@@ -167,7 +168,7 @@
             {% if workshop.latitude is not none and workshop.longitude is not none %}
             <div id="preview-map"></div>
             {% else %}
-            <p class="no-results">The owner hasn't pinned this workshop on the map.</p>
+            <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'lime') }}The owner hasn't pinned this workshop on the map.</p>
             {% endif %}
         </section>
 

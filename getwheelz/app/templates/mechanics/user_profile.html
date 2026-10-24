@@ -3,6 +3,7 @@
 {% block title %}{{ person.name }} — Getwheelz{% endblock %}
 
 {% block content %}
+{% from 'partials/robot.html' import neo_ico %}
 <div class="admin-layout">
 
     <aside class="admin-sidebar" id="sideBar">
@@ -104,7 +105,7 @@
                 {% endfor %}
             </div>
             {% else %}
-            <p class="no-results">No workshops listed yet.</p>
+            <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'lime') }}No workshops listed yet.</p>
             {% endif %}
         </section>
         {% else %}

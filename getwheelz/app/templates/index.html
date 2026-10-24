@@ -519,8 +519,8 @@
                 </div>
                 <div class="lp-wave">{{ robot('wave', 150, follow=True) }}</div>
             </div>
-            <div class="lp-tiles">
-                {% for svc in catalog_services[:10] %}
+            <div class="lp-tiles" data-more="10">
+                {% for svc in catalog_services %}
                 {% set n = svc.name | lower %}
                 {% set icon = 'bx-cog' if 'engine' in n
                     else 'bx-bolt-circle' if ('electr' in n or 'battery' in n)
@@ -683,12 +683,15 @@
         <p>Sign in to manage your bookings and workshop activity.</p>
         <input type="email" name="email" placeholder="Email" required>
         <input type="password" name="password" placeholder="Password" required>
+        <a class="forgot-link" href="{{ url_for('auth.forgot_password') }}">Forgot password?</a>
         <div class="fw-btn-con">
             <button class="fw-btn" type="submit">Login</button>
         </div>
         <p>New to Getwheelz? <a data-signup="signupBtn">Sign Up</a></p>
-        <p>or</p>
-        <button class="ggl-btn" id="google-login-btn" type="button">Login with Google</button>
+        <div class="auth-divider"><span>or</span></div>
+        <a class="ggl-btn" id="google-login-btn" href="{{ url_for('auth.google_login', mode='login') }}">
+            {% include 'partials/google_icon.html' %}<span>Sign in with Google</span>
+        </a>
     </form>
 </div>
 <div class="signup-modal" id="signUpModal">
@@ -709,8 +712,10 @@
             <button class="fw-btn" type="submit">Sign Up</button>
         </div>
         <p>Already have an account? <a data-login="loginBtn">Login</a></p>
-        <p>or</p>
-        <button class="ggl-btn" id="google-signup-btn" type="button">Sign Up with Google</button>
+        <div class="auth-divider"><span>or</span></div>
+        <a class="ggl-btn" id="google-signup-btn" href="{{ url_for('auth.google_login', mode='signup') }}">
+            {% include 'partials/google_icon.html' %}<span>Sign up with Google</span>
+        </a>
     </form>
 </div>
 {% endblock %}

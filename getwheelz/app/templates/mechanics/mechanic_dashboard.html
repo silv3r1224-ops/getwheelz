@@ -3,6 +3,7 @@
 {% block title %}Mechanic Dashboard — Getwheelz{% endblock %}
 
 {% block content %}
+{% from 'partials/robot.html' import neo_ico %}
 <div class="admin-layout">
 
     <aside class="admin-sidebar" id="sideBar">
@@ -44,6 +45,7 @@
                 {% endif %}
                 <p class="wp-line"><i class='bx bx-user-circle'></i> Owner: {{ workshop.owner_name }}</p>
             </div>
+            <div class="neo-corner" aria-hidden="true">{{ neo_ico('screwing', 150, '', wander=False) }}</div>
         </header>
 
         {# ---------------- my availability ---------------- #}
@@ -51,7 +53,7 @@
             <h2>My Availability
                 <span class="oc-badge {{ 'oc-open' if mechanic.active_stat == 'active' else 'oc-inactive' }}">
                     {{ 'Active for work now' if mechanic.active_stat == 'active' else 'Absent / inactive' }}
-                </span>
+                </span> <span class="neo-h">{{ neo_ico('happy' if mechanic.active_stat == 'active' else 'neutral', 52, '' if mechanic.active_stat == 'active' else 'amber') }}</span>
             </h2>
             <p class="leave-text">Let the owner and your team know whether you are available to take jobs.</p>
             <form method="POST" action="{{ url_for('mechanics.set_status') }}" class="oc-toggle-form">
@@ -86,99 +88,93 @@
 
         {# ---------------- stats ---------------- #}
         <div class="stats-grid">
-            <div class="stat-card">
+            <div class="stat-card" data-bk-filter="all" role="button" tabindex="0" title="Show these bookings">
                 <span class="stat-number">{{ stats.total }}</span>
                 <span class="stat-label">Workshop Bookings</span>
             </div>
-            <div class="stat-card {% if stats.pending %}highlight{% endif %}">
+            <div class="stat-card {% if stats.pending %}highlight{% endif %}" data-bk-filter="pending" role="button" tabindex="0" title="Show these bookings">
                 <span class="stat-number">{{ stats.pending }}</span>
                 <span class="stat-label">Pending</span>
             </div>
-            <div class="stat-card {% if stats.mine %}highlight{% endif %}">
+            <div class="stat-card {% if stats.mine %}highlight{% endif %}" data-bk-filter="todo" role="button" tabindex="0" title="Show these bookings">
                 <span class="stat-number">{{ stats.mine }}</span>
                 <span class="stat-label">Assigned to Me</span>
             </div>
-            <div class="stat-card">
+            <div class="stat-card" data-bk-filter="confirmed" role="button" tabindex="0" title="Show these bookings">
                 <span class="stat-number">{{ stats.confirmed }}</span>
                 <span class="stat-label">Confirmed</span>
             </div>
-            <div class="stat-card">
+            <div class="stat-card" data-bk-filter="history" role="button" tabindex="0" title="Show these bookings">
                 <span class="stat-number">{{ stats.completed }}</span>
                 <span class="stat-label">Completed</span>
             </div>
         </div>
 
-        {# ---------------- jobs assigned to me by the owner ---------------- #}
-        <section class="admin-section wp-panel" id="mMyJobs">
-            <h2>My Assigned Jobs</h2>
-            {% if my_jobs %}
-            <div class="admin-table-wrapper">
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>S.No</th>
-                            <th>Customer</th>
-                            <th>Service</th>
-                            <th>Requested Time</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for b in my_jobs %}
-                        <tr {% if b.status == 'confirmed' %}class="assigned-to-me"{% endif %}>
-                            <td>{{ loop.index }}</td>
-                            <td>{{ b.customer_name }}</td>
-                            <td>{{ b.s_name }}</td>
-                            <td>{{ b.requested_time.strftime('%d %b %Y, %I:%M %p') }}</td>
-                            <td><span class="status-badge status-{{ b.status }}">{{ b.status }}</span></td>
-                            <td>
-                                {% if b.status == 'confirmed' %}
-                                <form method="POST" action="{{ url_for('mechanics.complete_job', booking_id=b.b_id) }}"
-                                    class="inline-form" data-confirm-title="Mark this job as completed?"
-                                    data-confirm-text="{{ b.s_name }} for {{ b.customer_name }} will be shown as done to the owner and the customer."
-                                    data-confirm-yes="Yes, mark complete">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="mini-btn confirm"><i class='bx bx-check-double'></i>
-                                        Mark Complete</button>
-                                </form>
-                                {% else %}
-                                <span style="color: var(--text-muted); font-size: 13px;">Done</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <p class="no-results">No jobs assigned to you yet. When the owner assigns you a confirmed booking, it will appear here.</p>
-            {% endif %}
-        </section>
-
-        {# ---------------- all workshop bookings (read-only) ---------------- #}
+        {# ---------------- bookings: filter, search and sort (same idea as the owner dashboard) ---------------- #}
         <section class="admin-section wp-panel" id="mBookings">
-            <h2>Workshop Bookings</h2>
+            <div class="section-header-row">
+                <h2><i class='bx bx-calendar-check'></i> Bookings <span class="neo-h">{{ neo_ico('happy' if booking_counts.todo else 'neutral', 52, 'lime') }}</span></h2>
+                {% if bookings %}
+                <div class="bk-summary">
+                    <div class="bk-sum"><b>{{ booking_counts.todo }}</b>Jobs to do</div>
+                    <div class="bk-sum"><b>{{ booking_counts.mine - booking_counts.todo }}</b>Done by me</div>
+                </div>
+                {% endif %}
+            </div>
             {% if bookings %}
-            <div class="admin-table-wrapper">
+            {% set bc = booking_counts %}
+            <div class="bk-toolbar" id="bkToolbar">
+                <div class="bk-chips" role="tablist" aria-label="Filter bookings">
+                    <button type="button" class="bk-chip attn" data-bk-chip="todo">To do <span class="n" data-n="todo">{{ bc.todo }}</span></button>
+                    <button type="button" class="bk-chip" data-bk-chip="mine">My jobs <span class="n" data-n="mine">{{ bc.mine }}</span></button>
+                    <button type="button" class="bk-chip" data-bk-chip="pending">Pending <span class="n" data-n="pending">{{ bc.pending }}</span></button>
+                    <button type="button" class="bk-chip" data-bk-chip="confirmed">Confirmed <span class="n" data-n="confirmed">{{ bc.confirmed }}</span></button>
+                    <button type="button" class="bk-chip" data-bk-chip="history">History <span class="n" data-n="history">{{ bc.history }}</span></button>
+                    <button type="button" class="bk-chip" data-bk-chip="all">All <span class="n" data-n="all">{{ bc.all }}</span></button>
+                </div>
+                <div class="bk-controls">
+                    <label class="bk-search">
+                        <i class='bx bx-search'></i>
+                        <input type="search" id="bkSearch" placeholder="Search customer, service or mechanic"
+                            aria-label="Search bookings" autocomplete="off">
+                    </label>
+                    <select id="bkPeriod" class="assign-select" aria-label="Appointment date">
+                        <option value="any">Any date</option>
+                        <option value="today">Today</option>
+                        <option value="week">This week</option>
+                        <option value="month">This month</option>
+                    </select>
+                    <select id="bkSort" class="assign-select" aria-label="Sort bookings">
+                        <option value="soonest">Soonest first</option>
+                        <option value="latest">Latest first</option>
+                        <option value="customer">Customer A&ndash;Z</option>
+                    </select>
+                    <button type="button" class="bk-reset" id="bkReset" hidden>Clear filters</button>
+                </div>
+            </div>
+            <div class="admin-table-wrapper" id="bkTableWrap">
                 <table class="admin-table">
                     <thead>
                         <tr>
-                            <th>S.No</th>
+                            <th>#</th>
                             <th>Customer</th>
                             <th>Service</th>
                             <th>Requested Time</th>
                             <th>Status</th>
                             <th>Assigned To</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for b in bookings %}
-                        <tr {% if b.assigned_m_id == mechanic.m_id and b.status == 'confirmed' %}class="assigned-to-me"{% endif %}>
-                            <td>{{ loop.index }}</td>
-                            <td>{{ b.customer_name }}</td>
+                        <tr class="bk-row{% if b.is_todo %} assigned-to-me{% endif %}{% if b.status == 'pending' %} bk-row-pending{% endif %}"
+                            data-status="{{ b.status }}" data-mine="{{ 1 if b.is_mine else 0 }}" data-todo="{{ 1 if b.is_todo else 0 }}"
+                            data-periods="{{ b.periods }}" data-ts="{{ b.ts }}" data-customer="{{ b.customer_name | lower }}"
+                            data-search="{{ (b.customer_name ~ ' ' ~ b.s_name ~ ' ' ~ (b.mechanic_name or '') ~ (' you' if b.assigned_m_id == mechanic.m_id else '') ~ ' #' ~ b.b_id) | lower }}">
+                            <td class="bk-id">#{{ b.b_id }}</td>
+                            <td><strong>{{ b.customer_name }}</strong></td>
                             <td>{{ b.s_name }}</td>
-                            <td>{{ b.requested_time.strftime('%d %b %Y, %I:%M %p') }}</td>
+                            <td>{{ b.requested_time.strftime('%d %b %Y, %I:%M %p') }}{% if b.is_today %}<span class="bk-today">Today</span>{% endif %}</td>
                             <td><span class="status-badge status-{{ b.status }}">{{ b.status }}</span></td>
                             <td>
                                 {% if b.status == 'cancelled' or not b.mechanic_name %}
@@ -189,19 +185,44 @@
                                 {{ b.mechanic_name }}
                                 {% endif %}
                             </td>
+                            <td>
+                                {% if b.is_todo %}
+                                <form method="POST" action="{{ url_for('mechanics.complete_job', booking_id=b.b_id) }}"
+                                    class="inline-form" data-confirm-title="Mark this job as completed?"
+                                    data-confirm-text="{{ b.s_name }} for {{ b.customer_name }} will be shown as done to the owner and the customer."
+                                    data-confirm-yes="Yes, mark complete">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="mini-btn confirm"><i class='bx bx-check-double'></i>
+                                        Mark Complete</button>
+                                </form>
+                                {% elif b.is_mine and b.status == 'completed' %}
+                                <span style="color: var(--text-muted); font-size: 13px;">Done</span>
+                                {% else %}
+                                <span style="color: var(--text-muted);">&mdash;</span>
+                                {% endif %}
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
+            <div class="bk-empty" id="bkEmpty" hidden>
+                {{ neo_ico('neutral', 76, 'amber') }}
+                <b id="bkEmptyTitle">Nothing here</b>
+                <span id="bkEmptyText">No bookings match these filters.</span>
+            </div>
+            <div class="bk-foot" id="bkFoot">
+                <span id="bkCount"></span>
+                <button type="button" class="mini-btn neutral" id="bkMore" hidden>Show more</button>
+            </div>
             {% else %}
-            <p class="no-results">No bookings yet.</p>
+            <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'lime') }}No bookings yet.</p>
             {% endif %}
         </section>
 
         {# ---------------- owner ---------------- #}
         <section class="admin-section wp-panel" id="mOwner">
-            <h2>Workshop Owner</h2>
+            <h2>Workshop Owner <span class="neo-h">{{ neo_ico('happy', 52, 'lime', wander=False) }}</span></h2>
             <div class="team-grid">
                 <div class="team-card owner-card profile-trigger" role="button" tabindex="0" data-role="Workshop Owner"
                     data-name="{{ workshop.owner_name }}"
@@ -226,7 +247,7 @@
 
         {# ---------------- team ---------------- #}
         <section class="admin-section wp-panel" id="mTeam">
-            <h2>My Team <span class="count-pill">{{ team | length }}/{{ workshop.capacity }}</span></h2>
+            <h2>My Team <span class="count-pill">{{ team | length }}/{{ workshop.capacity }}</span> <span class="neo-h">{{ neo_ico('wave', 52, 'violet', wander=False) }}</span></h2>
             <div class="team-grid">
                 {% for t in team %}
                 <div class="team-card profile-trigger {% if t.m_id == mechanic.m_id %}is-me{% endif %}" role="button"
@@ -258,7 +279,7 @@
 
         {# ---------------- leave ---------------- #}
         <section class="admin-section wp-panel" id="mLeave">
-            <h2>Leave Workshop</h2>
+            <h2>Leave Workshop <span class="neo-h">{{ neo_ico('neutral', 52, 'violet') }}</span></h2>
 
             {% if leave_pending %}
             <p class="leave-text">
@@ -306,7 +327,12 @@
 </div>
 {% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bk-filter.css') }}">
+{% endblock %}
+
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/profile.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/confirm.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/mechanic-bookings.js') }}" defer></script>
 {% endblock %}

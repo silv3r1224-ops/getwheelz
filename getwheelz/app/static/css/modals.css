@@ -209,3 +209,380 @@ body.light .auth-msg.is-ok {
         animation: none;
     }
 }
+
+/* ==========================================================================
+   Continue with Google: a standard white Google button + an "or" divider
+   (placed last so it wins over the older .ggl-btn rules in style.css / scrollbar.css)
+   ========================================================================== */
+.auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.18);
+}
+
+body.light .auth-divider {
+    color: rgba(0, 0, 0, 0.5);
+}
+
+body.light .auth-divider::before,
+body.light .auth-divider::after {
+    background: rgba(0, 0, 0, 0.15);
+}
+
+a.ggl-btn,
+.login-form a.ggl-btn,
+.signup-form a.ggl-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    height: 52px;
+    padding: 0 16px;
+    box-sizing: border-box;
+    border: 1px solid #dadce0;
+    border-radius: 12px;
+    background-color: #fff;
+    color: #3c4043;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+a.ggl-btn:visited {
+    color: #3c4043;
+}
+
+a.ggl-btn:hover {
+    background-color: #f7f8f8;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+    transform: translateY(-1px);
+}
+
+a.ggl-btn:focus-visible {
+    outline: 3px solid rgba(66, 133, 244, 0.55);
+    outline-offset: 2px;
+}
+
+a.ggl-btn:active {
+    transform: none;
+    box-shadow: none;
+}
+
+a.ggl-btn .ggl-icon {
+    flex: none;
+}
+
+@media (max-width: 600px) {
+    a.ggl-btn,
+    .login-form a.ggl-btn,
+    .signup-form a.ggl-btn {
+        height: 48px;
+        font-size: 15px;
+    }
+}
+
+
+/* ==========================================================================
+   Forgot password: link in the login pop-up + the two standalone pages
+   ========================================================================== */
+.login-form .forgot-link {
+    align-self: flex-end;
+    margin-top: -8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--main-color);
+    text-decoration: none;
+}
+
+.login-form .forgot-link:hover {
+    text-decoration: underline;
+}
+
+.auth-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 90px);
+    padding: 40px 16px;
+}
+
+.auth-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: min(460px, 100%);
+    padding: 34px 36px;
+    border: 1px solid rgba(191, 93, 111, 0.35);
+    border-radius: 18px;
+    background: var(--second-bg);
+    color: var(--text-color);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.auth-card-icon {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(191, 93, 111, 0.15);
+    color: var(--main-color);
+    font-size: 30px;
+}
+
+.auth-card h1 {
+    margin: 0;
+    font-size: 1.9rem;
+}
+
+.auth-card .auth-sub {
+    margin: 0 0 6px;
+    font-size: 16px;
+    line-height: 1.5;
+    opacity: 0.8;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.auth-form label {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.auth-form input {
+    width: 100%;
+    height: 52px;
+    padding: 0 16px;
+    box-sizing: border-box;
+    border: 1px solid var(--main-color);
+    border-radius: 12px;
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-color);
+    font-size: 16px;
+    outline: none;
+    transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.auth-form input:focus {
+    border-color: #fff7cc;
+    box-shadow: 0 0 0 3px rgba(191, 93, 111, 0.25);
+}
+
+.auth-submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 52px;
+    margin-top: 8px;
+    border: none;
+    border-radius: 12px;
+    background: var(--main-color);
+    color: #fff;
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.auth-submit:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+}
+
+.auth-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    align-self: center;
+    margin-top: 4px;
+    font-size: 15px;
+    color: var(--main-color);
+    text-decoration: none;
+}
+
+.auth-back:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+    .auth-card {
+        padding: 26px 20px;
+    }
+
+    .auth-card h1 {
+        font-size: 1.6rem;
+    }
+}
+
+
+/* ==========================================================================
+   About / Contact additions: how-it-works steps, call to action, quick answers
+   ========================================================================== */
+.about-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 10px;
+}
+
+.about-step {
+    position: relative;
+    flex: 1;
+    min-width: 220px;
+    padding: 28px 24px 24px;
+    border-radius: 12px;
+    background-color: var(--second-bg);
+    text-align: center;
+}
+
+.about-step-num {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    margin: 0 auto 12px;
+    border-radius: 50%;
+    background: var(--main-color);
+    color: #fff;
+    font-weight: 700;
+}
+
+.about-step h3 {
+    margin: 0 0 8px;
+    font-size: 1.05rem;
+}
+
+.about-step p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.about-cta {
+    margin-top: 40px;
+    padding: 36px 24px;
+    border: 1px solid rgba(191, 93, 111, 0.35);
+    border-radius: 16px;
+    background: linear-gradient(160deg, rgba(191, 93, 111, 0.14), transparent 70%);
+    text-align: center;
+}
+
+.about-cta h2 {
+    margin: 0 0 8px;
+    font-size: 1.5rem;
+}
+
+.about-cta p {
+    margin: 0 0 20px;
+    color: var(--text-muted);
+}
+
+.about-cta-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+}
+
+.about-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border: 1px solid var(--main-color);
+    border-radius: 50px;
+    background: var(--main-color);
+    color: #fff;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.about-cta-btn.ghost {
+    background: transparent;
+    color: var(--main-color);
+}
+
+.about-cta-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+}
+
+.static-page-content a.about-cta-btn {
+    color: #fff;
+}
+
+.static-page .about-cta a.about-cta-btn.ghost {
+    color: var(--main-color);
+}
+
+.faq-section {
+    margin-top: 40px;
+}
+
+.faq-section h2 {
+    margin: 0 0 14px;
+    font-size: 1.5rem;
+}
+
+.faq-item {
+    margin-bottom: 10px;
+    border-radius: 12px;
+    background-color: var(--second-bg);
+}
+
+.faq-item summary {
+    padding: 16px 20px;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+}
+
+.faq-item summary::-webkit-details-marker {
+    display: none;
+}
+
+.faq-item summary::after {
+    content: "+";
+    float: right;
+    color: var(--main-color);
+    font-size: 1.3rem;
+    line-height: 1;
+}
+
+.faq-item[open] summary::after {
+    content: "\2212";
+}
+
+.faq-item p {
+    margin: 0;
+    padding: 0 20px 18px;
+    line-height: 1.6;
+    color: var(--text-muted);
+}
+
+.contact-info-item a {
+    color: inherit;
+}

@@ -40,25 +40,60 @@
         }
     });
 
+    // "Workshops near me" shortcut, on every page: jumps to the search results, nearest first.
     const locationBtn = document.getElementById("location-btn");
-    locationBtn?.addEventListener("click", () => {
-        if (!navigator.geolocation) {
-            window.alert("Your browser does not support location access.");
-            return;
-        }
 
+    // NEO says what went wrong (same look as the flash messages) instead of a browser alert
+    function neoToast(message) {
+        const tpl = document.getElementById("neoToastTpl");
+        if (!tpl) return;
+        document.querySelectorAll("[data-neo-toast]").forEach((el) => el.remove());
+        const box = tpl.content.firstElementChild.cloneNode(true);
+        box.querySelector(".flash-message span").textContent = message;
+        document.body.appendChild(box);
+        window.GWRobot?.init();
+
+        let timer;
+        const dismiss = () => {
+            window.clearTimeout(timer);
+            box.style.opacity = "0";
+            box.style.transform = "translateX(40px)";
+            window.setTimeout(() => box.remove(), 300);
+        };
+        const start = () => { window.clearTimeout(timer); timer = window.setTimeout(dismiss, 6000); };
+        const bubble = box.querySelector(".flash-message");
+        bubble.addEventListener("mouseenter", () => window.clearTimeout(timer));
+        bubble.addEventListener("mouseleave", start);
+        box.querySelector(".flash-close")?.addEventListener("click", dismiss);
+        start();
+    }
+
+    function locationProblem(error) {
+        if (error && error.code === 1) {
+            return "Location is blocked for this site. Allow it in your browser's site settings, then press the icon again.";
+        }
+        if (error && error.message === "unsupported") {
+            return "This browser can't share its location, so I can't sort by distance.";
+        }
+        return "I couldn't find your location. Check that location is turned on for your device and try again.";
+    }
+
+    let locating = false;
+    locationBtn?.addEventListener("click", () => {
+        if (locating) return;
+        // distance.js keeps a location for 10 minutes, so moving between pages doesn't ask again
+        if (!window.GW) { neoToast(locationProblem(new Error("unsupported"))); return; }
+
+        locating = true;
         const icon = locationBtn.querySelector("i");
         icon?.classList.add("bx-spin");
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const { latitude, longitude } = position.coords;
-                window.location.assign(`/workshops/search?lat=${latitude}&lng=${longitude}`);
-            },
-            () => {
+        window.GW.getLocation(false).then(
+            (loc) => window.location.assign(`/workshops/search?lat=${loc.lat}&lng=${loc.lng}`),
+            (error) => {
+                locating = false;
                 icon?.classList.remove("bx-spin");
-                window.alert("Could not access your location. Please allow location access and try again.");
-            },
-            { timeout: 10000 }
+                neoToast(locationProblem(error));
+            }
         );
     });
 
@@ -243,3 +278,14 @@
         }
     });
 })();
+
+// "Sign up with Google": carry the role picked in the form (customer / owner / mechanic) to the server.
+document.addEventListener("click", (e) => {
+    const link = e.target instanceof Element ? e.target.closest("#google-signup-btn") : null;
+    if (!link) return;
+    const role = link.closest("form")?.querySelector('select[name="role"]')?.value;
+    if (!role) return;
+    const url = new URL(link.getAttribute("href"), window.location.origin);
+    url.searchParams.set("role", role);
+    link.setAttribute("href", url.pathname + url.search);
+});
