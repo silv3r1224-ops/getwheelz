@@ -34,6 +34,7 @@
         if (!tpl || !body) return;
         var coach = tpl.content.firstElementChild.cloneNode(true);
         body.insertBefore(coach, body.firstChild);
+        if (window.GWRobot) window.GWRobot.init();               // so clicking NEO here works too
         var bot = coach.querySelector('.rb');
         var title = coach.querySelector('[data-nc-title]');
         var text = coach.querySelector('[data-nc-text]');
@@ -141,6 +142,7 @@
         if (tourCard && !tourCard.hidden) return;                // the dashboard tour is talking: stay quiet
         var card = tpl.content.firstElementChild.cloneNode(true);
         document.body.appendChild(card);
+        if (window.GWRobot) window.GWRobot.init();
         setMood(card.querySelector('.rb'), 'excited');
         if (!reduce) card.classList.add('pop');
         var go = card.querySelector('[data-nc-go]');

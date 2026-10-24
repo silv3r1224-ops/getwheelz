@@ -22,6 +22,17 @@
 </head>
 
 <body>
+    <script>
+        /* Apply the saved theme before the page paints, so light mode never flashes dark first.
+           html[data-theme] drives NEO's comic bubbles (ink shadow in light, red shadow + white outline in dark). */
+        (function () {
+            try {
+                var light = localStorage.getItem("theme") === "light";
+                document.body.classList.toggle("light", light);
+                document.documentElement.setAttribute("data-theme", light ? "light" : "dark");
+            } catch (e) { /* keep the dark default */ }
+        })();
+    </script>
     {% include 'partials/navbar.html' %}
     {# NEO's message for the navbar "near me" button (header.js clones it when location can't be found) #}
     {% if session.role not in ['admin', 'owner', 'mechanic'] %}

@@ -5,8 +5,10 @@
     --cm-yellow: #ffd23f;
     --cm-font: "Comic Neue", "Comic Sans MS", "Chalkboard SE", "Marker Felt", "Segoe Print", cursive, sans-serif;
     --cm-title-font: "Bangers", "Impact", "Arial Black", sans-serif;
-    --cm-shadow: var(--cm-ink);          /* hard offset shadow of bubbles */
-    --cm-ring: 0 0 0 0 transparent;       /* thin outer outline, only needed on the dark theme */
+    --cm-shadow: var(--cm-ink);
+    /* hard offset shadow of bubbles */
+    --cm-ring: 0 0 0 0 transparent;
+    /* thin outer outline, only needed on the dark theme */
     --cm-dots: radial-gradient(rgba(21, 19, 26, .10) 1.3px, transparent 1.7px);
 }
 
@@ -23,20 +25,150 @@
     box-shadow: var(--cm-ring), 5px 5px 0 var(--cm-shadow);
     padding: 12px 14px;
 }
-.flash-item .flash-success { background-color: #d9fbe3; }
-.flash-item .flash-error { background-color: #ffe0e0; }
-.flash-item .flash-message span { font-size: 15px; font-weight: 700; color: var(--cm-ink); }
-.flash-item .flash-message i { color: var(--cm-ink); }
-.flash-item .flash-message button { color: var(--cm-ink); font-weight: 900; }
-.flash-item .flash-message button:hover { color: var(--main-color); }
-/* the tail points back at NEO */
-.flash-item .flash-message::before, .flash-item .flash-message::after {
-    content: ""; position: absolute; bottom: 10px; width: 0; height: 0; border-style: solid; border-color: transparent;
+
+.flash-item .flash-success {
+    background-color: #d9fbe3;
 }
-.flash-item .flash-message::before { left: -19px; border-width: 10px 17px 10px 0; border-right-color: var(--cm-ink); }
-.flash-item .flash-message::after { left: -12px; bottom: 12px; border-width: 8px 13px 8px 0; border-right-color: var(--cm-paper); }
-.flash-item .flash-success::after { border-right-color: #d9fbe3; }
-.flash-item .flash-error::after { border-right-color: #ffe0e0; }
+
+.flash-item .flash-error {
+    background-color: #ffe0e0;
+}
+
+.flash-item .flash-message span {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--cm-ink);
+}
+
+.flash-item .flash-message i {
+    color: var(--cm-ink);
+}
+
+.flash-item .flash-message button {
+    color: var(--cm-ink);
+    font-weight: 900;
+}
+
+.flash-item .flash-message button:hover {
+    color: var(--main-color);
+}
+
+/* the tail points back at NEO */
+.flash-item .flash-message::before,
+.flash-item .flash-message::after {
+    content: "";
+    position: absolute;
+    bottom: 10px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-color: transparent;
+}
+
+.flash-item .flash-message::before {
+    left: -19px;
+    border-width: 10px 17px 10px 0;
+    border-right-color: var(--cm-ink);
+}
+
+.flash-item .flash-message::after {
+    left: -12px;
+    bottom: 12px;
+    border-width: 8px 13px 8px 0;
+    border-right-color: var(--cm-paper);
+}
+
+.flash-item .flash-success::after {
+    border-right-color: #d9fbe3;
+}
+
+.flash-item .flash-error::after {
+    border-right-color: #ffe0e0;
+}
 
 /* on the dark theme black ink would vanish, so bubbles get a white outline and an accent-colour shadow */
-html[data-theme="dark"] { --cm-shadow: var(--main-color); --cm-ring: 0 0 0 2px #fff; }
+html[data-theme="dark"] {
+    --cm-shadow: var(--main-color);
+    --cm-ring: 0 0 0 2px #fff;
+}
+
+
+/* "Hii! NEO is here!": the bubble that pops up when NEO is clicked (robot.js) */
+.neo-hi {
+    position: fixed;
+    z-index: 10050;
+    pointer-events: none;
+    width: max-content;
+    max-width: min(280px, calc(100vw - 24px));
+    text-align: center;
+    padding: 8px 16px 7px;
+    background-color: var(--cm-paper);
+    background-image: var(--cm-dots);
+    background-size: 7px 7px;
+    color: var(--cm-ink);
+    font-family: var(--cm-font);
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.2;
+    border: 3px solid var(--cm-ink);
+    border-radius: 16px;
+    box-shadow: var(--cm-ring), 4px 4px 0 var(--cm-shadow);
+    animation: neoHiPop .28s cubic-bezier(.3, 1.6, .5, 1);
+}
+
+.neo-hi::before,
+.neo-hi::after {
+    content: "";
+    position: absolute;
+    left: var(--tail, 50%);
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-color: transparent;
+    transform: translateX(-50%);
+}
+
+.neo-hi.above::before {
+    top: 100%;
+    border-width: 12px 10px 0;
+    border-top-color: var(--cm-ink);
+    margin-top: 0;
+}
+
+.neo-hi.above::after {
+    top: 100%;
+    border-width: 8px 7px 0;
+    border-top-color: var(--cm-paper);
+    margin-top: -1px;
+}
+
+.neo-hi.below::before {
+    bottom: 100%;
+    border-width: 0 10px 12px;
+    border-bottom-color: var(--cm-ink);
+}
+
+.neo-hi.below::after {
+    bottom: 100%;
+    border-width: 0 7px 8px;
+    border-bottom-color: var(--cm-paper);
+    margin-bottom: -1px;
+}
+
+@keyframes neoHiPop {
+    from {
+        transform: scale(.7);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .neo-hi {
+        animation: none;
+    }
+}

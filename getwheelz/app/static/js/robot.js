@@ -2,6 +2,7 @@
 //
 //   GWRobot.setMood(el, 'working')          switch mood (neutral | happy | excited | wave | working | screwing | strained)
 //   GWRobot.flash(el, 'happy', 1600)        show a mood briefly, then return to the base mood
+//   click on NEO                            NEO hops and says something friendly (add data-no-greet to a robot to silence it)
 //   <form data-robot="#myRobot" data-robot-on-submit="working">   robot reacts when the form is sent
 //
 (function () {
@@ -25,14 +26,85 @@
         el._rbTimer = setTimeout(() => setMood(el, el.dataset.baseMood || 'neutral'), ms || 1600);
     }
 
+    // ---------- click NEO and it says something friendly in a speech bubble ----------
+    // The first click on a page is always the classic hello; after that NEO works through the lines below in a
+    // shuffled order (no repeats until it has used them all). Click it again and again, fast, and it giggles.
+    const HELLO = { t: 'Hii! NEO is here!', mood: 'wave' };
+    const TICKLE = { t: 'Hehe, that tickles! Okay, okay, hi again!', mood: 'excited' };
+    const LINES = [
+        { t: 'Hello, friend! So good to see you!', mood: 'wave' },
+        { t: 'Beep boop! Hi there!', mood: 'happy' },
+        { t: 'You found me! Hi!', mood: 'excited' },
+        { t: 'Need a hand? Just ask me!', mood: 'happy' },
+        { t: 'Nice to meet you, I\u2019m NEO!', mood: 'wave' },
+        { t: 'Hope your day is going smoothly!', mood: 'happy' },
+        { t: 'Psst\u2026 you\u2019re doing great!', mood: 'excited' },
+        { t: 'Wrench in hand, ready to help!', mood: 'happy' },
+        { t: 'Vroom vroom! Hi there!', mood: 'excited' },
+        { t: 'Happy to see you again!', mood: 'wave' },
+        { t: 'Hi hi hi! Click me again!', mood: 'excited' },
+        { t: 'Every great ride starts with a good mechanic!', mood: 'happy' }
+    ];
+    let bag = [], lastLine = null, firstClick = true, taps = [];
+    function nextLine() {
+        const now = Date.now();
+        taps = taps.filter((t) => now - t < 5000);
+        taps.push(now);
+        if (taps.length >= 5) { taps = []; return TICKLE; }
+        if (firstClick) { firstClick = false; return HELLO; }
+        if (!bag.length) {
+            bag = LINES.slice();
+            for (let i = bag.length - 1; i > 0; i--) {                 // shuffle
+                const j = Math.floor(Math.random() * (i + 1));
+                [bag[i], bag[j]] = [bag[j], bag[i]];
+            }
+            if (bag[bag.length - 1] === lastLine) bag.unshift(bag.pop());   // never the same line twice in a row
+        }
+        lastLine = bag.pop();
+        return lastLine;
+    }
+
+    let hiTimer = 0, hiBubble = null;
+    function hideHi() {
+        clearTimeout(hiTimer);
+        if (hiBubble) { hiBubble.remove(); hiBubble = null; }
+    }
+    function greet(el) {
+        hideHi();
+        if (el.closest('#ntCard, [data-no-greet]')) return null;   // the tour already has its own speech bubble
+        const line = nextLine();
+        const bubble = document.createElement('div');
+        bubble.className = 'neo-hi';
+        bubble.setAttribute('role', 'status');
+        bubble.textContent = line.t;
+        document.body.appendChild(bubble);
+
+        const r = el.getBoundingClientRect();
+        const bw = bubble.offsetWidth, bh = bubble.offsetHeight;   // layout size: getBoundingClientRect would be scaled by the pop-in animation
+        const vw = document.documentElement.clientWidth;
+        const gap = 14;
+        const above = r.top - bh - gap >= 8;               // above NEO when there is room, else below
+        const cx = r.left + r.width / 2;
+        const left = clamp(cx - bw / 2, 8, Math.max(8, vw - bw - 8));
+        bubble.style.left = left + 'px';
+        bubble.style.top = (above ? r.top - bh - gap : r.bottom + gap) + 'px';
+        bubble.style.setProperty('--tail', clamp(cx - left, 20, Math.max(20, bw - 20)) + 'px');
+        bubble.classList.add(above ? 'above' : 'below');
+        hiBubble = bubble;
+        hiTimer = setTimeout(hideHi, 2600);
+        return line.mood;
+    }
+    window.addEventListener('scroll', hideHi, { passive: true });   // the bubble is fixed, so it would drift off NEO
+
     function boop(el) {
+        const mood = greet(el);
         if (!reduce) {
             el.classList.remove('is-boop');
             void el.getBoundingClientRect();           // restart the animation
             el.classList.add('is-boop');
             setTimeout(() => el.classList.remove('is-boop'), 650);
         }
-        flash(el, 'happy', 1500);
+        flash(el, mood || 'happy', 1700);
     }
 
     function look(el, nx, ny) {

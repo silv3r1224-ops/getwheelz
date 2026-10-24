@@ -23,6 +23,7 @@
     try {
         const isLight = localStorage.getItem("theme") === "light";
         document.body.classList.toggle("light", isLight);
+        document.documentElement.setAttribute("data-theme", isLight ? "light" : "dark");
         themeIcon?.classList.toggle("bx-moon", isLight);
         themeIcon?.classList.toggle("bx-sun", !isLight);
     } catch (error) {
@@ -31,6 +32,7 @@
 
     themeToggle?.addEventListener("click", () => {
         const isLight = document.body.classList.toggle("light");
+        document.documentElement.setAttribute("data-theme", isLight ? "light" : "dark");
         themeIcon?.classList.toggle("bx-moon", isLight);
         themeIcon?.classList.toggle("bx-sun", !isLight);
         try {

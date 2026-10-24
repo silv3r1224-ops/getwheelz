@@ -1,115 +1,158 @@
 /* ==========================================================================
-   Tilted heading plates.
-   The heading (and its subtitle) sits on a solid dark card that is exactly big
-   enough to hold the text, tilted a couple of degrees, with a dark crimson card
-   peeking out behind it at the opposite angle. The card and the text float
-   together; only the tilt breathes a little.
+   Heading plates, comic-panel style.
+   The heading (and its subtitle) sits on a solid dark panel that hugs the text:
+   a thick outline, a hard crimson shadow block behind it and two cyan corner
+   brackets, the same look as NEO's speech bubbles. Text on the panel is always
+   white, in both themes.
 
    Loaded by the customer pages (partials/px_head.html) and the landing page.
 
    Tune it here:
-     --tilt      front-card angle (the back card uses the opposite direction)
-     padding     how much room the text has inside the card
-     --plate-bg / --plate-back   the two colours
-     animation durations at the bottom of each rule (bob = float, sway = tilt)
+     --plate-bg      panel colour
+     --plate-line    outline (white on the dark theme, blends into the panel on the light theme)
+     --plate-shadow  the hard shadow block (crimson)
+     --plate-edge    the corner brackets (NEO's cyan)
+     padding         how much room the text has inside the panel
    ========================================================================== */
 
 :is(.px-section-head > div:first-child,
     .px h1.px-title,
     .lp-section-head,
     .lp-hero h1) {
-    --tilt: -1.8deg;
     --plate-bg: #09090b;
-    --plate-back: #3a1019;
+    --plate-line: #fff;
+    --plate-shadow: var(--main-color);
+    /* crimson */
+    --plate-edge: #27c4f2;
+    /* NEO's cyan */
 
     position: relative;
-    isolation: isolate;                 /* keeps the cards behind the text but above the page background */
-    width: fit-content;                 /* the card hugs the text */
+    width: fit-content;
+    /* the panel hugs the text */
     box-sizing: border-box;
     padding: 18px 30px 20px;
+    background: var(--plate-bg);
+    border: 3px solid var(--plate-line);
+    border-radius: 14px;
+    box-shadow: 8px 8px 0 var(--plate-shadow);
 
-    /* text on the card is always white, in both themes */
+    /* text on the panel is always white, in both themes */
     color: #fff;
     --text-color: #fff;
     --text-muted: rgba(255, 255, 255, .64);
     --px-line: rgba(255, 255, 255, .14);
     --lp-line: rgba(255, 255, 255, .14);
-
-    animation: gw-bob 7s ease-in-out infinite;
 }
 
-:is(.px-section-head > div:first-child, .px h1.px-title, .lp-hero h1) { max-width: 100%; }
-.lp-section-head { max-width: min(100%, 660px); }
-
-/* the big page titles get a roomier card, and a slightly calmer size now that they sit on a card */
-:is(.px h1.px-title, .lp-hero h1) { padding: 22px 38px 26px; }
-.px h1.px-title { font-size: clamp(1.9rem, 3.6vw, 2.8rem); margin: 28px 0 34px; }
-.lp-hero h1 { margin: 30px 0 34px; }
-.px-section-head { margin-bottom: 36px; }
-.lp-section-head { margin-bottom: 58px; }
-.lp-section-head { padding: 24px 34px 28px; }
-
-/* back card: dark crimson, tilted the other way */
-:is(.px-section-head > div:first-child, .px h1.px-title, .lp-section-head, .lp-hero h1)::before {
-    content: '';
-    position: absolute;
-    z-index: -1;
-    inset: 4px -14px -14px 10px;
-    border-radius: 24px;
-    rotate: calc(var(--tilt) * -1.6);
-    background: linear-gradient(135deg, var(--plate-back), color-mix(in srgb, var(--plate-back) 55%, #000));
-    border: 1px solid rgba(214, 86, 112, .35);
-    pointer-events: none;
-    animation: gw-sway-back 9s ease-in-out infinite;
+:is(.px-section-head > div:first-child, .px h1.px-title, .lp-hero h1) {
+    max-width: 100%;
 }
 
-/* front card: solid black */
+.lp-section-head {
+    max-width: min(100%, 660px);
+}
+
+/* the big page titles get a roomier panel, and a slightly calmer size now that they sit on one */
+:is(.px h1.px-title, .lp-hero h1) {
+    padding: 22px 38px 26px;
+}
+
+.px h1.px-title {
+    font-size: clamp(1.9rem, 3.6vw, 2.8rem);
+    margin: 28px 0 34px;
+}
+
+.lp-hero h1 {
+    margin: 30px 0 34px;
+}
+
+.px-section-head {
+    margin-bottom: 36px;
+}
+
+.lp-section-head {
+    margin-bottom: 58px;
+}
+
+.lp-section-head {
+    padding: 24px 34px 28px;
+}
+
+/* cyan corner brackets: top left and bottom right */
+:is(.px-section-head > div:first-child, .px h1.px-title, .lp-section-head, .lp-hero h1)::before,
 :is(.px-section-head > div:first-child, .px h1.px-title, .lp-section-head, .lp-hero h1)::after {
     content: '';
     position: absolute;
-    z-index: -1;
-    inset: -8px -10px;
-    border-radius: 22px;
-    rotate: var(--tilt);
-    background: linear-gradient(160deg, color-mix(in srgb, var(--plate-bg) 94%, #fff), var(--plate-bg));
-    border: 1px solid rgba(255, 255, 255, .1);
-    box-shadow: 0 26px 50px -26px rgba(0, 0, 0, .85), inset 0 1px 0 rgba(255, 255, 255, .08);
+    width: 26px;
+    height: 26px;
+    border: 4px solid var(--plate-edge);
     pointer-events: none;
-    animation: gw-sway-front 7s ease-in-out infinite;
 }
 
-/* alternate the tilt direction from section to section so the page feels less rigid */
-.px-section:nth-of-type(even) .px-section-head > div:first-child,
-section:nth-of-type(even) .lp-section-head { --tilt: 1.6deg; }
+:is(.px-section-head > div:first-child, .px h1.px-title, .lp-section-head, .lp-hero h1)::before {
+    top: -11px;
+    left: -11px;
+    border-right: 0;
+    border-bottom: 0;
+    border-radius: 11px 0 0 0;
+}
 
-/* inside a black box the front card is a shade lighter so it still reads as a card */
-.px-card :is(.px-section-head > div:first-child) { --plate-bg: #1a1a20; --plate-back: #4a1824; }
+:is(.px-section-head > div:first-child, .px h1.px-title, .lp-section-head, .lp-hero h1)::after {
+    right: -11px;
+    bottom: -11px;
+    border-left: 0;
+    border-top: 0;
+    border-radius: 0 0 11px 0;
+}
+
+/* light theme: the panel is black on a light page, so the outline simply melts into it */
+body.light :is(.px-section-head > div:first-child, .px h1.px-title, .lp-section-head, .lp-hero h1) {
+    --plate-line: var(--plate-bg);
+}
+
+/* inside a black box the panel is a shade lighter so it still reads as a panel */
+.px-card :is(.px-section-head > div:first-child) {
+    --plate-bg: #1a1a20;
+}
+
+body.light .px-card :is(.px-section-head > div:first-child) {
+    --plate-line: #fff;
+}
 
 /* centred title (booking confirmation) */
-.px-confirm h1.px-title { margin-left: auto; margin-right: auto; }
-
-@keyframes gw-bob {
-    0%, 100% { translate: 0 0; }
-    50%      { translate: 0 -6px; }
-}
-@keyframes gw-sway-front {
-    0%, 100% { rotate: var(--tilt); }
-    50%      { rotate: calc(var(--tilt) * .45); }
-}
-@keyframes gw-sway-back {
-    0%, 100% { rotate: calc(var(--tilt) * -1.6); }
-    50%      { rotate: calc(var(--tilt) * -2.3); }
+.px-confirm h1.px-title {
+    margin-left: auto;
+    margin-right: auto;
 }
 
 @media (max-width: 760px) {
-    :is(.px-section-head > div:first-child, .px h1.px-title, .lp-section-head, .lp-hero h1) { padding: 14px 20px 16px; }
-    :is(.px h1.px-title, .lp-hero h1) { padding: 16px 22px 18px; }
-    .lp-section-head { padding: 18px 22px 22px; }
-    :is(.px-section-head > div:first-child, .px h1.px-title, .lp-section-head, .lp-hero h1)::before { inset: 4px -8px -10px 6px; }
-}
+    :is(.px-section-head > div:first-child, .px h1.px-title, .lp-section-head, .lp-hero h1) {
+        padding: 14px 20px 16px;
+        box-shadow: 6px 6px 0 var(--plate-shadow);
+    }
 
-@media (prefers-reduced-motion: reduce) {
-    :is(.px-section-head > div:first-child, .px h1.px-title, .lp-section-head, .lp-hero h1),
+    :is(.px h1.px-title, .lp-hero h1) {
+        padding: 16px 22px 18px;
+    }
+
+    .lp-section-head {
+        padding: 18px 22px 22px;
+    }
+
     :is(.px-section-head > div:first-child, .px h1.px-title, .lp-section-head, .lp-hero h1)::before,
-    :is(.px-section-head > div:first-child, .px h1.px-title, .lp-section-head, .lp-hero h1)::after { animation: none; }
+    :is(.px-section-head > div:first-child, .px h1.px-title, .lp-section-head, .lp-hero h1)::after {
+        width: 20px;
+        height: 20px;
+        border-width: 3px;
+    }
+
+    :is(.px-section-head > div:first-child, .px h1.px-title, .lp-section-head, .lp-hero h1)::before {
+        top: -9px;
+        left: -9px;
+    }
+
+    :is(.px-section-head > div:first-child, .px h1.px-title, .lp-section-head, .lp-hero h1)::after {
+        right: -9px;
+        bottom: -9px;
+    }
 }
