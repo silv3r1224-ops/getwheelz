@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}{{ person.name }} — Getwheelz{% endblock %}
+
+{% block head %}
+{% include 'partials/px_head.html' %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/px-people.css') }}">
+{% endblock %}
+
+{# one workshop card; used for an owner's workshops and for the workshop a mechanic works at #}
+{% macro wcard(w_id, name, address, photo, is_open, tags, team_size, solo) %}
+<a class="px-wc{{ ' solo' if solo }}" href="{{ url_for('workshops.selected', w_id=w_id) }}">
+    <span class="px-wc-photo">
+        {% if photo %}<img src="{{ url_for('static', filename=photo) }}" alt="{{ name }}">{% else %}<i class='bx bx-store'></i>{% endif %}
+        <span class="oc-badge {{ 'oc-open' if is_open else 'oc-closed' }}">{{ 'Open now' if is_open else 'Closed' }}</span>
+    </span>
+    <span class="px-wc-body">
+        <h3>{{ name }}</h3>
+        <span class="px-wc-addr"><i class='bx bx-map'></i><span>{{ address or 'Address not listed' }}</span></span>
+        {% if tags %}
+        <span class="px-tags">
+            {% for t in tags[:4] %}<span class="px-tag">{{ t }}</span>{% endfor %}
+            {% if tags | length > 4 %}<span class="px-tag">+{{ tags | length - 4 }} more&hellip;</span>{% endif %}
+        </span>
+        {% endif %}
+        <span class="px-wc-foot">
+            <span>{% if team_size is not none %}<i class='bx bx-group'></i> {{ team_size }} mechanic{{ '' if team_size == 1 else 's' }}{% endif %}</span>
+            <span class="go">View workshop <i class='bx bx-right-arrow-alt'></i></span>
+        </span>
+    </span>
+</a>
+{% endmacro %}
+
+{% block content %}
+{% set is_owner = person.role == 'owner' %}
+{% set can_book = session.get('role') in [None, 'customer'] %}
+<div class="px index-con" id="mainCon">
+    <section class="px-section" style="padding-top: 36px; padding-bottom: 80px;">
+        <div class="px-wrap">
+
+            <a class="px-back" href="javascript:history.back()"><i class='bx bx-arrow-back'></i> Go back</a>
+
+            {# ---------------- hero ---------------- #}
+            <header class="px-card px-pf-top">
+                <div class="px-pf-cover" aria-hidden="true"></div>
+                <div class="px-pf-head">
+                    <span class="px-av xl">{% if person.profile_picture %}<img src="{{ url_for('static', filename=person.profile_picture) }}" alt="{{ person.name }}">{% else %}{{ person.name[:1] | upper }}{% endif %}</span>
+                    <div class="px-pf-id">
+                        <h1>{{ person.name }}</h1>
+                        <div class="px-pf-chips">
+                            <span class="px-pf-chip role">{% if is_owner %}<i class='bx bxs-crown'></i> Workshop owner{% else %}<i class='bx bxs-wrench'></i> Mechanic{% endif %}</span>
+                            {% if person.created_at %}<span class="px-pf-chip"><i class='bx bx-calendar'></i> Member since {{ person.created_at.strftime('%b %Y') }}</span>{% endif %}
+                            {% if is_owner %}
+                            <span class="px-pf-chip"><i class='bx bx-store'></i> {{ workshops | length }} workshop{{ '' if workshops | length == 1 else 's' }}</span>
+                            {% else %}
+                            <span class="px-pf-chip"><i class='bx bx-store'></i> {{ mech.workshop_name }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="px-pf-actions">
+                        {% if is_owner and workshops %}
+                        <a class="px-btn" href="#workshops"><i class='bx bx-store'></i> See workshops</a>
+                        {% elif mech %}
+                        <a class="px-btn" href="{{ url_for('workshops.selected', w_id=mech.w_id) }}"><i class='bx bx-store'></i> View workshop</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </header>
+
+            <div class="px-body-grid">
+
+                {# ---------------- main column ---------------- #}
+                <div class="px-col">
+
+                    <div class="px-card px-panel" id="workshops">
+                        <h2>{% if is_owner %}Workshops{% else %}Works at{% endif %}</h2>
+                        {% if is_owner %}
+                            {% if workshops %}
+                            <div class="px-wcs" data-more="4" data-more-label="workshops">
+                                {% for w in workshops %}
+                                {{ wcard(w.w_id, w.name, w.address, w.photo_path, w.is_open, w.service_names, w.team_size, workshops | length == 1) }}
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="px-note" style="margin: 0;">No workshops listed yet.</p>
+                            {% endif %}
+                        {% else %}
+                        <div class="px-wcs">
+                            {{ wcard(mech.w_id, mech.workshop_name, mech.address, mech.photo_path, mech.is_open, mech.service_names, none, true) }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    {% if team %}
+                    <div class="px-card px-panel" id="team">
+                        <h2>{% if is_owner %}The team{% else %}Teammates{% endif %} <span class="px-count">{{ team | length }}</span></h2>
+                        <div class="px-people" data-more="8" data-more-label="mechanics">
+                            {% for m in team %}
+                            <a class="px-person" href="{{ url_for('workshops.person', token=m.u_id | utoken) }}">
+                                <span class="px-av">{% if m.profile_picture %}<img src="{{ url_for('static', filename=m.profile_picture) }}" alt="{{ m.name }}">{% else %}{{ m.name[:1] | upper }}{% endif %}</span>
+                                <h3>{{ m.name }}</h3>
+                                <small><i class='bx bx-medal'></i> {% if m.experience_yrs %}{{ m.experience_yrs }} yr{{ '' if m.experience_yrs == 1 else 's' }} experience{% else %}Experience not listed{% endif %}</small>
+                                {% if is_owner and m.workshop_name %}<small><i class='bx bx-store'></i> {{ m.workshop_name }}</small>{% endif %}
+                                {% if m.active_stat %}<span class="px-state {{ 'on' if m.active_stat | lower in ['active', 'available'] }}">{{ m.active_stat }}</span>{% endif %}
+                                <span class="px-hint">View profile</span>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {# ---------------- sidebar ---------------- #}
+                <aside class="px-side">
+
+                    <div class="px-card px-glance">
+                        <h2>At a glance</h2>
+                        {% if is_owner %}
+                        <div class="px-gl-row"><span class="px-gl-ico"><i class='bx bx-store'></i></span><div><b>{{ workshops | length }}</b><small>Workshop{{ '' if workshops | length == 1 else 's' }}</small></div></div>
+                        <div class="px-gl-row"><span class="px-gl-ico"><i class='bx bx-group'></i></span><div><b>{{ workshops | sum(attribute='team_size') }}</b><small>Mechanics employed</small></div></div>
+                        <div class="px-gl-row"><span class="px-gl-ico"><i class='bx bx-check-circle'></i></span><div><b>{{ jobs }}</b><small>Jobs completed</small></div></div>
+                        {% else %}
+                        <div class="px-gl-row"><span class="px-gl-ico"><i class='bx bx-medal'></i></span><div><b>{% if mech.experience_yrs %}{{ mech.experience_yrs }} yr{{ '' if mech.experience_yrs == 1 else 's' }}{% else %}—{% endif %}</b><small>Experience</small></div></div>
+                        <div class="px-gl-row"><span class="px-gl-ico"><i class='bx bx-pulse'></i></span><div><b style="text-transform: capitalize;">{{ mech.active_stat or '—' }}</b><small>Availability</small></div></div>
+                        <div class="px-gl-row"><span class="px-gl-ico"><i class='bx bx-wrench'></i></span><div><b>{{ mech.service_names | length }}</b><small>Services the workshop offers</small></div></div>
+                        {% endif %}
+                        {% if person.created_at %}
+                        <div class="px-gl-row"><span class="px-gl-ico"><i class='bx bx-calendar'></i></span><div><b>{{ person.created_at.strftime('%b %Y') }}</b><small>Member since</small></div></div>
+                        {% endif %}
+                    </div>
+
+                    {% if boss %}
+                    <div class="px-card px-side-card">
+                        <h2>Workshop owner</h2>
+                        <a class="px-person" href="{{ url_for('workshops.person', token=boss.u_id | utoken) }}">
+                            <span class="px-av">{% if boss.profile_picture %}<img src="{{ url_for('static', filename=boss.profile_picture) }}" alt="{{ boss.name }}">{% else %}{{ boss.name[:1] | upper }}{% endif %}</span>
+                            <span class="col"><h3>{{ boss.name }}</h3><span class="px-hint">View profile</span></span>
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    {% if can_book %}
+                    <div class="px-card px-side-card">
+                        <h2>Ready to book?</h2>
+                        {% if mech %}
+                        <p>Choose a service and a time. {{ mech.workshop_name }} confirms your request.</p>
+                        <a class="px-btn block" href="{{ url_for('bookings.new', w_id=mech.w_id) }}">Book a service</a>
+                        {% if mech.contact_no %}<a class="px-ghost block" href="tel:{{ mech.contact_no }}"><i class='bx bx-phone-call'></i> Call the workshop</a>{% endif %}
+                        {% elif workshops | length == 1 %}
+                        <p>Choose a service and a time. {{ workshops[0].name }} confirms your request.</p>
+                        <a class="px-btn block" href="{{ url_for('bookings.new', w_id=workshops[0].w_id) }}">Book a service</a>
+                        {% elif workshops %}
+                        <p>Pick one of {{ person.name }}'s workshops, then choose a service and a time.</p>
+                        <a class="px-btn block" href="#workshops">Choose a workshop</a>
+                        {% else %}
+                        <p>Browse trusted workshops near you and book in minutes.</p>
+                        <a class="px-btn block" href="{{ url_for('workshops.search') }}">Find workshops</a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </aside>
+            </div>
+
+        </div>
+    </section>
+</div>
+
+{% if not session.get('user_id') %}
+{% include 'partials/px_auth_modals.html' %}
+{% endif %}
+{% endblock %}

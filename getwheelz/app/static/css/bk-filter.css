@@ -1,0 +1,40 @@
+/* Booking filter bar (chips, search, selects, empty state, footer).
+   Used by the mechanic dashboard; the owner dashboard carries the same rules inline. */
+.bk-summary { display: flex; gap: 10px; flex-wrap: wrap; }
+.bk-sum { padding: 8px 14px; border-radius: 12px; font-size: 12px; line-height: 1.3; color: var(--text-muted);
+    background: color-mix(in srgb, var(--text-color) 6%, transparent);
+    border: 1px solid color-mix(in srgb, var(--text-color) 10%, transparent); }
+.bk-sum b { display: block; font-size: 16px; color: var(--text-color); }
+.bk-toolbar { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+.bk-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.bk-chip { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; cursor: pointer;
+    font: inherit; font-size: 13px; font-weight: 600; color: var(--text-muted);
+    background: color-mix(in srgb, var(--text-color) 5%, transparent);
+    border: 1px solid color-mix(in srgb, var(--text-color) 12%, transparent);
+    transition: background .15s, color .15s, transform .15s; }
+.bk-chip:hover { transform: translateY(-1px); color: var(--text-color); }
+.bk-chip .n { min-width: 20px; padding: 1px 7px; border-radius: 999px; font-size: 11px; text-align: center;
+    background: color-mix(in srgb, var(--text-color) 10%, transparent); }
+.bk-chip.active { background: var(--main-color); border-color: transparent; color: #fff; }
+.bk-chip.active .n { background: rgba(255, 255, 255, 0.25); }
+.bk-chip.attn:not(.active) .n { background: rgba(255, 193, 7, 0.22); color: #ffc107; }
+.bk-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.bk-search { position: relative; flex: 1 1 220px; max-width: 360px; }
+.bk-search i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+.bk-search input { width: 100%; height: 38px; padding: 0 12px 0 36px; border-radius: 10px; font: inherit; font-size: 14px;
+    color: var(--text-color); background: color-mix(in srgb, var(--text-color) 5%, transparent);
+    border: 1px solid var(--border-soft); }
+.bk-controls select.assign-select { height: 38px; max-width: none; border-radius: 10px; font-size: 14px; }
+.bk-reset { background: none; border: 0; padding: 4px 6px; font: inherit; font-size: 13px; cursor: pointer;
+    color: var(--main-color); text-decoration: underline; }
+.bk-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 14px;
+    font-size: 13px; color: var(--text-muted); }
+.bk-empty { text-align: center; padding: 36px 12px; color: var(--text-muted); }
+.bk-empty i { display: block; font-size: 2.2rem; margin-bottom: 6px; opacity: .7; }
+.bk-empty b { display: block; color: var(--text-color); margin-bottom: 4px; }
+.bk-id { color: var(--text-muted); font-size: 13px; white-space: nowrap; }
+.bk-today { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700;
+    background: rgba(199, 69, 92, 0.18); color: #ff7a9b; vertical-align: middle; }
+.bk-row-pending td:first-child { box-shadow: inset 3px 0 0 #ffc107; }
+.stat-card[data-bk-filter] { cursor: pointer; }
+.bk-row[hidden], #bkTableWrap[hidden], .bk-empty[hidden], .bk-foot [hidden], .bk-controls [hidden] { display: none !important; }

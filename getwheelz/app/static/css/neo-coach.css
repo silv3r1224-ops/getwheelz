@@ -1,0 +1,74 @@
+/* NEO coaches a new owner while they create their workshop (neo-coach.js), then nudges them to add a first service.
+   Uses the comic variables from comic.css, so it looks like the rest of NEO's speech bubbles. */
+
+/* ---- inside the "Set up your workshop" pop-up ---- */
+.nc-coach {
+    position: sticky; top: 0; z-index: 5; flex: 0 0 auto;
+    display: flex; align-items: flex-end; gap: 16px;
+    margin: -20px -24px 0; padding: 20px 24px 12px;   /* cancels the modal body's padding so the strip is edge to edge */
+    background: var(--second-bg);
+}
+.nc-coach[hidden] { display: none; }
+.nc-bot { flex: 0 0 64px; }
+.nc-bot .rb { display: block; width: 64px; height: auto; filter: drop-shadow(2px 2px 0 var(--cm-shadow)); }
+
+.nc-bubble {
+    position: relative; flex: 1; min-width: 0; padding: 10px 14px 10px;
+    background-color: var(--cm-paper); background-image: var(--cm-dots); background-size: 7px 7px;
+    color: var(--cm-ink); font-family: var(--cm-font);
+    border: 3px solid var(--cm-ink); border-radius: 18px 18px 18px 6px;
+    box-shadow: var(--cm-ring), 4px 4px 0 var(--cm-shadow);
+}
+.nc-bubble::before, .nc-bubble::after { content: ""; position: absolute; width: 0; height: 0; border-style: solid; border-color: transparent; }
+.nc-bubble::before { left: -19px; bottom: 12px; border-width: 10px 17px 10px 0; border-right-color: var(--cm-ink); }
+.nc-bubble::after { left: -12px; bottom: 14.5px; border-width: 7.5px 13px 7.5px 0; border-right-color: var(--cm-paper); }
+.nc-coach.pop .nc-bubble { animation: ncPop .28s cubic-bezier(.3, 1.6, .5, 1); transform-origin: 0 100%; }
+@keyframes ncPop { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+.nc-title { margin: 0 0 3px; font-family: var(--cm-title-font); font-weight: 400; font-size: 1.2rem; letter-spacing: 1px; line-height: 1.1; text-transform: uppercase; color: var(--cm-ink); }
+.nc-text { margin: 0; font-size: .95rem; font-weight: 700; line-height: 1.35; color: var(--cm-ink); }
+.nc-foot { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.nc-bar { flex: 1; height: 9px; border: 2px solid var(--cm-ink); border-radius: 9px; background: #fff; overflow: hidden; }
+.nc-bar span { display: block; height: 100%; width: 0; background: var(--main-color); transition: width .3s ease; }
+.nc-count { font-family: var(--cm-font); font-weight: 700; font-size: .8rem; color: var(--cm-ink); white-space: nowrap; }
+.nc-hide { border: 0; background: none; cursor: pointer; font-family: var(--cm-font); font-weight: 700; font-size: .8rem; color: var(--cm-ink); padding: 2px; text-decoration: underline dotted; }
+.nc-hide:hover { color: var(--main-color); }
+.nc-hide:focus-visible, .nc-btn:focus-visible { outline: 3px solid var(--main-color); outline-offset: 2px; }
+
+/* ---- the "what next" card shown once the workshop exists ---- */
+.nc-next {
+    position: fixed; z-index: 1850; right: 20px; bottom: 20px; width: min(430px, calc(100vw - 24px)); box-sizing: border-box;
+    display: flex; align-items: flex-end; gap: 20px; padding: 14px 8px 8px 0;
+}
+.nc-next[hidden] { display: none; }
+.nc-next .nc-bot { flex-basis: 84px; }
+.nc-next .nc-bot .rb { width: 84px; }
+.nc-next .nc-bubble { padding: 14px 18px 12px; }
+.nc-next .nc-title { font-size: 1.35rem; margin-bottom: 5px; }
+.nc-next .nc-text { font-size: 1rem; margin-bottom: 12px; }
+.nc-next.pop .nc-bubble { animation: ncPop .32s cubic-bezier(.3, 1.6, .5, 1); transform-origin: 0 100%; }
+.nc-acts { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.nc-btn {
+    cursor: pointer; font: inherit; font-family: var(--cm-title-font); font-size: 1rem; letter-spacing: 1px; text-transform: uppercase;
+    padding: 6px 14px 5px; color: var(--cm-ink); background: var(--cm-yellow);
+    border: 3px solid var(--cm-ink); border-radius: 12px; box-shadow: 3px 3px 0 var(--cm-ink);
+    transition: transform .08s ease, box-shadow .08s ease;
+}
+.nc-btn.ghost { background: #fff; }
+.nc-btn:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--cm-ink); }
+.nc-btn:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--cm-ink); }
+
+@media (max-width: 640px) {
+    .nc-coach { gap: 14px; margin-left: -18px; margin-right: -18px; padding-left: 18px; padding-right: 18px; }
+    .nc-bot { flex-basis: 52px; }
+    .nc-bot .rb { width: 52px; }
+    .nc-title { font-size: 1.05rem; }
+    .nc-text { font-size: .88rem; }
+    .nc-next { left: 8px; right: 8px; bottom: 10px; width: auto; gap: 16px; }
+    .nc-next .nc-bot { flex-basis: 60px; }
+    .nc-next .nc-bot .rb { width: 60px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .nc-coach.pop .nc-bubble, .nc-next.pop .nc-bubble { animation: none; }
+    .nc-bar span, .nc-btn { transition: none; }
+}

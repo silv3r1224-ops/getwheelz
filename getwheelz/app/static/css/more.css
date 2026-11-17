@@ -1,0 +1,25 @@
+/* "More..." for long lists (js/more.js). Add data-more="N" to a list, chip row, tile grid or table to show N items first. */
+.more-hidden { display: none !important; }
+
+.more-btn {
+    cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
+    font: inherit; font-size: .88rem; font-weight: 700; line-height: 1;
+    padding: 8px 14px; border-radius: 999px;
+    color: var(--main-color); background: transparent;
+    border: 1.5px dashed var(--main-color);
+    transition: background-color .15s ease, color .15s ease;
+}
+.more-btn:hover { background: var(--main-color); color: #fff; }
+.more-btn:focus-visible { outline: 3px solid var(--main-color); outline-offset: 2px; }
+.more-btn i { font-size: 1.05rem; transition: transform .15s ease; }
+.more-btn[aria-expanded="true"] i { transform: rotate(180deg); }
+
+/* tile grids: the button takes its own row */
+.more-row { grid-column: 1 / -1; display: flex; justify-content: center; padding: 6px 0 0; }
+/* lists and tables: the button sits under them */
+.more-row.after { margin-top: 12px; }
+/* inside a dropdown menu <li> */
+.more-li { list-style: none; padding: 6px 12px 8px; }
+.more-li .more-btn { width: 100%; justify-content: center; }
+
+@media (prefers-reduced-motion: reduce) { .more-btn, .more-btn i { transition: none; } }

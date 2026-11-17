@@ -1,0 +1,37 @@
+{# NEO's guided tour. Included by base.html for signed-in people only.
+   tour_pending is True until the person finishes or skips the tour (see inject_tour in app/__init__.py). #}
+{% from 'partials/robot.html' import robot %}
+<div class="nt-spot" id="ntSpot" hidden></div>
+<div class="nt-card" id="ntCard" role="dialog" aria-live="polite" aria-labelledby="ntTitle" hidden>
+    <div class="nt-bot" aria-hidden="true">{{ robot('wave', 84, follow=False, id='ntBot', label='NEO') }}</div>
+    <div class="nt-body">
+        <div class="nt-burst" id="ntBurst" aria-hidden="true">HI!</div>
+        <div class="nt-bar" aria-hidden="true"><span id="ntBarFill"></span></div>
+        <h3 id="ntTitle"></h3>
+        <p id="ntText"></p>
+        <div class="nt-actions">
+            <button type="button" class="nt-link" id="ntSkip">Skip tour</button>
+            <span class="nt-gap"></span>
+            <button type="button" class="nt-btn ghost" id="ntBack">Back</button>
+            <button type="button" class="nt-btn" id="ntNext">Next</button>
+        </div>
+    </div>
+</div>
+<script>
+    window.GW_TOUR = {
+        uid: {{ session.get('user_id') | tojson }},
+        role: {{ (session.get('role') or '') | tojson }},
+        name: {{ (session.get('user_name') or '') | tojson }},
+        pending: {{ 'true' if tour_pending else 'false' }},
+        csrf: {{ csrf_token() | tojson }},
+        doneUrl: {{ url_for('main.tour_done') | tojson }},
+        urls: {
+            home: {{ url_for({'admin': 'dashboard.admin', 'customer': 'customer.home', 'owner': 'dashboard.owner', 'mechanic': 'mechanics.home'}.get(session.get('role'), 'main.index')) | tojson }},
+            profile: {{ url_for('dashboard.profile') | tojson }},
+            bookings: {{ url_for('bookings.my_bookings') | tojson }},
+            adminServices: {{ url_for('dashboard.admin_services') | tojson }},
+            adminSubadmins: {{ url_for('dashboard.admin_subadmins') | tojson }}
+        }
+    };
+</script>
+<script src="{{ url_for('static', filename='js/tour.js') }}" defer></script>

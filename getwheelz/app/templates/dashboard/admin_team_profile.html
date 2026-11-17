@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}{{ member.name }} — Admin Team — Getwheelz{% endblock %}
+
+{% block content %}
+<div class="admin-layout" id="adminLayout">
+
+    <aside class="admin-sidebar" id="sideBar">
+        <div class="sidebar-header">
+            <i class='bx bxs-shield-alt-2'></i>
+            <span>Admin Panel</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('dashboard.admin_subadmins') }}" class="sidebar-link"><i class='bx bx-arrow-back'></i> Sub-admin Management</a>
+            <a href="#overview" class="sidebar-link active"><i class='bx bx-user'></i> Profile</a>
+            <a href="#pfScope" class="sidebar-link"><i class='bx bx-task'></i> Responsibilities</a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-link"><i class='bx bx-log-out'></i> Logout</a>
+        </div>
+    </aside>
+
+    <main class="admin-main wp-main">
+
+        {# ---------------- hero ---------------- #}
+        <header class="wp-hero" id="overview">
+            <div class="team-avatar hero-avatar">
+                {% if member.profile_picture %}
+                <img src="{{ url_for('static', filename=member.profile_picture) }}" alt="{{ member.name }}">
+                {% else %}
+                <span>{{ member.name[:1] | upper }}</span>
+                {% endif %}
+            </div>
+
+            <div class="wp-hero-info">
+                <span class="preview-badge"><i class='bx bx-show'></i> Admin team (read-only)</span>
+                <h1>{{ member.name }}</h1>
+                <p class="wp-line">
+                    <i class='bx {{ "bxs-crown" if member.admin_type == "main" else "bxs-shield-alt-2" }}'></i>
+                    {% if member.admin_type == 'main' %}Main Admin{% else %}{{ member.admin_type.replace('_', ' ').title() }}{% endif %}
+                </p>
+                <p class="wp-line"><i class='bx bx-envelope'></i> {{ member.email }}</p>
+                {% if member.created_at %}
+                <p class="wp-line"><i class='bx bx-calendar'></i> Admin since {{ member.created_at.strftime('%d %b %Y') }}</p>
+                {% endif %}
+                <p class="wp-line">
+                    <span class="status-badge {{ 'status-completed' if member.is_active else 'status-pending' }}">{{ 'Active' if member.is_active else 'Inactive' }}</span>
+                </p>
+            </div>
+
+            <div class="wp-apply">
+                <a href="{{ url_for('dashboard.admin_subadmins') }}" class="back-link"><i class='bx bx-arrow-back'></i> Back to team</a>
+                {% if member.admin_type != 'main' and member.u_id != session.user_id %}
+                <form method="post" action="{{ url_for('dashboard.toggle_subadmin', a_id=member.a_id) }}" style="margin-top:10px;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="join-btn">{{ 'Deactivate account' if member.is_active else 'Activate account' }}</button>
+                </form>
+                {% endif %}
+            </div>
+        </header>
+
+        {# ---------------- stats: the area this admin looks after ---------------- #}
+        <div class="stats-grid">
+            {% if member.admin_type == 'main' %}
+            <div class="stat-card"><span class="stat-number">{{ scope.customers }}</span><span class="stat-label">Customers</span></div>
+            <div class="stat-card"><span class="stat-number">{{ scope.owners }}</span><span class="stat-label">Owners</span></div>
+            <div class="stat-card"><span class="stat-number">{{ scope.mechanics }}</span><span class="stat-label">Mechanics</span></div>
+            <div class="stat-card"><span class="stat-number">{{ scope.workshops }}</span><span class="stat-label">Workshops</span></div>
+            {% elif member.admin_type == 'customer_manager' %}
+            <div class="stat-card"><span class="stat-number">{{ scope.customers }}</span><span class="stat-label">Customers Managed</span></div>
+            {% elif member.admin_type == 'owner_workshop_manager' %}
+            <div class="stat-card"><span class="stat-number">{{ scope.owners }}</span><span class="stat-label">Owners Managed</span></div>
+            <div class="stat-card"><span class="stat-number">{{ scope.workshops }}</span><span class="stat-label">Workshops Listed</span></div>
+            {% else %}
+            <div class="stat-card"><span class="stat-number">{{ scope.mechanics }}</span><span class="stat-label">Mechanics Managed</span></div>
+            {% endif %}
+        </div>
+
+        {# ---------------- responsibilities ---------------- #}
+        <section class="admin-section wp-panel" id="pfScope">
+            <h2>Responsibilities</h2>
+            {% if member.admin_type == 'main' %}
+            <p>Full access: every record, the service catalog, feedback messages, and creating or deactivating sub-admin accounts.</p>
+            {% elif member.admin_type == 'customer_manager' %}
+            <p>Can view and delete customer accounts. No access to owners, mechanics, workshops or other admin settings.</p>
+            {% elif member.admin_type == 'owner_workshop_manager' %}
+            <p>Can view and delete workshop owner accounts and see all workshop listings. No access to customers or mechanics.</p>
+            {% else %}
+            <p>Can view and delete mechanic accounts. No access to customers, owners or workshops.</p>
+            {% endif %}
+        </section>
+
+    </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin.js') }}" defer></script>
+{% endblock %}

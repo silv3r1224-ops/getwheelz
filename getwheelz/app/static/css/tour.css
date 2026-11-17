@@ -1,0 +1,71 @@
+/* NEO's guided tour, drawn like a comic: a spotlight on the page element, NEO standing at the corner of the panel
+   and a speech bubble with a tail pointing at him. Shared comic variables live in comic.css. */
+.nt-spot {
+    position: fixed; z-index: 1900; pointer-events: none; border-radius: 14px;
+    box-shadow: 0 0 0 9999px rgba(6, 6, 10, .66), 0 0 0 4px var(--cm-yellow), 0 0 0 7px var(--cm-ink);
+    transition: top .3s ease, left .3s ease, width .3s ease, height .3s ease, opacity .2s ease;
+}
+.nt-spot.nt-none { box-shadow: 0 0 0 9999px rgba(6, 6, 10, .66); width: 0; height: 0; top: 50%; left: 50%; }
+.nt-spot[hidden], .nt-card[hidden] { display: none; }
+
+.nt-card {
+    position: fixed; z-index: 1910; width: min(470px, calc(100vw - 24px)); box-sizing: border-box;
+    display: flex; align-items: flex-end; gap: 22px; padding: 14px 8px 8px 0;
+    transition: top .3s ease, left .3s ease, opacity .2s ease;
+}
+.nt-bot { flex: 0 0 96px; }
+.nt-bot .rb { display: block; filter: drop-shadow(3px 3px 0 var(--cm-shadow)); }
+
+/* the speech bubble */
+.nt-body {
+    position: relative; flex: 1; min-width: 0; padding: 14px 18px 12px;
+    background-color: var(--cm-paper); background-image: var(--cm-dots); background-size: 7px 7px;
+    color: var(--cm-ink); font-family: var(--cm-font);
+    border: 3px solid var(--cm-ink); border-radius: 22px 22px 22px 8px; box-shadow: var(--cm-ring), 6px 6px 0 var(--cm-shadow);
+}
+.nt-body::before, .nt-body::after { content: ""; position: absolute; width: 0; height: 0; border-style: solid; border-color: transparent; }
+.nt-body::before { left: -23px; bottom: 14px; border-width: 12px 21px 12px 0; border-right-color: var(--cm-ink); }
+.nt-body::after { left: -15px; bottom: 17px; border-width: 9px 16px 9px 0; border-right-color: var(--cm-paper); }
+.nt-card.pop .nt-body { animation: ntPop .32s cubic-bezier(.3, 1.6, .5, 1); transform-origin: 0 100%; }
+@keyframes ntPop { from { transform: scale(.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* "WOW!" sound-effect burst on the bubble's corner */
+.nt-burst {
+    position: absolute; top: -22px; right: -14px; min-width: 62px; padding: 15px 14px 13px; text-align: center;
+    font-family: var(--cm-title-font); font-size: 1.15rem; letter-spacing: 1px; line-height: 1; color: var(--cm-ink);
+    background: var(--cm-yellow); transform: rotate(8deg);
+    clip-path: polygon(50% 0, 62% 14%, 80% 6%, 80% 26%, 100% 30%, 90% 48%, 100% 66%, 80% 70%, 82% 92%, 62% 86%, 50% 100%, 38% 86%, 18% 92%, 20% 70%, 0 66%, 10% 48%, 0 30%, 20% 26%, 20% 6%, 38% 14%);
+    filter: drop-shadow(2px 2px 0 var(--cm-ink));
+}
+.nt-bar { height: 10px; border: 2px solid var(--cm-ink); border-radius: 10px; background: #fff; margin: 0 0 10px; overflow: hidden; }
+.nt-bar span { display: block; height: 100%; width: 0; background: var(--main-color); transition: width .3s ease; }
+.nt-body h3 {
+    margin: 0 62px 6px 0; font-family: var(--cm-title-font); font-weight: 400; font-size: 1.45rem; letter-spacing: 1px;
+    line-height: 1.1; text-transform: uppercase; color: var(--cm-ink);
+}
+.nt-body p { margin: 0 0 12px; font-size: 1.02rem; font-weight: 700; line-height: 1.4; color: var(--cm-ink); }
+.nt-actions { display: flex; align-items: center; gap: 8px; }
+.nt-gap { flex: 1; }
+.nt-btn {
+    cursor: pointer; font: inherit; font-family: var(--cm-title-font); font-size: 1rem; letter-spacing: 1px; text-transform: uppercase;
+    padding: 6px 14px 5px; color: var(--cm-ink); background: var(--cm-yellow);
+    border: 3px solid var(--cm-ink); border-radius: 12px; box-shadow: 3px 3px 0 var(--cm-ink);
+    transition: transform .08s ease, box-shadow .08s ease;
+}
+.nt-btn.ghost { background: #fff; }
+.nt-btn:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--cm-ink); }
+.nt-btn:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--cm-ink); }
+.nt-btn[disabled] { opacity: .45; cursor: default; transform: none; box-shadow: 3px 3px 0 var(--cm-ink); }
+.nt-link { border: 0; background: none; cursor: pointer; font-family: var(--cm-font); font-weight: 700; font-size: .85rem; color: var(--cm-ink); padding: 4px 2px; text-decoration: underline dotted; }
+.nt-link:hover { color: var(--main-color); }
+.nt-btn:focus-visible, .nt-link:focus-visible { outline: 3px solid var(--main-color); outline-offset: 2px; }
+
+@media (max-width: 640px) {
+    .nt-card { left: 8px !important; right: 8px; top: auto !important; bottom: 10px; width: auto; gap: 18px; }
+    .nt-bot { flex-basis: 62px; }
+    .nt-bot .rb { width: 62px; height: auto; }
+    .nt-body { padding: 12px 14px 10px; }
+    .nt-body h3 { font-size: 1.2rem; }
+    .nt-body p { font-size: .95rem; margin-bottom: 10px; }
+}
+@media (prefers-reduced-motion: reduce) { .nt-spot, .nt-card, .nt-bar span, .nt-btn { transition: none; } .nt-card.pop .nt-body { animation: none; } }

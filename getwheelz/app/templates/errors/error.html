@@ -1,0 +1,27 @@
+{% from 'partials/robot.html' import robot %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ code }} · {{ title }} — Getwheelz</title>
+    <link rel="icon" href="{{ url_for('static', filename='logo/getwheelz.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/robot.css') }}">
+</head>
+
+<body style="margin:0">
+    {# Standalone on purpose (no base.html): this page has to render even when the database is down. #}
+    <main class="neo-err">
+        <div class="neo-err-box">
+            {{ robot(mood, 190, skin=skin, follow=not wander, wander=wander, label='NEO') }}
+            <p class="neo-err-code">{{ code }}</p>
+            <h1>{{ title }}</h1>
+            <p class="neo-err-text">{{ text }}</p>
+            <a class="neo-err-btn" href="{{ url_for('main.index') }}">Back to home</a>
+        </div>
+    </main>
+    <script src="{{ url_for('static', filename='js/robot.js') }}"></script>
+</body>
+
+</html>
