@@ -1,0 +1,35 @@
+{# NEO's shared paint (gradients + head clip), defined ONCE per page, always rendered (0x0, not display:none).
+Every NEO drawing refers to these ids. If they only lived inside each NEO, a NEO sitting in a hidden tab (the profile
+cover while the Settings tab is open, say) would be the "first" owner of the ids and every other NEO on the page would
+lose
+its dark body. #}
+<svg class="rb-defs-host" width="0" height="0" aria-hidden="true" focusable="false"
+    style="position:absolute;width:0;height:0;overflow:hidden;pointer-events:none">
+    <defs>
+        <linearGradient id="rbShellGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop class="rb-stop-a" offset="0" />
+            <stop class="rb-stop-b" offset="1" />
+        </linearGradient>
+        <radialGradient id="rbGlow" cx="0.5" cy="0.35" r="0.62">
+            <stop class="rb-stop-glow" offset="0" />
+            <stop class="rb-stop-clear" offset="1" />
+        </radialGradient>
+        <linearGradient id="rbGlassGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop class="rb-stop-glass-a" offset="0" />
+            <stop class="rb-stop-glass-b" offset="1" />
+        </linearGradient>
+        <linearGradient id="rbShadeL" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#000" stop-opacity=".5" />
+            <stop offset="1" stop-color="#000" stop-opacity="0" />
+        </linearGradient>
+        <linearGradient id="rbShadeR" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#fff" stop-opacity="0" />
+            <stop offset="1" stop-color="#fff" stop-opacity=".07" />
+        </linearGradient>
+        <path id="rbHeadShape"
+            d="M120 24 A88 88 0 0 1 206 96 Q197 112 206 128 A88 88 0 0 1 120 200 A88 88 0 0 1 34 128 Q43 112 34 96 A88 88 0 0 1 120 24Z" />
+        <clipPath id="rbHeadClip">
+            <use href="#rbHeadShape" />
+        </clipPath>
+    </defs>
+</svg>

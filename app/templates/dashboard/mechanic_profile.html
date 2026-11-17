@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}{{ person.name }} — Getwheelz{% endblock %}
+
+{% block content %}
+<div class="admin-layout" id="adminLayout">
+
+    <aside class="admin-sidebar" id="sideBar">
+        <div class="sidebar-header">
+            <i class='bx bxs-store'></i>
+            <span>Owner Panel</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('dashboard.owner') }}" class="sidebar-link"><i class='bx bx-arrow-back'></i> Back to my panel</a>
+            <a href="#overview" class="sidebar-link active"><i class='bx bx-user-circle'></i> Profile</a>
+            {% if is_member %}
+            <a href="#pfJobs" class="sidebar-link"><i class='bx bx-wrench'></i> Jobs</a>
+            {% endif %}
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-link"><i class='bx bx-log-out'></i> Logout</a>
+        </div>
+    </aside>
+
+    <main class="admin-main wp-main">
+
+        {# ---------------- slim profile header (no hero card) ---------------- #}
+        <div class="profile-head" id="overview">
+            <div class="team-avatar">
+                {% if person.profile_picture %}
+                <img loading="lazy" decoding="async" src="{{ url_for('static', filename=person.profile_picture) }}" alt="{{ person.name }}">
+                {% else %}
+                <span>{{ person.name[:1] | upper }}</span>
+                {% endif %}
+            </div>
+            <div class="profile-head-text">
+                <h1>{{ person.name }}</h1>
+                <p>
+                    <i class='bx {{ "bx-user-plus" if is_applicant else "bx-show" }}'></i>
+                    {{ 'Application' if is_applicant else 'Team member' }} · {{ workshop.name }}
+                    <i class='bx bxs-wrench'></i> Mechanic
+                    <i class='bx bx-envelope'></i> {{ person.email }}
+                </p>
+            </div>
+            <div class="profile-head-actions">
+                <a href="{{ url_for('dashboard.owner') }}#{{ 'joiningRequests' if is_applicant else 'mechanics' }}" class="sa-btn"><i class='bx bx-arrow-back'></i> Go back</a>
+            </div>
+        </div>
+
+        <div class="admin-hero-strip">
+            <div class="strip-cell">
+                <span class="strip-lab"><i class='bx bx-medal'></i> Experience</span>
+                <span class="strip-val strip-stat">{{ person.experience_yrs if person.experience_yrs else '—' }}{% if person.experience_yrs %} yrs{% endif %}</span>
+            </div>
+            {% if is_member %}
+            <div class="strip-cell {{ 'hot' if person.active_stat and person.active_stat | lower in ['active', 'available'] else '' }}">
+                <span class="strip-lab"><i class='bx bx-pulse'></i> Availability</span>
+                <span class="strip-val" style="text-transform:capitalize;">{{ person.active_stat or '—' }}</span>
+            </div>
+            <div class="strip-cell {{ 'hot' if jobs.active else '' }}">
+                <span class="strip-lab"><i class='bx bx-wrench'></i> Jobs in progress</span>
+                <span class="strip-val strip-stat">{{ jobs.active }}</span>
+            </div>
+            <div class="strip-cell">
+                <span class="strip-lab"><i class='bx bx-check-double'></i> Jobs completed</span>
+                <span class="strip-val strip-stat">{{ jobs.completed }}</span>
+            </div>
+            {% else %}
+            <div class="strip-cell hot">
+                <span class="strip-lab"><i class='bx bx-hourglass'></i> Request</span>
+                <span class="strip-val">Pending review</span>
+            </div>
+            <div class="strip-cell">
+                <span class="strip-lab"><i class='bx bxs-store'></i> Workshop</span>
+                <span class="strip-val">{{ workshop.name }}</span>
+            </div>
+            <div class="strip-cell">
+                <span class="strip-lab"><i class='bx bx-calendar'></i> Member since</span>
+                <span class="strip-val">{{ person.created_at.strftime('%b %Y') if person.created_at else '—' }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        {# ---------------- applicant: decide right here ---------------- #}
+        {% if is_applicant %}
+        <section class="admin-section wp-panel" id="pfDecision">
+            <h2>Joining <span class="px-ghellis-tail">request.</span></h2>
+            <p class="leave-text">
+                {{ person.name }} wants to join <strong>{{ workshop.name }}</strong>.
+                {% if full %}Your workshop is at full capacity ({{ workshop.team_size }}/{{ workshop.capacity }}), so you can't accept right now.{% endif %}
+            </p>
+            <form method="POST" action="{{ url_for('dashboard.review_mechanic', jr_id=person.jr_id, action='accept') }}"
+                class="inline-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="mini-btn confirm" {% if full %}disabled title="Workshop is at full capacity"{% endif %}>
+                    <i class='bx bx-check'></i> Accept
+                </button>
+            </form>
+            <button type="button" class="mini-btn cancel js-confirm"
+                data-url="{{ url_for('dashboard.review_mechanic', jr_id=person.jr_id, action='reject') }}"
+                data-title="Reject {{ person.name }}'s application?"
+                data-msg="They will not be able to join your workshop through this request.">
+                <i class='bx bx-x'></i> Reject
+            </button>
+        </section>
+        {% endif %}
+
+        {# ---------------- member: leave notice ---------------- #}
+        {% if is_member and person.leave_pending %}
+        <section class="admin-section wp-panel">
+            <div class="notice-card notice-bad">
+                <i class='bx bx-log-out-circle'></i>
+                <div>
+                    <strong>Leave requested</strong>
+                    <p>{{ person.name }} has asked to leave your workshop. You can approve or decline it from your panel.</p>
+                </div>
+            </div>
+        </section>
+        {% endif %}
+
+        {% if is_member %}
+        <section class="admin-section wp-panel" id="pfJobs">
+            <h2>Jobs at <span class="px-ghellis-tail">{{ workshop.name }}.</span></h2>
+            <p class="leave-text">
+                {{ person.name }} has completed <strong>{{ jobs.completed }}</strong>
+                job{{ '' if jobs.completed == 1 else 's' }} here and currently has
+                <strong>{{ jobs.active }}</strong> in progress.
+                Assign more from the Bookings table on your panel.
+            </p>
+        </section>
+        {% endif %}
+    </main>
+</div>
+
+{# generic confirmation modal (driven by admin.js .js-confirm) #}
+<div class="delete-con" id="confirmCon" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <h2 id="confirmTitle">Are you sure?</h2>
+    <p id="confirmMsg"></p>
+    <div class="delete-actions">
+        <form id="confirmForm" method="post" action="">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button id="confirmBtn" type="submit" class="sure-btn danger">Yes, continue</button>
+        </form>
+        <button type="button" id="cancelConfirm" class="sure-btn cancel">Cancel</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin.js', v='3') }}" defer></script>
+{% endblock %}

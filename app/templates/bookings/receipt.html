@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Receipt {{ booking.reference }} — Getwheelz{% endblock %}
+
+{% block content %}
+<section class="booking-page receipt-page px-customer-booking">
+    {% set rp_stage = 'processing' %}
+    {% set rp_feed_motion = 'stepped' %}
+    {% set rp_animate = True %}
+    {% set rp_order_id = booking.reference %}
+    {% set rp_order_date = booking.paid_at.strftime('%d %b %Y') %}
+    {% set rp_receipt_status = 'PROCESSING' %}
+    {% set rp_status_label = 'Processing payment' %}
+    {% set rp_reference = booking.reference %}
+    {% set rp_amount = paid_label %}
+    {% set rp_method = {'card': 'Card', 'upi': 'UPI', 'netbanking': 'Net banking'}[booking.paid_method] ~ (' · ' ~ booking.paid_detail if booking.paid_detail else '') %}
+    {% set rp_workshop = booking.workshop_name %}
+    {% set rp_service = booking.s_name %}
+    {% set rp_mechanic = booking.mechanic_name %}
+    {% include 'partials/receipt_printer.html' %}
+
+    <div class="rc-card">
+        <div class="rc-brand">
+            <span class="rc-brand-mark">GW / 26</span>
+            <span class="rc-brand-tag">Official Receipt</span>
+        </div>
+        <div class="rc-head">
+            <div class="rc-tick"><i class='bx bx-check'></i></div>
+            <h1>Payment <span class="px-ghellis-tail">successful.</span></h1>
+            <p>Reference: <b>{{ booking.reference }}</b></p>
+        </div>
+
+        <div class="rc-amount">{{ paid_label }}</div>
+
+        <div class="rc-details">
+            <div class="rc-line"><span>Paid on</span><span>{{ booking.paid_at.strftime('%d %b %Y, %I:%M %p') }}</span></div>
+            <div class="rc-line"><span>Method</span><span>{{ {'card': 'Card', 'upi': 'UPI', 'netbanking': 'Net banking'}[booking.paid_method] }}{% if booking.paid_detail %} · {{ booking.paid_detail }}{% endif %}</span></div>
+            <div class="rc-line"><span>Workshop</span><span>{{ booking.workshop_name }}</span></div>
+            <div class="rc-line"><span>Service</span><span>{{ booking.s_name }}</span></div>
+            <div class="rc-line"><span>Appointment</span><span>{{ booking.requested_time.strftime('%d %b %Y, %I:%M %p') }}</span></div>
+            {% if booking.mechanic_name %}
+            <div class="rc-line"><span>Mechanic</span><span>{{ booking.mechanic_name }}</span></div>
+            {% endif %}
+        </div>
+
+        <p class="rc-foot">Getwheelz Network · Demo receipt. No real payment was processed.</p>
+    </div>
+
+    <div class="rc-actions">
+        <button type="button" class="rc-btn primary" onclick="window.print()"><i class='bx bx-printer'></i> Print receipt</button>
+        <a class="rc-btn" href="{{ url_for('bookings.my_bookings') }}">Back to my bookings</a>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/receipt_printer.js', v='1') }}"></script>
+<script>
+    (function () {
+        var root = document.querySelector('[data-receipt-printer]');
+        if (!root || !root.receiptPrinter) return;
+        var printer = root.receiptPrinter;
+        window.setTimeout(function () { printer.setStage('printing'); }, 700);
+        window.setTimeout(function () { printer.setStage('complete'); }, 2600);
+    })();
+</script>
+<script src="{{ url_for('static', filename='js/premium-scroll.js', v='puzzle-4') }}" defer></script>
+{% endblock %}

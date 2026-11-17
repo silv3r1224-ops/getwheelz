@@ -1,0 +1,515 @@
+{% extends "base.html" %}
+
+{% block title %}Home — Getwheelz{% endblock %}
+
+{% block head %}
+{% include 'partials/px_head.html' %}
+{% endblock %}
+
+{% block content %}
+{% from 'partials/robot.html' import neo_ico %}
+{% from 'partials/vehicle_icon.html' import vehicle_icon %}
+<div class="px px-customer-home">
+
+    {# ===================== HERO ===================== #}
+    <section class="px-hero reveal">
+        <div class="neo-side" aria-hidden="true">{{ neo_ico('wave', 176, '', wander=False) }}</div>
+        <div class="px-wrap">
+            <div class="px-kicker-row"><span>CUSTOMER / 01</span><span>TRUSTED WORKSHOPS</span></div>
+            <span class="px-eyebrow"><i class='bx bxs-hand'></i> Welcome back</span>
+            <h1 class="px-title">
+                <span class="px-title-line">Hello, <span class="grad">{{ session.user_name }}</span>.</span>
+                <span class="px-title-line px-title-accent">What does your vehicle need?</span>
+            </h1>
+            <p class="px-lead">Search trusted workshops, see how far each one is, and book a service in minutes.</p>
+
+            {# step one: what are you bringing in? Everything below follows the answer. #}
+            <div class="gwv-switch" style="margin-top: 22px;" role="group" aria-label="Vehicle type">
+                <b>I'm bringing in:</b>
+                {% for t in VEHICLE_TYPES %}
+                <a class="gwv-badge" href="{{ url_for('customer.home', vehicle=t) }}" {% if t == vehicle_choice %}aria-current="true" style="border-color: var(--main-color); font-weight: 700;"{% endif %}>{{ vehicle_icon(t, 16) }} {{ VEHICLE_PLURAL[t] }}</a>
+                {% endfor %}
+                {% if not vehicle_choice %}<small>Pick one to see matching workshops and services.</small>{% endif %}
+            </div>
+
+            <form action="{{ url_for('workshops.search') }}" method="get" class="px-search" id="hero-search-form" role="search" style="margin-top: 14px;">
+                {% if vehicle_choice %}<input type="hidden" name="vehicle" value="{{ vehicle_choice }}">{% endif %}
+                <i class='bx bx-search' aria-hidden="true"></i>
+                <input type="text" name="service" id="main-search-input" placeholder="Engine repair, tires, AC service..." aria-label="Search for a service">
+                <input type="hidden" id="search-lat" name="lat">
+                <input type="hidden" id="search-lng" name="lng">
+                <button class="px-btn" type="submit">Find workshops</button>
+            </form>
+
+            {% if catalog_services %}
+            <div class="px-chips" style="margin-top: 16px;" data-more="8">
+                <span class="px-count" data-more-skip>Browse by service:</span>
+                {% for svc in catalog_services %}
+                <a class="px-chip" href="{{ url_for('workshops.search', vehicle=vehicle_choice, service=svc.name) }}">{{ svc.name }}</a>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <ul class="px-trust">
+                <li><i class='bx bx-map-pin'></i> Workshops near you</li>
+                <li><i class='bx bx-calendar-check'></i> Book in minutes</li>
+                <li><i class='bx bx-group'></i> Real mechanics, real owners</li>
+            </ul>
+
+            {% if next_booking %}
+            <a class="px-card px-lift px-next" href="{{ url_for('bookings.my_bookings') }}">
+                <span class="px-next-ico"><i class='bx bx-calendar-check'></i></span>
+                <div>
+                    <small>Your next appointment</small>
+                    <strong>{{ next_booking.s_name }} at {{ next_booking.workshop_name }}</strong>
+                    <span class="meta">{{ next_booking.requested_time.strftime('%a, %d %b · %I:%M %p') }}</span>
+                </div>
+                <span class="px-badge {{ next_booking.status }}">{{ next_booking.status | status_label }}</span>
+            </a>
+            {% else %}
+            <div class="px-card px-next">
+                <span class="px-next-ico"><i class='bx bx-calendar-plus'></i></span>
+                <div>
+                    <small>Your next appointment</small>
+                    <strong>Nothing booked yet</strong>
+                    <span class="meta">Pick a workshop below and book your first service.</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    {# ===================== EDITION MARQUEE ===================== #}
+    <div class="px-edition-marquee" aria-hidden="true">
+        <span>CARE IN MOTION&nbsp;&nbsp; / &nbsp;&nbsp;TRUSTED WORKSHOPS&nbsp;&nbsp; / &nbsp;&nbsp;CARE IN MOTION&nbsp;&nbsp; / &nbsp;&nbsp;TRUSTED WORKSHOPS&nbsp;&nbsp; / &nbsp;&nbsp;</span>
+    </div>
+
+    {# ===================== RECOMMENDED (inside one black box) ===================== #}
+    <section class="px-section reveal">
+        <div class="px-wrap">
+            <div class="px-card px-showcase">
+                <div class="px-section-head">
+                    <div>
+                        <span class="px-eyebrow"><i class='bx bxs-star'></i> Picks</span>
+                        <h2>Recommended <span class="px-ghellis-tail">workshops.</span></h2>
+                        <p>{% if recommended %}{{ recommended | length }} workshop{{ '' if recommended | length == 1 else 's' }} to start with.{% else %}A few workshops to start with.{% endif %}</p>
+                    </div>
+                    <span class="px-loc" id="loc-chip">
+                        <i class='bx bx-current-location'></i>
+                        <span class="loc-text">Finding your location...</span>
+                        <button type="button" data-enable-location hidden>Enable</button>
+                    </span>
+                </div>
+
+                {% if recommended %}
+                <div class="px-carousel">
+                    <div class="px-track" id="rec-track">
+                        {% for w in recommended %}
+                    {% set wp_payload = {
+                        'id': w.w_id,
+                        'name': w.name,
+                        'address': w.address or '',
+                        'photo': url_for('static', filename=w.photo_path) if w.photo_path else '',
+                        'open': w.is_open,
+                        'km': none,
+                        'services': (w.service_names or [])[:6],
+                        'url': url_for('workshops.selected', w_id=w.w_id),
+                        'lat': w.latitude,
+                        'lng': w.longitude,
+                    } | tojson | forceescape %}
+                    <a href="{{ url_for('workshops.selected', w_id=w.w_id) }}" class="px-card px-lift px-wcard"
+                        {% if w.latitude is not none and w.longitude is not none %}data-lat="{{ w.latitude }}" data-lng="{{ w.longitude }}"{% endif %}>
+                            <div class="px-wcard-img">
+                                {% if w.photo_path %}
+                                <span class="px-card-photo-open" role="button" tabindex="0" aria-label="View {{ w.name }} photo" data-wp-lightbox>
+                                    <img src="{{ url_for('static', filename=w.photo_path) }}" alt="{{ w.name }}" loading="lazy" data-wp-photo>
+                                    <span class="px-photo-zoom" aria-hidden="true"><i class='bx bx-expand'></i></span>
+                                </span>
+                                {% else %}
+                                <div class="px-ph"><i class='bx bx-store'></i></div>
+                                {% endif %}
+                                <div class="px-wcard-top">
+                                    <span class="px-feat"><i class='bx bxs-star'></i> Recommended</span>
+                                    <span class="px-dist"><i class='bx bx-navigation'></i><span class="px-dist-text"></span></span>
+                                </div>
+                                <span class="px-wcard-overlay" role="button" tabindex="0"
+                                    aria-label="Quick view {{ w.name }}" aria-expanded="false"
+                                    data-wp="{{ wp_payload }}">
+                                </span>
+                                {% if session.get('role') == 'customer' %}
+                                <span class="px-bm {{ 'on' if w.w_id in bookmarked_ids else '' }}" role="button" tabindex="0"
+                                    aria-label="{{ 'Remove from saved workshops' if w.w_id in bookmarked_ids else 'Save this workshop' }}"
+                                    aria-pressed="{{ 'true' if w.w_id in bookmarked_ids else 'false' }}"
+                                    data-bm data-w-id="{{ w.w_id }}">
+                                    <i class="bx {{ 'bxs-bookmark' if w.w_id in bookmarked_ids else 'bx-bookmark' }}"></i>
+                                    <span class="bm-label">{{ 'Saved' if w.w_id in bookmarked_ids else 'Save' }}</span>
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div class="px-wcard-body">
+                                <h3>{{ w.name }} <span class="oc-badge {{ 'oc-open' if w.is_open else 'oc-closed' }}">{{ 'Open' if w.is_open else 'Closed' }}</span></h3>
+                                <p class="px-addr"><i class='bx bx-map'></i><span>{{ w.address or 'Address not listed' }}</span></p>
+                                {% set served_types = [] %}
+                                {% if w.serves_cars %}{% set _ = served_types.append('car') %}{% endif %}
+                                {% if w.serves_two_wheelers %}{% set _ = served_types.append('two_wheeler') %}{% endif %}
+                                {% if served_types %}
+                                <div class="px-tags" style="margin-bottom: 6px;">
+                                    {% for t in served_types %}<span class="gwv-badge" style="font-size: 11px; padding: 2px 8px;">{{ vehicle_icon(t, 12) }} {{ VEHICLE_PLURAL[t] }}</span>{% endfor %}
+                                </div>
+                                {% endif %}
+                                {% if w.service_names %}
+                                <div class="px-tags">
+                                    {% for service in w.service_names[:3] %}<span class="px-tag">{{ service }}</span>{% endfor %}
+                                    {% if w.service_names | length > 3 %}<span class="px-tag">+{{ w.service_names | length - 3 }} more&hellip;</span>{% endif %}
+                                </div>
+                                {% endif %}
+                                <span class="px-quickview" role="button" tabindex="0"
+                                    aria-label="Quick view {{ w.name }}" aria-expanded="false"
+                                    data-wp="{{ wp_payload }}"><i class='bx bx-show'></i> Quick view</span>
+                                <div class="px-wcard-foot">View workshop <i class='bx bx-right-arrow-alt'></i></div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="px-empty">
+                    {{ neo_ico('neutral', 96, 'amber') }}
+                    <h3>No workshops yet</h3>
+                    <p>Workshops will appear here as soon as owners list them.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    {# ===================== SAVED ===================== #}
+    {% if saved %}
+    <section class="px-section reveal">
+        <div class="px-wrap">
+            <div class="px-section-head">
+                <div>
+                    <span class="px-eyebrow"><i class='bx bxs-bookmark'></i> Saved</span>
+                    <h2>Your saved <span class="px-ghellis-tail">workshops.</span></h2>
+                    <p>Quick access to the workshops you've bookmarked.</p>
+                </div>
+            </div>
+            <div class="px-saved-grid">
+                {% for w in saved %}
+                <a href="{{ url_for('workshops.selected', w_id=w.w_id) }}" class="px-card px-lift px-wcard"
+                    data-saved-card data-w-id="{{ w.w_id }}">
+                    <div class="px-wcard-img">
+                        {% if w.photo_path %}
+                        <img src="{{ url_for('static', filename=w.photo_path) }}" alt="{{ w.name }}" loading="lazy">
+                        {% else %}
+                        <div class="px-ph"><i class='bx bx-store'></i></div>
+                        {% endif %}
+                        <span class="px-bm on" role="button" tabindex="0"
+                            aria-label="Remove from saved workshops" aria-pressed="true"
+                            data-bm data-w-id="{{ w.w_id }}">
+                            <i class="bx bxs-bookmark"></i><span class="bm-label">Saved</span>
+                        </span>
+                    </div>
+                    <div class="px-wcard-body">
+                        <h3>{{ w.name }}</h3>
+                        <p class="px-addr"><i class='bx bx-map'></i><span>{{ w.address or 'Address not listed' }}</span></p>
+                        {% set saved_served_types = [] %}
+                        {% if w.serves_cars %}{% set _ = saved_served_types.append('car') %}{% endif %}
+                        {% if w.serves_two_wheelers %}{% set _ = saved_served_types.append('two_wheeler') %}{% endif %}
+                        {% if saved_served_types %}
+                        <div class="px-tags" style="margin-bottom: 6px;">
+                            {% for t in saved_served_types %}<span class="gwv-badge" style="font-size: 11px; padding: 2px 8px;">{{ vehicle_icon(t, 12) }} {{ VEHICLE_PLURAL[t] }}</span>{% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if w.service_names %}
+                        <div class="px-tags">
+                            {% for s in w.service_names[:3] %}<span class="px-tag">{{ s }}</span>{% endfor %}
+                            {% if w.service_names | length > 3 %}<span class="px-tag">+{{ w.service_names | length - 3 }} more&hellip;</span>{% endif %}
+                        </div>
+                        {% endif %}
+                        <div class="px-wcard-foot">Open workshop <i class='bx bx-right-arrow-alt'></i></div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    {# ===================== NEARBY ===================== #}
+    <section class="px-section reveal" id="nearby-section"
+        data-url="{{ url_for('workshops.nearby') }}"
+        data-profile-url="{{ url_for('workshops.selected', w_id=0) }}"
+        data-static-url="{{ url_for('static', filename='') }}">
+        <div class="px-wrap">
+            <div class="px-section-head">
+                <div>
+                    <span class="px-eyebrow"><i class='bx bx-current-location'></i> Near you</span>
+                    <h2>Closest to <span class="px-ghellis-tail">you.</span></h2>
+                    <p>Workshops within 25 km, nearest first.</p>
+                </div>
+                <a class="px-ghost sm" href="{{ url_for('workshops.search', vehicle=vehicle_choice) }}">Browse all workshops <i class='bx bx-right-arrow-alt'></i></a>
+            </div>
+            <div class="px-grid" id="nearby-grid"></div>
+            <div class="px-card px-empty" id="nearby-status" hidden></div>
+        </div>
+    </section>
+
+    {# ===================== BROWSE BY SERVICE ===================== #}
+    {% if catalog_services %}
+    <section class="px-section reveal">
+        <div class="px-wrap">
+            <div class="px-section-head">
+                <div>
+                    <span class="px-eyebrow"><i class='bx bx-cog'></i> Services</span>
+                    <h2>Browse by <span class="px-ghellis-tail">service.</span></h2>
+                    <p>Pick what your vehicle needs and see who offers it.</p>
+                </div>
+            </div>
+            <div class="px-tiles" data-more="12">
+                {% for svc in catalog_services %}
+                {% set n = svc.name | lower %}
+                {% set icon = 'bx-cog' if 'engine' in n
+                    else 'bx-bolt-circle' if ('electr' in n or 'battery' in n)
+                    else 'bx-disc' if ('tire' in n or 'tyre' in n or 'wheel' in n)
+                    else 'bx-wind' if ('ac' in n.split() or 'a/c' in n or 'air' in n.split() or 'conditioning' in n or 'cooling' in n)
+                    else 'bx-stop-circle' if 'brake' in n
+                    else 'bx-droplet' if ('oil' in n.split() or 'fluid' in n)
+                    else 'bx-brush' if ('paint' in n or 'body' in n.split() or 'denting' in n)
+                    else 'bx-water' if ('wash' in n or 'clean' in n or 'detail' in n)
+                    else 'bx-wrench' %}
+                <a class="px-card px-lift px-tile" href="{{ url_for('workshops.search', vehicle=vehicle_choice, service=svc.name) }}">
+                    <span class="px-tile-ico"><i class='bx {{ icon }}'></i></span>
+                    <b>{{ svc.name }}</b>
+                    <span class="count">
+                        <span>{% if svc.count %}{{ svc.count }} workshop{{ '' if svc.count == 1 else 's' }}{% else %}No workshops yet{% endif %}</span>
+                        <i class='bx bx-right-arrow-alt'></i>
+                    </span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    {# ===================== RECENT BOOKINGS ===================== #}
+    {% if recent_bookings %}
+    <section class="px-section reveal">
+        <div class="px-wrap">
+            <div class="px-section-head">
+                <div>
+                    <span class="px-eyebrow"><i class='bx bx-calendar-check'></i> Continue</span>
+                    <h2>Pick up where you <span class="px-ghellis-tail">left off.</span></h2>
+                    <p>Your latest booking requests.</p>
+                </div>
+                <a class="px-ghost sm" href="{{ url_for('bookings.my_bookings') }}">All my bookings <i class='bx bx-right-arrow-alt'></i></a>
+            </div>
+            <div class="px-list">
+                {% for b in recent_bookings %}
+                <a class="px-card px-lift px-booking" href="{{ url_for('workshops.selected', w_id=b.w_id) }}">
+                    <div class="px-date"><b>{{ b.requested_time.strftime('%d') }}</b><span>{{ b.requested_time.strftime('%b') }}</span></div>
+                    <div class="px-booking-info">
+                        <h3>{{ b.s_name }}</h3>
+                        <p>
+                            <span><i class='bx bx-store'></i> {{ b.workshop_name }}</span>
+                            <span><i class='bx bx-time'></i> {{ b.requested_time.strftime('%a, %I:%M %p') }}</span>
+                        </p>
+                    </div>
+                    <div class="px-booking-side"><span class="px-badge {{ b.status }}">{{ b.status | status_label }}</span></div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    {# ===================== MAP ===================== #}
+    {% if map_workshops %}
+    <section class="px-section reveal">
+        <div class="px-wrap">
+            <div class="px-section-head">
+                <div>
+                    <span class="px-eyebrow"><i class='bx bx-map-alt'></i> Map</span>
+                    <h2>Workshops on the <span class="px-ghellis-tail">map.</span></h2>
+                    <p>Tap a pin to see the workshop and open its page.</p>
+                </div>
+            </div>
+            <div class="px-card px-map-frame short"><div id="map"></div></div>
+        </div>
+    </section>
+    {% endif %}
+
+    {# ===================== HOW BOOKING WORKS ===================== #}
+    <section class="px-section reveal">
+        <div class="px-wrap">
+            <div class="px-section-head">
+                <div>
+                    <span class="px-eyebrow"><i class='bx bx-list-check'></i> How it works</span>
+                    <h2>How booking <span class="px-ghellis-tail">works.</span></h2>
+                    <p>From search to service in three steps.</p>
+                </div>
+            </div>
+            <div class="px-how">
+                <div class="px-card px-how-card">
+                    <span class="px-how-num">1</span>
+                    <h3>Choose a workshop</h3>
+                    <p>Search by service, check the distance and the services each workshop offers.</p>
+                </div>
+                <div class="px-card px-how-card">
+                    <span class="px-how-num">2</span>
+                    <h3>Send a request</h3>
+                    <p>Pick a service and a time that suits you. Your request goes to the workshop.</p>
+                </div>
+                <div class="px-card px-how-card">
+                    <span class="px-how-num">3</span>
+                    <h3>Get it confirmed</h3>
+                    <p>Once the workshop accepts, the status changes to Confirmed in My Bookings.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {# ===================== VEHICLE CARE TIPS ===================== #}
+    <section class="px-section reveal">
+        <div class="px-wrap">
+            <div class="px-section-head">
+                <div>
+                    <span class="px-eyebrow"><i class='bx bx-wrench'></i> Care notes</span>
+                    <h2>Vehicle care <span class="px-ghellis-tail">tips.</span></h2>
+                    <p>Small habits that save big repairs.</p>
+                </div>
+            </div>
+            <div class="px-tips">
+                <div class="px-card px-tip">
+                    <i class='bx bx-disc'></i>
+                    <h3>Check tire pressure</h3>
+                    <p>Look at it monthly and before long trips. Correct pressure improves grip and tire life.</p>
+                </div>
+                <div class="px-card px-tip">
+                    <i class='bx bx-droplet'></i>
+                    <h3>Change oil on schedule</h3>
+                    <p>Follow the interval in your owner's manual. Old oil wears the engine faster.</p>
+                </div>
+                <div class="px-card px-tip">
+                    <i class='bx bx-error-circle'></i>
+                    <h3>Do not ignore warning lights</h3>
+                    <p>A light on the dashboard is an early warning. Getting it checked is cheaper than a breakdown.</p>
+                </div>
+                <div class="px-card px-tip">
+                    <i class='bx bx-wind'></i>
+                    <h3>Service the AC before summer</h3>
+                    <p>If the cooling feels weak, get it looked at before the hottest weeks arrive.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {# ===================== FAQ ===================== #}
+    <section class="px-section reveal">
+        <div class="px-wrap px-faq-grid">
+            <div class="px-section-head">
+                <div>
+                    <span class="px-eyebrow"><i class='bx bx-help-circle'></i> Good to know</span>
+                    <h2>Good to <span class="px-ghellis-tail">know.</span></h2>
+                    <p>Quick answers about bookings and distances.</p>
+                </div>
+            </div>
+            <div class="px-faq">
+                <details class="px-card">
+                    <summary>How do I know my booking is confirmed?</summary>
+                    <p>A new request starts as Pending. When the workshop accepts it, the status changes to Confirmed, and after the visit it becomes Completed. You can follow all of this under My Bookings.</p>
+                </details>
+                <details class="px-card">
+                    <summary>Can I cancel a booking?</summary>
+                    <p>Yes. While a booking is still Pending you can cancel it from My Bookings.</p>
+                </details>
+                <details class="px-card">
+                    <summary>How is the distance worked out?</summary>
+                    <p>It is the straight-line distance from your device's location to the workshop's pin on the map, so the road distance may be a little longer. Your location stays in your browser and is not saved.</p>
+                </details>
+                <details class="px-card">
+                    <summary>Why can't I see distances?</summary>
+                    <p>Allow location access when your browser asks. If you blocked it earlier, turn it back on in the site settings of your browser, then use the Enable button on this page.</p>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    {# ===================== CLOSING CTA ===================== #}
+    <section class="px-section reveal" style="padding-bottom: 90px;">
+        <div class="px-wrap">
+            <div class="px-card px-cta">
+                <h2>Need something <span class="px-ghellis-tail">specific?</span></h2>
+                <p>Search every listed workshop, or check on a booking you already made.</p>
+                <div class="px-btn-row">
+                    <a class="px-btn" href="{{ url_for('workshops.search') }}">Browse all workshops</a>
+                    <a class="px-ghost" href="{{ url_for('bookings.my_bookings') }}">My bookings</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {# ---------------- workshop quick-view modal ---------------- #}
+    <div class="wp-modal" id="wpPreview" role="dialog" aria-modal="true" aria-labelledby="wpvName">
+        <div class="wp-box">
+            <button type="button" class="wp-close" data-wp-close aria-label="Close">&times;</button>
+            <div class="wp-photo" id="wpvPhotoWrap">
+                <button type="button" class="wp-photo-open" data-wp-lightbox aria-label="View workshop photo" hidden>
+                    <img id="wpvPhoto" alt="" data-wp-photo hidden>
+                    <span class="wp-photo-zoom" aria-hidden="true"><i class='bx bx-expand'></i></span>
+                </button>
+                <i class="bx bx-store" id="wpvPhotoIco" data-wp-ph-ico></i>
+            </div>
+            <span class="wp-badge off" id="wpvBadge"></span>
+            <h3 id="wpvName"></h3>
+            <p class="wp-addr" id="wpvAddr"></p>
+            <span class="wp-km" id="wpvKm"></span>
+            <button type="button" class="wp-bm" id="wpvBm" data-bm data-w-id="" aria-pressed="false" hidden>
+                <i class="bx bx-bookmark"></i><span class="bm-label">Save</span>
+            </button>
+            <div class="wp-tags" id="wpvServices"></div>
+            <div class="wp-team-preview" id="wpvTeam" hidden></div>
+            <div class="wp-actions">
+                <a class="px-btn block" id="wpvLink" href="#">View workshop <i class='bx bx-right-arrow-alt'></i></a>
+                <a class="px-ghost sm" id="wpvDir" href="#" target="_blank" rel="noopener"><i class='bx bx-directions'></i> Get directions</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    {# bookmark feature: only customers get the controls; seed the saved-workshop id set #}
+    window.GW_CUSTOMER = {{ 'true' if session.get('role') == 'customer' else 'false' }};
+    window.GW_BOOKMARKS = {{ bookmarked_ids | default([]) | tojson }};
+    window.GW_CSRF = {{ csrf_token() | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/bookmarks.js', v='1') }}" defer></script>
+<script src="{{ url_for('static', filename='js/premium-scroll.js', v='puzzle-4') }}" defer></script>
+<script src="{{ url_for('static', filename='js/distance.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pages/customer_home_location.js', v='1') }}"></script>
+<script src="{{ url_for('static', filename='js/customer-home.js', v='11') }}"></script>
+<script src="{{ url_for('static', filename='js/workshop-preview.js', v='4') }}" defer></script>
+<script src="{{ url_for('static', filename='js/workshop-photo.js', v='5') }}" defer></script>
+<script src="{{ url_for('static', filename='js/workshop.js') }}" defer></script>
+
+{% if map_workshops %}
+<script>
+    const mapCenterOnUser = true;
+    const mapClickToInteract = true;
+    const workshopData = [
+        {% for w in map_workshops %}
+        {
+            url: {{ url_for('workshops.selected', w_id=w.w_id) | tojson }},
+            name: {{ w.name | tojson }},
+            address: {{ (w.address or '') | tojson }},
+            lat: {{ w.latitude | float }},
+            lng: {{ w.longitude | float }}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+</script>
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+{% endif %}
+{% endblock %}

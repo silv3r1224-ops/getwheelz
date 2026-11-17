@@ -1,0 +1,861 @@
+{% extends "base.html" %}
+
+{% block title %}Owner Dashboard — Getwheelz{% endblock %}
+
+{% block head %}{{ super() }}{% endblock %}
+
+{% block content %}
+{% from 'partials/robot.html' import neo_ico, robot %}
+
+<div class="admin-layout" id="adminLayout">
+    <!-- Owner Sidebar -->
+    <aside class="admin-sidebar" id="sideBar">
+        <div class="sidebar-header">
+            <i class='bx bxs-store'></i>
+            <span>Owner Panel</span>
+        </div>
+        {% if not workshop %}
+        <div class="sidebar-warning">
+            <i class='bx bx-error'></i>
+            <p>You haven't created your workshop yet. Set it up to start receiving bookings and mechanics.</p>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('dashboard.owner') }}" class="sidebar-link active">
+                <i class='bx bx-rocket'></i> Get started
+            </a>
+            <a href="#" class="sidebar-link sidebar-action" data-open-create-workshop role="button">
+                <i class='bx bx-plus-circle'></i> Create workshop
+            </a>
+        </nav>
+        {% else %}
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('dashboard.owner') }}" class="sidebar-link active">
+                <i class='bx bxs-bar-chart-alt-2'></i> Overview
+            </a>
+            <a href="#bookings" class="sidebar-link">
+                <i class='bx bx-calendar-check'></i> Bookings
+            </a>
+            <a href="#analytics" class="sidebar-link">
+                <i class='bx bx-line-chart'></i> Analytics
+            </a>
+            <a href="#services" class="sidebar-link">
+                <i class='bx bx-wrench'></i> Services
+            </a>
+            <a href="#mechanics" class="sidebar-link">
+                <i class='bx bx-group'></i> Mechanics
+            </a>
+        </nav>
+        {% endif %}
+        <div class="sidebar-footer">
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-link">
+                <i class='bx bx-log-out'></i> Logout
+            </a>
+        </div>
+    </aside>
+    <main class="admin-main">
+        {% if not workshop %}
+        <!-- Welcome empty state when no workshop listed -->
+        <section class="owner-welcome">
+            <div class="neo-owner">{{ neo_ico('wave', 140, '', wander=False) }}</div>
+            <h1>Welcome, Workshop Owner!</h1>
+            <p class="ow-lead">Let's get your workshop listed so customers nearby can find and book you.</p>
+
+            <ol class="ow-steps">
+                <li>
+                    <span class="ow-num">1</span>
+                    <div><strong>Create your workshop</strong>
+                        <small>Add its name, address and a pin on the map.</small></div>
+                </li>
+                <li>
+                    <span class="ow-num">2</span>
+                    <div><strong>Add your services</strong>
+                        <small>Choose what you offer, with prices and durations.</small></div>
+                </li>
+                <li>
+                    <span class="ow-num">3</span>
+                    <div><strong>Take bookings and build a team</strong>
+                        <small>Confirm jobs and accept mechanics who want to join you.</small></div>
+                </li>
+            </ol>
+
+            <div class="create-btn-con">
+                <div class="fw-btn-con">
+                    <a href="#" class="fw-btn" id="create-workshop-btn">
+                        <i class='bx bx-plus'></i> Create Workshop
+                    </a>
+                </div>
+            </div>
+            <p class="ow-note">Takes about a minute.</p>
+        </section>
+        {% else %}
+        <!-- Workshop Hero Header -->
+        <article class="owner-hero-card">
+            <div class="owner-banner">
+                <div class="neo-banner" aria-hidden="true">{{ neo_ico('working', 96, '', wander=False) }}{{ neo_ico('screwing', 96, 'lime', wander=False) }}</div>
+                <div class="workshop-photo-box">
+                    {% if workshop.photo_path %}
+                    <img loading="lazy" decoding="async" src="{{ url_for('static', filename=workshop.photo_path) }}" alt="{{ workshop.name }}">
+                    {% else %}
+                    <div class="workshop-photo-placeholder"><i class='bx bx-store'></i></div>
+                    {% endif %}
+                    <form method="POST" action="{{ url_for('dashboard.upload_workshop_photo') }}"
+                        enctype="multipart/form-data" class="workshop-photo-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <label for="photo" class="photo-upload-overlay" title="Click to upload workshop photo">
+                            <i class='bx bx-camera'></i>
+                            <span>Change</span>
+                        </label>
+                        <input type="file" name="photo" id="photo" accept="image/*" style="display: none;"
+                            onchange="this.form.submit()">
+                    </form>
+                </div>
+                <div class="owner-banner-title">
+                    <h1>{{ workshop.name }}
+                        <span class="oc-badge {{ 'oc-open' if workshop.is_open else 'oc-closed' }}">{{ 'Open' if workshop.is_open else 'Closed' }}</span>
+                        {% if owner_rating_count %}
+                        <span class="owner-rating-chip" title="{{ owner_rating_count }} review{{ '' if owner_rating_count == 1 else 's' }}"><i class='bx bxs-star'></i> {{ '%.1f' | format(owner_rating_avg) }} <em>({{ owner_rating_count }})</em></span>
+                        {% else %}
+                        <span class="owner-rating-chip none"><i class='bx bx-star'></i> No ratings yet</span>
+                        {% endif %}
+                    </h1>
+                </div>
+            </div>
+            <div class="owner-hero-body">
+                <div class="owner-details-wrap" style="margin-left: 126px;">
+                    <div class="owner-heading-info">
+                        {% if workshop.address %}
+                        <div class="owner-loc-line">
+                            <span class="owner-info-chip"><i class='bx bx-map-pin'></i> {{ workshop.address }}</span>
+                        </div>
+                        {% endif %}
+                        {% if workshop.serves_cars or workshop.serves_two_wheelers %}
+                        <div class="owner-type-line">
+                            {% if workshop.serves_cars %}
+                            <span class="owner-info-chip"><i class='bx bx-car'></i> {{ VEHICLE_PLURAL['car'] }}</span>
+                            {% endif %}
+                            {% if workshop.serves_two_wheelers %}
+                            <span class="owner-info-chip"><i class='bx bx-cycle'></i> {{ VEHICLE_PLURAL['two_wheeler'] }}</span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        {% if workshop.contact_no or workshop.whatsapp_no %}
+                        <div class="owner-contact-details">
+                            {% if workshop.contact_no %}
+                            <span class="owner-contact-line"><i class='bx bx-phone-call'></i> {{ workshop.contact_no }}</span>
+                            {% endif %}
+                            {% if workshop.whatsapp_no %}
+                            <span class="owner-contact-line"><i class='bx bxl-whatsapp'></i> {{ workshop.whatsapp_no }}</span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="owner-top-actions">
+                    <button type="button" class="mini-btn neutral" data-open-edit-workshop
+                        data-action="{{ url_for('dashboard.edit_workshop') }}"
+                        data-name="{{ workshop.name }}" data-address="{{ workshop.address or '' }}"
+                        data-contact="{{ workshop.contact_no or '' }}"
+                        data-whatsapp="{{ workshop.whatsapp_no or '' }}"
+                        data-cars="{{ 1 if workshop.serves_cars else 0 }}" data-two-wheelers="{{ 1 if workshop.serves_two_wheelers else 0 }}"
+                        data-lat="{{ workshop.latitude if workshop.latitude is not none else '' }}"
+                        data-lng="{{ workshop.longitude if workshop.longitude is not none else '' }}">
+                        <i class='bx bx-edit'></i> Edit Details
+                    </button>
+                    <button type="button" id="add-service-btn" class="mini-btn confirm" data-open-add-service>
+                        <i class='bx bx-plus'></i> Add Service
+                    </button>
+                </div>
+            </div>
+            {% if workshop.status != 'approved' %}
+            <div class="ow-moderation {{ 'is-pending' if workshop.status == 'pending' else 'is-rejected' }}">
+                {% if workshop.status == 'pending' %}
+                <i class='bx bx-hourglass'></i>
+                <span><strong>Pending approval.</strong> Customers and mechanics can't see your workshop yet — an admin is reviewing it. You'll get a notice in your inbox when it's decided.</span>
+                {% else %}
+                <i class='bx bx-error-circle'></i>
+                <span><strong>Rejected.</strong> {% if workshop.rejection_reason %}Reason: {{ workshop.rejection_reason }}.{% else %}No reason was given.{% endif %} Fix the details and save — that resubmits your workshop for approval.</span>
+                {# Appeal a rejected listing (Phase 6). The same button is on the rejection notice in the inbox.
+                   One appeal per rejection; an admin answers in your inbox. #}
+                <div class="ow-appeal-slot" id="workshopAppealSlot" data-appeal-kind="workshop_rejection" data-w-id="{{ workshop.w_id }}">
+                    {% if workshop_appeal_open %}
+                    <span class="ow-appeal-note"><i class='bx bx-time-five'></i> Your appeal is under review.</span>
+                    {% elif workshop_can_appeal %}
+                    <details class="px-cancel-request">
+                        <summary class="px-ghost sm"><i class='bx bx-revision'></i> Appeal this decision</summary>
+                        <form method="POST" action="{{ url_for('appeals.listing_appeal') }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="w_id" value="{{ workshop.w_id }}">
+                            <label>Why should the decision be reconsidered?
+                                <textarea name="message" rows="4" minlength="10" maxlength="1000" required></textarea>
+                            </label>
+                            <small>You can appeal once for each rejection. An admin will answer in your inbox.</small>
+                            <button type="submit" class="px-ghost sm">Send appeal</button>
+                        </form>
+                    </details>
+                    {% else %}
+                    <span class="ow-appeal-note">You have already appealed this decision.</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </article>
+        <!-- KPI Stats Cards -->
+        <div class="owner-stats-container">
+            <div class="owner-stat-card" data-bk-filter="all" role="button" tabindex="0" title="Show all bookings">
+                <div class="owner-stat-icon">
+                    <i class='bx bx-calendar-event'></i>
+                </div>
+                <div class="owner-stat-info">
+                    <span>Total Bookings</span>
+                    <strong>{{ stats.total_bookings }}</strong>
+                </div>
+            </div>
+            <div class="owner-stat-card accent" data-bk-filter="pending" role="button" tabindex="0" title="Show bookings waiting for you">
+                <div class="owner-stat-icon">
+                    <i class='bx bx-time-five'></i>
+                </div>
+                <div class="owner-stat-info">
+                    <span>Pending Bookings</span>
+                    <strong>{{ stats.pending_bookings }}</strong>
+                </div>
+            </div>
+            <div class="owner-stat-card">
+                <div class="owner-stat-icon">
+                    <i class='bx bx-wrench'></i>
+                </div>
+                <div class="owner-stat-info">
+                    <span>Active Services</span>
+                    <strong>{{ stats.total_services }}</strong>
+                </div>
+            </div>
+            <div class="owner-stat-card">
+                <div class="owner-stat-icon">
+                    <i class='bx bx-user-check'></i>
+                </div>
+                <div class="owner-stat-info">
+                    <span>Staff Capacity</span>
+                    <strong>{{ stats.total_mechanics }} / {{ stats.capacity }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Open / Closed Widget -->
+        <div class="capacity-bar-widget">
+            <div class="capacity-desc">
+                <i class='bx bx-store-alt' aria-hidden="true"></i>
+                <div>
+                    <h4>Workshop Status</h4>
+                    <p>Customers see whether your workshop is open or closed right now.</p>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('dashboard.update_open_status') }}" class="oc-toggle-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" name="is_open" value="1"
+                    class="oc-choice to-open {% if workshop.is_open %}is-current{% endif %}"
+                    {% if workshop.is_open %}aria-pressed="true"{% else %}aria-pressed="false"{% endif %}>Open</button>
+                <button type="submit" name="is_open" value="0"
+                    class="oc-choice to-closed {% if not workshop.is_open %}is-current{% endif %}"
+                    {% if not workshop.is_open %}aria-pressed="true"{% else %}aria-pressed="false"{% endif %}>Closed</button>
+            </form>
+        </div>
+
+        <!-- Opening Hours Widget -->
+        <div class="capacity-bar-widget">
+            <div class="capacity-desc">
+                <i class='bx bx-time-five' aria-hidden="true"></i>
+                <div>
+                    <h4>Opening Hours</h4>
+                    <p>One open / close window, applied every day. Leave both blank to follow the Open / Closed switch alone.</p>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('dashboard.update_workshop_hours') }}" class="oc-hours-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label class="oc-hours-field">
+                    <span class="oc-hours-day">Open</span>
+                    <input type="time" name="open_time" value="{{ hours_pair[0].strftime('%H:%M') if hours_pair and hours_pair[0] else '' }}" aria-label="Daily opening time">
+                </label>
+                <span class="oc-hours-sep" aria-hidden="true">–</span>
+                <label class="oc-hours-field">
+                    <span class="oc-hours-day">Close</span>
+                    <input type="time" name="close_time" value="{{ hours_pair[1].strftime('%H:%M') if hours_pair and hours_pair[1] else '' }}" aria-label="Daily closing time">
+                </label>
+                <button type="submit" class="mini-btn confirm oc-hours-save"><i class='bx bx-check'></i> Save hours</button>
+            </form>
+        </div>
+
+        <!-- Capacity Control Widget -->
+        <div class="capacity-bar-widget">
+            <div class="capacity-desc">
+                <i class='bx bx-slider-alt' aria-hidden="true"></i>
+                <div>
+                    <h4>Mechanic Capacity Limit</h4>
+                    <p>Set the maximum number of mechanics permitted to work in your workshop.</p>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('dashboard.update_capacity') }}" class="capacity-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="number-stepper">
+                    <button type="button" class="stepper-btn decrease"
+                        aria-label="Decrease mechanic capacity">−</button>
+                    <input type="number" name="capacity" id="capacity" min="{{ [stats.total_mechanics, 1] | max }}"
+                        max="100" step="1" value="{{ stats.capacity }}" aria-label="Maximum mechanic capacity" required>
+                    <button type="button" class="stepper-btn increase"
+                        aria-label="Increase mechanic capacity">+</button>
+                </div>
+
+                <button type="submit" class="mini-btn confirm">
+                    <i class='bx bx-save' aria-hidden="true"></i>
+                    <span>Update</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Delete Workshop Danger Zone -->
+        <section class="admin-section delete-workshop-section" aria-labelledby="deleteWorkshopHeading">
+            <div class="delete-workshop-copy">
+                <i class='bx bx-trash delete-workshop-icon' aria-hidden="true"></i>
+                <div>
+                    <h2 id="deleteWorkshopHeading">Delete Workshop</h2>
+                    <p>Permanently remove <strong>{{ workshop.name }}</strong>. This removes its bookings and services,
+                        clears its join requests, and unassigns its mechanics. This action cannot be undone.</p>
+                </div>
+            </div>
+            <button type="button" class="delete-workshop-btn" data-open-delete-workshop>
+                <i class='bx bx-trash' aria-hidden="true"></i> Delete Workshop
+            </button>
+        </section>
+
+        <!-- Bookings Section -->
+        <section class="admin-section" id="bookings">
+            <div class="section-header-row">
+                <h2><i class='bx bx-calendar-check'></i> Bookings <span class="neo-h">{{ neo_ico('happy', 50, 'lime', wander=False) }}</span></h2>
+                {% if booking_summary and bookings %}
+                <div class="bk-summary">
+                    <div class="bk-sum"><b>{{ booking_summary.collected_month }}</b>Collected this month</div>
+                    <div class="bk-sum" title="Bills you set, or an estimate from your listed price">
+                        <b>{{ booking_summary.awaiting }}</b>Awaiting payment ({{ booking_summary.awaiting_count }})
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% if bookings %}
+            {% set bc = booking_summary.counts %}
+            <div class="bk-toolbar" id="bkToolbar">
+                <div class="bk-chips" role="tablist" aria-label="Filter bookings">
+                    <button type="button" class="bk-chip active" data-bk-chip="active">Active <span class="n" data-n="active">{{ bc.active }}</span></button>
+                    <button type="button" class="bk-chip attn" data-bk-chip="pending">Needs action <span class="n" data-n="pending">{{ bc.pending }}</span></button>
+                    <button type="button" class="bk-chip" data-bk-chip="unpaid">Unpaid <span class="n" data-n="unpaid">{{ bc.unpaid }}</span></button>
+                    <button type="button" class="bk-chip" data-bk-chip="paid">Paid <span class="n" data-n="paid">{{ bc.paid }}</span></button>
+                    <button type="button" class="bk-chip" data-bk-chip="history">History <span class="n" data-n="history">{{ bc.history }}</span></button>
+                    <button type="button" class="bk-chip" data-bk-chip="all">All <span class="n" data-n="all">{{ bc.all }}</span></button>
+                </div>
+                <div class="bk-controls">
+                    <label class="bk-search">
+                        <i class='bx bx-search'></i>
+                        <input type="search" id="bkSearch" placeholder="Search customer, service or mechanic"
+                            aria-label="Search bookings" autocomplete="off">
+                    </label>
+                    <select id="bkPeriod" class="assign-select" aria-label="Appointment date">
+                        <option value="any">Any date</option>
+                        <option value="today">Today</option>
+                        <option value="week">This week</option>
+                        <option value="month">This month</option>
+                    </select>
+                    <select id="bkSort" class="assign-select" aria-label="Sort bookings">
+                        <option value="soonest">Soonest first</option>
+                        <option value="latest">Latest first</option>
+                        <option value="customer">Customer A&ndash;Z</option>
+                    </select>
+                    <button type="button" class="bk-reset" id="bkReset" hidden>Clear filters</button>
+                </div>
+            </div>
+            <div class="admin-table-wrapper" id="bkTableWrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Customer</th>
+                            <th>Service</th>
+                            <th>Requested Time</th>
+                            <th>Status</th>
+                            <th>Assigned Mechanic</th>
+                            <th>Payment</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in bookings %}
+                        <tr class="bk-row{% if b.needs_action %} bk-row-pending{% endif %}" data-live-key="bk{{ b.b_id }}"
+                            data-status="{{ b.status }}" data-attn="{{ 1 if b.needs_action else 0 }}" data-paid="{{ 1 if b.is_paid else 0 }}"
+                            data-unpaid="{{ 1 if b.is_unpaid else 0 }}" data-periods="{{ b.periods }}"
+                            data-ts="{{ b.ts }}" data-customer="{{ b.customer_name | lower }}"
+                            data-search="{{ (b.customer_name ~ ' ' ~ b.s_name ~ ' ' ~ (b.mechanic_name or '') ~ ' #' ~ b.b_id) | lower }}">
+                            <td class="bk-id">#{{ b.b_id }}</td>
+                            <td><strong>{{ b.customer_name }}</strong></td>
+                            <td>{{ b.s_name }}{% if b.vehicle_description %}<br><small class="gwv-veh">{{ VEHICLE_SINGULAR[b.vehicle_type] }}: {{ b.vehicle_description }}</small>{% endif %}</td>
+                            <td>{{ b.requested_time.strftime('%d %b %Y, %I:%M %p') }}{% if b.is_today %}<span class="bk-today">Today</span>{% endif %}</td>
+                            <td><span class="status-badge status-{{ b.status }}">{{ b.status_label }}</span>
+                                {% if b.cancel_requested %}<br><span class="status-badge status-pending" title="{{ b.cancel_request_reason or '' }}">Cancellation requested</span>{% elif b.cancel_request_status == 'declined' and b.status in ('confirmed', 'in_progress') %}<br><small class="pay-sub">Cancellation request declined</small>{% endif %}
+                                {% if b.status == 'pending' and b.hours_left is not none %}<br><small class="pay-sub">{{ b.hours_left }}h left to answer</small>{% endif %}
+                                {% if b.status == 'cancelled' and b.cancelled_by %}<br><small class="pay-sub">{{ {'customer': 'By customer', 'owner': 'By workshop', 'system': 'No answer in 48h'}[b.cancelled_by] }}</small>{% endif %}</td>
+                            <td>
+                                {% if b.status in ('confirmed', 'in_progress') %}
+                                {% if mechanics %}
+                                <form method="POST"
+                                    action="{{ url_for('dashboard.assign_booking', booking_id=b.b_id) }}"
+                                    class="inline-form assign-form">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <select name="m_id" class="assign-select" aria-label="Assign mechanic">
+                                        <option value="" {% if not b.assigned_m_id %}selected{% endif %}>Unassigned</option>
+                                        {% for m in mechanics %}
+                                        <option value="{{ m.m_id }}" {% if b.assigned_m_id == m.m_id %}selected{% endif %}>
+                                            {{ m.name }}{% if m.leave_pending %} (leaving){% endif %}{% if m.active_stat == 'inactive' %} (inactive){% endif %}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="submit" class="mini-btn confirm">Save</button>
+                                </form>
+                                {% else %}
+                                <span style="color: var(--text-muted); font-size: 13px;">No mechanics in your workshop yet</span>
+                                {% endif %}
+                                {% elif b.status == 'completed' and b.mechanic_name %}
+                                <strong>{{ b.mechanic_name }}</strong>
+                                {% else %}
+                                <span style="color: var(--text-muted); font-size: 13px;">&mdash;</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if b.is_paid %}
+                                <span class="status-badge status-completed">Paid {{ b.paid_label }}</span>
+                                <small class="pay-sub">{{ b.paid_detail }}</small>
+                                {% elif b.status in ('confirmed', 'in_progress', 'completed') %}
+                                <form method="POST" action="{{ url_for('bookings.set_bill', b_id=b.b_id) }}"
+                                    class="inline-form assign-form">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="number" name="amount" class="assign-select bill-input" min="1" max="1000000"
+                                        step="0.01" inputmode="decimal" value="{{ b.bill_value }}"
+                                        placeholder="{{ b.due_label or 'Bill ₹' }}" aria-label="Bill amount in rupees">
+                                    <button type="submit" class="mini-btn confirm">Save</button>
+                                </form>
+                                <small class="pay-sub">
+                                    {% if b.due_label %}Customer pays {{ b.due_label }}{% if b.due_is_estimate %} (estimate){% endif %}
+                                    {% else %}Set a bill so the customer can pay{% endif %}
+                                </small>
+                                {% else %}
+                                <span style="color: var(--text-muted); font-size: 13px;">&mdash;</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if b.status == 'pending' %}
+                                <form method="POST"
+                                    action="{{ url_for('dashboard.update_booking_status', booking_id=b.b_id, action='confirm') }}"
+                                    class="inline-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="mini-btn confirm"><i class='bx bx-check'></i>
+                                        Accept</button>
+                                </form>
+                                <form method="POST"
+                                    action="{{ url_for('dashboard.update_booking_status', booking_id=b.b_id, action='decline') }}"
+                                    class="inline-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="mini-btn cancel"><i class='bx bx-x'></i>
+                                        Decline</button>
+                                </form>
+                                {% elif b.cancel_requested %}
+                                <form method="POST"
+                                    action="{{ url_for('dashboard.review_cancellation', booking_id=b.b_id, decision='approve') }}"
+                                    class="inline-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="mini-btn cancel"><i class='bx bx-check'></i>
+                                        Approve cancellation</button>
+                                </form>
+                                <form method="POST"
+                                    action="{{ url_for('dashboard.review_cancellation', booking_id=b.b_id, decision='decline') }}"
+                                    class="inline-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="mini-btn confirm"><i class='bx bx-x'></i>
+                                        Keep booking</button>
+                                </form>
+                                {% elif b.status == 'confirmed' %}
+                                <form method="POST"
+                                    action="{{ url_for('dashboard.update_booking_status', booking_id=b.b_id, action='start') }}"
+                                    class="inline-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="mini-btn confirm"><i class='bx bx-play'></i>
+                                        Start work</button>
+                                </form>
+                                <form method="POST"
+                                    action="{{ url_for('dashboard.update_booking_status', booking_id=b.b_id, action='cancel') }}"
+                                    class="inline-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="mini-btn cancel"><i class='bx bx-x'></i>
+                                        Cancel</button>
+                                </form>
+                                {% elif b.status == 'in_progress' %}
+                                <form method="POST"
+                                    action="{{ url_for('dashboard.update_booking_status', booking_id=b.b_id, action='complete') }}"
+                                    class="inline-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="mini-btn confirm"><i class='bx bx-check-double'></i>
+                                        Mark Complete</button>
+                                </form>
+                                {% else %}
+                                <span style="color: var(--text-muted); font-size: 13px;">None</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="bk-empty" id="bkEmpty" hidden>
+                {{ neo_ico('neutral', 76, 'amber') }}
+                <b id="bkEmptyTitle">Nothing here</b>
+                <span id="bkEmptyText">No bookings match these filters.</span>
+            </div>
+            <div class="bk-foot" id="bkFoot">
+                <span id="bkCount"></span>
+                <button type="button" class="mini-btn neutral" id="bkMore" hidden>Show more</button>
+            </div>
+            {% else %}
+            <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'lime') }}No bookings received yet.</p>
+            {% endif %}
+        </section>
+        <!-- Analytics Section (Phase 7) -->
+        {% include 'dashboard/_analytics.html' %}
+        <!-- Services Section -->
+        <section class="admin-section" id="services">
+            <div class="section-header-row">
+                <h2><i class='bx bx-wrench'></i> Services Offered <span class="neo-h">{{ neo_ico('neutral', 50, 'amber') }}</span></h2>
+                <button type="button" class="mini-btn confirm" data-open-add-service>
+                    <i class='bx bx-plus'></i> New Service
+                </button>
+            </div>
+            {% if services %}
+            <div class="admin-table-wrapper">
+                <table class="admin-table" data-more="8">
+                    <thead>
+                        <tr>
+                            <th>S.No</th>
+                            <th>Service</th>
+                            <th>Price Range</th>
+                            <th>Estimated Duration</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in services %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td><strong>{{ s.s_name }}</strong>{% if workshop.serves_cars and workshop.serves_two_wheelers %} <span class="gwv-badge">{{ VEHICLE_SINGULAR[s.vehicle_type] }}</span>{% endif %}</td>
+                            <td>{{ s.price_range or '—' }}</td>
+                            <td>{{ s.duration or '—' }}</td>
+                            <td>
+                                <button type="button" class="mini-btn neutral"
+                                    data-edit-url="{{ url_for('dashboard.edit_service', s_id=s.s_id) }}"
+                                    data-name="{{ s.s_name }}" data-price="{{ s.price_range or '' }}"
+                                    data-duration="{{ s.duration or '' }}">
+                                    <i class='bx bx-edit'></i> Edit
+                                </button>
+                                {% if s.booking_count %}
+                                <button type="button" class="mini-btn cancel" disabled
+                                    title="This service has bookings, so it can't be removed">
+                                    <i class='bx bx-trash'></i> Remove
+                                </button>
+                                {% else %}
+                                <button type="button" class="mini-btn cancel"
+                                    data-remove-url="{{ url_for('dashboard.remove_service', s_id=s.s_id) }}"
+                                    data-name="{{ s.s_name }}">
+                                    <i class='bx bx-trash'></i> Remove
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'lime') }}No services added to your workshop yet.</p>
+            {% endif %}
+        </section>
+        <section class="admin-section" id="mechanics">
+            <div class="section-header-row">
+                <h2><i class='bx bx-group'></i> Workshop Mechanics <span class="neo-h">{{ neo_ico('wave', 50, 'violet', wander=False) }}</span></h2>
+            </div>
+            {% if mechanics %}
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>S.No</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Experience</th>
+                            <th>Current Status</th>
+                            <th>Profile</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in mechanics %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td><a class="person-link" href="{{ url_for('dashboard.mechanic_profile', token=m.u_id | utoken) }}"
+                                    title="View {{ m.name }}'s profile"><strong>{{ m.name }}</strong></a></td>
+                            <td>{{ m.email }}</td>
+                            <td>{{ m.experience_yrs or '—' }} yrs</td>
+                            <td>
+                                <span
+                                    class="status-badge {% if m.active_stat == 'active' %}status-confirmed{% else %}status-pending{% endif %}">
+                                    {% if m.active_stat == 'active' %}Active for work now{% else %}Absent / inactive{% endif %}
+                                </span>
+                                {% if m.leave_pending %}<span class="status-badge status-cancelled">Leave
+                                    requested</span>{% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('dashboard.mechanic_profile', token=m.u_id | utoken) }}"
+                                    class="mini-btn neutral"><i class='bx bx-user'></i> View</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'lime') }}No mechanics are currently assigned to this workshop.</p>
+            {% endif %}
+        </section>
+        {% endif %}
+    </main>
+</div>
+<!-- Modal: Add Service -->
+<div class="login-modal" id="addServiceModal">
+    <form method="POST" action="{{ url_for('dashboard.add_service') }}" class="login-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <h2>Add a Service</h2>
+        {# services this workshop already offers are listed separately and can't be picked again #}
+        {% set added_ids = services | map(attribute='sc_id') | list %}
+        {% set available = service_catalog | rejectattr('sc_id', 'in', added_ids) | list %}
+        {% set already = service_catalog | selectattr('sc_id', 'in', added_ids) | list %}
+        <div class="gwv-toggles" role="group" aria-label="Filter services by vehicle type">
+            <button type="button" class="gwv-toggle {{ 'on' if workshop and workshop.serves_cars and not workshop.serves_two_wheelers }}" data-vtype="{{ VEHICLE_SINGULAR['car'] }} services" {% if workshop and not workshop.serves_cars %}disabled{% endif %} aria-pressed="{{ 'true' if workshop and workshop.serves_cars and not workshop.serves_two_wheelers else 'false' }}">
+                <i class='bx bx-car'></i> {{ VEHICLE_PLURAL['car'] }}
+            </button>
+            <button type="button" class="gwv-toggle {{ 'on' if workshop and workshop.serves_two_wheelers and not workshop.serves_cars }}" data-vtype="{{ VEHICLE_SINGULAR['two_wheeler'] }} services" {% if workshop and not workshop.serves_two_wheelers %}disabled{% endif %} aria-pressed="{{ 'true' if workshop and workshop.serves_two_wheelers and not workshop.serves_cars else 'false' }}">
+                <i class='bx bx-cycle'></i> {{ VEHICLE_PLURAL['two_wheeler'] }}
+            </button>
+        </div>
+        <select name="sc_id" required>
+            <option value="" disabled selected>{{ 'Select a service' if available else "You've added every service" }}</option>
+            {% set both_types = workshop and workshop.serves_cars and workshop.serves_two_wheelers %}
+            {% for c in available | sort(attribute='vehicle_type') %}
+            <option value="{{ c.sc_id }}" data-label="{{ c.s_name }}"{% if both_types %} data-group="{{ VEHICLE_SINGULAR[c.vehicle_type] }} services"{% endif %}>{{ c.s_name }}</option>
+            {% endfor %}
+            {% if already %}
+            <optgroup label="Already added">
+                {% for c in already %}
+                <option value="{{ c.sc_id }}" data-label="{{ c.s_name }}" disabled>&#10003; {{ c.s_name }} &mdash; already added</option>
+                {% endfor %}
+            </optgroup>
+            {% endif %}
+        </select>
+        <input type="text" name="price_range" placeholder="Price Range (e.g. ₹500–800)" maxlength="50">
+        <input type="text" name="duration" placeholder="Duration (e.g. 1–2 hours)" maxlength="50">
+        <button type="submit" class="fw-btn-con" {% if not available %}disabled style="opacity:.5;cursor:not-allowed"{% endif %}><span class="fw-btn">Add Service</span></button>
+    </form>
+</div>
+<!-- Modal: Edit Service -->
+<div class="login-modal" id="editServiceModal">
+    <form method="POST" action="" class="login-form" id="editServiceForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <h2>Edit <span id="editServiceName">Service</span></h2>
+        <input type="text" name="price_range" id="editServicePrice" maxlength="50"
+            placeholder="Price Range (e.g. ₹500–800)">
+        <input type="text" name="duration" id="editServiceDuration" maxlength="50"
+            placeholder="Duration (e.g. 1–2 hours)">
+        <button type="submit" class="fw-btn-con"><span class="fw-btn">Save Changes</span></button>
+    </form>
+</div>
+<!-- NEO's coach for the create-workshop pop-up and the "add a service" card that follows (js/neo-coach.js) -->
+<div id="neoCoachCfg" data-has-workshop="{{ 'true' if workshop else 'false' }}" hidden></div>
+{% if not workshop %}
+<template id="neoCoachTpl">
+    <div class="nc-coach" aria-live="polite">
+        <div class="nc-bot" aria-hidden="true">{{ robot('wave', 64, follow=False, label='NEO') }}</div>
+        <div class="nc-bubble">
+            <h3 class="nc-title" data-nc-title></h3>
+            <p class="nc-text" data-nc-text></p>
+            <div class="nc-foot">
+                <div class="nc-bar" aria-hidden="true"><span data-nc-fill></span></div>
+                <span class="nc-count" data-nc-count></span>
+                <button type="button" class="nc-hide" data-nc-hide>Hide tips</button>
+            </div>
+        </div>
+    </div>
+</template>
+{% else %}
+<template id="neoNextTpl">
+    <div class="nc-next" role="dialog" aria-live="polite" aria-labelledby="ncNextTitle">
+        <div class="nc-bot" aria-hidden="true">{{ robot('excited', 84, follow=False, label='NEO') }}</div>
+        <div class="nc-bubble">
+            <h3 class="nc-title" id="ncNextTitle">Your workshop is live!</h3>
+            <p class="nc-text">Next, add the services you offer, each with a price range and a duration. Customers search and book by these.</p>
+            <div class="nc-acts">
+                <button type="button" class="nc-btn ghost" data-nc-later>Later</button>
+                <button type="button" class="nc-btn" data-nc-go>Add a service</button>
+            </div>
+        </div>
+    </div>
+</template>
+{% endif %}
+<!-- Modal: Create Workshop -->
+<div class="fw-modal" id="createWorkshopModal" role="dialog" aria-modal="true" aria-labelledby="cwTitle">
+    <div class="fw-modal-panel">
+        <header class="fw-modal-header">
+            <div>
+                <h2 id="cwTitle">{{ 'Edit workshop details' if workshop else 'Set up your workshop' }}</h2>
+                <p>Tell customers who you are and where to find you.</p>
+            </div>
+            <button type="button" class="fw-modal-close" data-close aria-label="Close">&times;</button>
+        </header>
+
+        <form method="POST" action="{{ url_for('dashboard.create_workshop') }}" id="createWorkshopForm" data-mode="{{ 'edit' if workshop else 'create' }}" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" id="latitude" name="latitude">
+            <input type="hidden" id="longitude" name="longitude">
+
+            <div class="fw-modal-body">
+                <div class="fw-field">
+                    <label for="cwName">Workshop name <span class="fw-req">*</span></label>
+                    <input type="text" id="cwName" name="name" maxlength="150" autocomplete="organization"
+                        placeholder="e.g. Speedy Auto Care" aria-describedby="cwNameError">
+                    <p class="fw-error" id="cwNameError" hidden></p>
+                </div>
+
+                <div class="fw-field">
+                    <label for="cwAddress">Address <span class="fw-req">*</span></label>
+                    <input type="text" id="cwAddress" name="address" maxlength="300" autocomplete="street-address"
+                        placeholder="Street, area, city" aria-describedby="cwAddressError">
+                    <p class="fw-error" id="cwAddressError" hidden></p>
+                </div>
+
+                <div class="fw-field">
+                    <label for="cwContact">Contact number <span class="fw-opt">(optional)</span></label>
+                    <input type="tel" id="cwContact" name="contact_no" maxlength="20" inputmode="tel"
+                        autocomplete="tel" placeholder="e.g. +91 98765 43210" aria-describedby="cwContactError">
+                    <p class="fw-error" id="cwContactError" hidden></p>
+                </div>
+
+                <div class="fw-field">
+                    <label for="cwWhatsapp">WhatsApp number <span class="fw-opt">(optional)</span></label>
+                    <input type="tel" id="cwWhatsapp" name="whatsapp_no" maxlength="20" inputmode="tel"
+                        placeholder="e.g. +91 98765 43210" aria-describedby="cwWhatsappHint">
+                    <p class="fw-hint" id="cwWhatsappHint">Shown on your workshop page so customers can call or WhatsApp you — visitors see these numbers too.</p>
+                </div>
+
+                <div class="fw-field">
+                    <label id="cwVehiclesLabel">Vehicles you serve <span class="fw-req">*</span></label>
+                    <div class="gwv-checks" role="group" aria-labelledby="cwVehiclesLabel" aria-describedby="cwVehiclesError">
+                        <label class="gwv-check"><input type="checkbox" id="cwServesCars" name="serves_cars" value="1"> Four-wheelers</label>
+                        <label class="gwv-check"><input type="checkbox" id="cwServesTwoWheelers" name="serves_two_wheelers" value="1"> Two-wheelers</label>
+                    </div>
+                    <p class="fw-hint" style="margin:6px 0 0;opacity:.75;">Tick both if you work on four-wheelers and two-wheelers. You can only offer services from the matching catalogs.</p>
+                    <p class="fw-error" id="cwVehiclesError" hidden></p>
+                </div>
+
+                <div class="fw-field">
+                    <div class="fw-label-row">
+                        <label id="cwMapLabel">Location on map <span class="fw-req">*</span></label>
+                        <button type="button" class="fw-link-btn" id="cwUseLocation">
+                            <i class='bx bx-current-location'></i> Use my location
+                        </button>
+                    </div>
+                    <p class="fw-hint">Click the map or drag the pin. Customers find you through this location.</p>
+                    <div class="pin-map-wrapper" id="cwMapWrap">
+                        <div id="workshop-pin-map" aria-labelledby="cwMapLabel"></div>
+                    </div>
+                    <p class="fw-status" id="location-status" data-state="empty" role="status">
+                        No location set yet. Click the map to drop a pin.</p>
+                    <p class="fw-error" id="cwLocationError" hidden></p>
+                </div>
+            </div>
+
+            {% if not workshop and not owner_agreement_ok %}
+            <label class="ow-agreement">
+                <input type="checkbox" name="accept_owner_agreement" required>
+                <span>I have read and agree to the <a href="{{ url_for('legal.owner_agreement') }}" target="_blank" rel="noopener">Workshop Owner Agreement</a> (see also the <a href="{{ url_for('legal.terms') }}" target="_blank" rel="noopener">Terms</a> and <a href="{{ url_for('legal.privacy') }}" target="_blank" rel="noopener">Privacy Policy</a>).</span>
+            </label>
+            {% endif %}
+
+            <footer class="fw-modal-footer">
+                <button type="button" class="fw-btn-ghost" data-close>Cancel</button>
+                <button type="submit" class="fw-btn-primary" id="cwSubmit">{{ 'Save changes' if workshop else 'Create workshop' }}</button>
+            </footer>
+        </form>
+    </div>
+</div>
+<!-- Confirm: remove service -->
+<div class="confirm-dialog" id="confirmDialog" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="confirm-box">
+        <i class='bx bx-error-circle confirm-icon'></i>
+        <h3 id="confirmTitle">Remove this service?</h3>
+        <p>Are you sure you want to remove <strong id="confirmName"></strong> from your workshop?
+            Customers will no longer be able to book it.</p>
+        <form method="POST" id="confirmForm" class="confirm-actions">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="mini-btn cancel">Yes, remove</button>
+            <button type="button" class="mini-btn neutral" data-cancel>Cancel</button>
+        </form>
+    </div>
+</div>
+
+{% if workshop %}
+<!-- Confirm: delete workshop -->
+<div class="confirm-dialog delete-workshop-dialog" id="deleteWorkshopDialog" role="dialog" aria-modal="true"
+    aria-labelledby="deleteWorkshopTitle" aria-describedby="deleteWorkshopDescription">
+    <div class="confirm-box">
+        <i class='bx bx-error-circle confirm-icon' aria-hidden="true"></i>
+        <h3 id="deleteWorkshopTitle">Delete {{ workshop.name }}?</h3>
+        <p id="deleteWorkshopDescription">Are you sure you want to permanently delete this workshop?</p>
+        <div class="delete-workshop-warning">
+            <strong>This will permanently remove:</strong><br>
+            Workshop services and bookings, join requests, and the workshop's saved details. Mechanics will be
+            unassigned from this workshop.
+        </div>
+        <form method="POST" action="{{ url_for('dashboard.delete_workshop') }}" class="confirm-actions">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="mini-btn cancel"><i class='bx bx-trash' aria-hidden="true"></i> Yes, delete
+                workshop</button>
+            <button type="button" class="mini-btn neutral" data-cancel-delete-workshop>Keep Workshop</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{# generic confirmation modal (driven by admin.js .js-confirm) #}
+<div class="delete-con" id="confirmCon" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <h2 id="confirmTitle">Are you sure?</h2>
+    <p id="confirmMsg"></p>
+    <div class="delete-actions">
+        <form id="confirmForm" method="post" action="">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button id="confirmBtn" type="submit" class="sure-btn danger">Yes, continue</button>
+        </form>
+        <button type="button" id="cancelConfirm" class="sure-btn cancel">Cancel</button>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/owner-bookings.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/workshop.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/neo-coach.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/customer-home.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/admin.js', v='3') }}" defer></script>
+<script src="{{ url_for('static', filename='js/pages/owner_service_popups.js', v='1') }}"></script>
+{% endblock %}

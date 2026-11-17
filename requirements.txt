@@ -1,0 +1,26 @@
+blinker==1.9.0
+cryptography>=43.0.0
+click==8.4.2
+colorama==0.4.6
+Deprecated==3.0.0
+Flask==3.1.3
+Flask-Limiter==4.1.1
+Flask-WTF==1.3.0
+gunicorn==23.0.0
+itsdangerous==2.2.0
+Jinja2==3.1.6
+limits==5.8.0
+MarkupSafe==3.0.3
+ordered-set==4.1.0
+packaging==26.3
+psycopg2-binary==2.9.12
+python-dotenv==1.2.3
+typing_extensions==4.16.0
+Werkzeug==3.1.8
+wrapt==2.5.1
+WTForms==3.2.2
+
+# Development tools (formerly requirements-dev.txt)
+pytest==9.2.0
+ruff==0.17.3
+pillow==13.0.0

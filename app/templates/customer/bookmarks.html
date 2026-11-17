@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Saved Workshops — Getwheelz{% endblock %}
+
+{% block head %}
+{% include 'partials/px_head.html' %}
+{% endblock %}
+
+{% block content %}
+{% from 'partials/robot.html' import neo_ico %}
+{% from 'partials/vehicle_icon.html' import vehicle_icon %}
+<div class="px px-customer-page px-wp index-con" id="mainCon">
+    <section class="px-section" style="padding-top: 40px; padding-bottom: 80px;">
+        <div class="px-wrap">
+
+            <div class="px-section-head">
+                <div>
+                    <span class="px-eyebrow"><i class='bx bxs-bookmark'></i> Saved</span>
+                    <h1 class="px-title">
+                        <span class="px-title-line">Your saved <span class="px-ghellis-tail">workshops.</span></span>
+                    </h1>
+                    <p class="px-lead">The workshops you've bookmarked for later — tap one to view or book a service.</p>
+                </div>
+                {% if saved %}
+                <span class="px-count" id="bmCount">{{ saved | length }}</span>
+                {% endif %}
+            </div>
+
+            {% if saved %}
+            <div class="px-saved-grid" id="bmGrid" style="margin-top: 26px;">
+                {% for w in saved %}
+                <a href="{{ url_for('workshops.selected', w_id=w.w_id) }}" class="px-card px-lift px-wcard"
+                    data-saved-card data-w-id="{{ w.w_id }}">
+                    <div class="px-wcard-img">
+                        {% if w.photo_path %}
+                        <img src="{{ url_for('static', filename=w.photo_path) }}" alt="{{ w.name }}" loading="lazy">
+                        {% else %}
+                        <div class="px-ph"><i class='bx bx-store'></i></div>
+                        {% endif %}
+                        <span class="px-bm on" role="button" tabindex="0"
+                            aria-label="Remove from saved workshops" aria-pressed="true"
+                            data-bm data-w-id="{{ w.w_id }}">
+                            <i class="bx bxs-bookmark"></i><span class="bm-label">Saved</span>
+                        </span>
+                    </div>
+                    <div class="px-wcard-body">
+                        <h3>{{ w.name }}</h3>
+                        <p class="px-addr"><i class='bx bx-map'></i><span>{{ w.address or 'Address not listed' }}</span></p>
+                        {% set bm_served_types = [] %}
+                        {% if w.serves_cars %}{% set _ = bm_served_types.append('car') %}{% endif %}
+                        {% if w.serves_two_wheelers %}{% set _ = bm_served_types.append('two_wheeler') %}{% endif %}
+                        {% if bm_served_types %}
+                        <div class="px-tags" style="margin-bottom: 6px;">
+                            {% for t in bm_served_types %}<span class="gwv-badge" style="font-size: 11px; padding: 2px 8px;">{{ vehicle_icon(t, 12) }} {{ VEHICLE_PLURAL[t] }}</span>{% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if w.service_names %}
+                        <div class="px-tags">
+                            {% for s in w.service_names[:3] %}<span class="px-tag">{{ s }}</span>{% endfor %}
+                            {% if w.service_names | length > 3 %}<span class="px-tag">+{{ w.service_names | length - 3 }} more&hellip;</span>{% endif %}
+                        </div>
+                        {% endif %}
+                        <div class="px-wcard-foot">Open workshop <i class='bx bx-right-arrow-alt'></i></div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="px-card px-empty" id="bmEmpty" style="margin-top: 26px;">
+                {{ neo_ico('neutral', 110, 'lime') }}
+                <h3>No saved workshops yet</h3>
+                <p>Bookmark a workshop from the search results or any workshop page and it will show up here.</p>
+                <a class="px-btn" href="{{ url_for('workshops.search') }}">Find workshops</a>
+            </div>
+            {% endif %}
+
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    {# bookmark feature: only customers get the controls; seed the saved-workshop id set #}
+    window.GW_CUSTOMER = {{ 'true' if session.get('role') == 'customer' else 'false' }};
+    window.GW_BOOKMARKS = {{ bookmarked_ids | default([]) | tojson }};
+    window.GW_CSRF = {{ csrf_token() | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/bookmarks.js', v='1') }}" defer></script>
+<script>
+    {# when a card is unsaved and collapses, update the count and reveal the empty state #}
+    (() => {
+        const grid = document.getElementById('bmGrid');
+        const empty = document.getElementById('bmEmpty');
+        const count = document.getElementById('bmCount');
+        if (!grid) return;
+        const refresh = () => {
+            const n = grid.querySelectorAll('[data-saved-card]').length;
+            if (empty) empty.hidden = n > 0;
+            if (count) count.textContent = String(n);
+        };
+        new MutationObserver(refresh).observe(grid, { childList: true });
+        refresh();
+    })();
+</script>
+<script src="{{ url_for('static', filename='js/premium-scroll.js', v='puzzle-4') }}" defer></script>
+{% endblock %}

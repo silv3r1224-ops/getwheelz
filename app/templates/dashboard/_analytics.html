@@ -1,0 +1,138 @@
+{# Owner analytics (spec section 10). Needs `analytics` (app/analytics.py build()), vehicle_labels and
+   range_options. Plain HTML/CSS bars and one inline SVG line: no scripts, no external services, and it
+   scales to any screen width. Every chart has a text alternative and a "show the numbers" table. #}
+{% macro an_link(vehicle, months, label, active, extra_cls='') %}
+<a class="an-chip {{ extra_cls }}{{ ' is-active' if active }}" href="{{ url_for('dashboard.owner', vehicle=vehicle, range=months) }}#analytics"{% if active %} aria-current="true"{% endif %}>{{ label }}</a>
+{% endmacro %}
+
+{% if analytics %}
+<section class="admin-section an-section" id="analytics" aria-labelledby="anHeading">
+    <div class="section-header-row">
+        <h2 id="anHeading"><i class='bx bx-line-chart'></i> Business analytics</h2>
+    </div>
+
+    <div class="an-filters">
+        {% if analytics.split_available %}
+        <div class="an-chips" role="group" aria-label="Vehicle type">
+            {% for key in ('all', 'car', 'two_wheeler') %}{{ an_link(key, analytics.months, vehicle_labels[key], analytics.vehicle == key) }}{% endfor %}
+        </div>
+        {% endif %}
+        <div class="an-chips" role="group" aria-label="Time range">
+            {% for m in range_options %}{{ an_link(analytics.vehicle, m, 'Last ' ~ m ~ ' months', analytics.months == m) }}{% endfor %}
+        </div>
+    </div>
+
+    {% if not analytics.has_data %}
+    <div class="an-empty">
+        <i class='bx bx-bar-chart-alt-2'></i>
+        <b>No analytics yet</b>
+        <span>{% if analytics.vehicle != 'all' %}No {{ vehicle_labels[analytics.vehicle] | lower }} bookings or reviews yet.{% else %}Once customers book and pay, your earnings, ratings, busiest days and top services show up here.{% endif %}</span>
+    </div>
+    {% else %}
+    {% set e = analytics.earnings %}
+    <div class="an-kpis">
+        <div class="an-kpi"><span>Total earned</span><b>{{ e.total | money }}</b><small>{{ e.count }} paid job{{ '' if e.count == 1 else 's' }}</small></div>
+        <div class="an-kpi"><span>This month</span><b>{{ e.this_month | money }}</b><small>Last month {{ e.last_month | money }}</small></div>
+        <div class="an-kpi"><span>Average per job</span><b>{{ e.average | money }}</b><small>completed &amp; paid</small></div>
+        <div class="an-kpi"><span>Awaiting payment</span><b>{{ e.awaiting | money }}</b><small>{{ e.awaiting_count }} completed job{{ '' if e.awaiting_count == 1 else 's' }}</small></div>
+    </div>
+
+    <div class="an-grid">
+        {# ------------------------------------------------------------- earnings #}
+        <div class="an-card">
+            <h3>Earnings by month</h3>
+            {% if e.count == 0 %}
+            <p class="an-none">No paid jobs yet. Money appears here once a customer pays for a completed job.</p>
+            {% else %}
+            <div class="an-bars" role="img" aria-label="Earnings per month: {% for m in e.months %}{{ m.label }} {{ m.amount | money }}{{ '; ' if not loop.last }}{% endfor %}">
+                {% for m in e.months %}
+                <div class="an-bar" title="{{ m.label }}: {{ m.amount | money }} from {{ m.count }} job{{ '' if m.count == 1 else 's' }}">
+                    <span class="an-bar-val">{{ m.amount | money if m.amount else '' }}</span>
+                    <span class="an-bar-track"><span class="an-bar-fill" style="height: {{ analytics.earn_bars[loop.index0] }}%"></span></span>
+                    <span class="an-bar-label">{{ m.label }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            <details class="an-table"><summary>Show the numbers</summary>
+                <div class="an-table-scroll"><table><thead><tr><th>Month</th><th>Jobs</th><th>Earned</th></tr></thead>
+                    <tbody>{% for m in e.months %}<tr><td>{{ m.label }}</td><td>{{ m.count }}</td><td>{{ m.amount | money }}</td></tr>{% endfor %}</tbody></table></div>
+            </details>
+            {% endif %}
+            <p class="an-note">Earnings are completed <em>and</em> paid bookings, counted in the month the customer paid.</p>
+        </div>
+
+        {# ------------------------------------------------------------- ratings #}
+        {% set rt = analytics.ratings %}
+        <div class="an-card">
+            <h3>Ratings over time</h3>
+            {% if rt.count == 0 %}
+            <p class="an-none">No reviews yet. Customers can review a workshop after a completed job.</p>
+            {% else %}
+            <p class="an-big"><b>{{ '%.1f' | format(rt.overall) }}</b> / 5 <small>from {{ rt.count }} review{{ '' if rt.count == 1 else 's' }}</small></p>
+            <svg class="an-line" viewBox="0 0 300 120" preserveAspectRatio="none" role="img"
+                 aria-label="Average rating per month: {% for m in rt.months %}{{ m.label }} {{ ('%.1f' | format(m.avg)) if m.avg is not none else 'no reviews' }}{{ '; ' if not loop.last }}{% endfor %}">
+                {% for y in (10, 35, 60, 85, 110) %}<line x1="0" x2="300" y1="{{ y }}" y2="{{ y }}" class="an-grid-line"/>{% endfor %}
+                {% for seg in analytics.rating_segments %}<polyline points="{{ seg }}" class="an-line-path" fill="none" vector-effect="non-scaling-stroke"/>{% endfor %}
+                {% for x, y in analytics.rating_dots %}<circle cx="{{ x }}" cy="{{ y }}" r="3.5" class="an-dot"/>{% endfor %}
+            </svg>
+            <div class="an-axis">{% for label in analytics.rating_labels %}<span>{{ label }}</span>{% endfor %}</div>
+            <div class="an-dist">
+                {% set top = rt.distribution.values() | max %}
+                {% for star in (5, 4, 3, 2, 1) %}
+                <div class="an-dist-row"><span>{{ star }}★</span><span class="an-bar-track h"><span class="an-bar-fill h" style="width: {{ (rt.distribution[star] / top * 100) if top else 0 }}%"></span></span><span>{{ rt.distribution[star] }}</span></div>
+                {% endfor %}
+            </div>
+            <details class="an-table"><summary>Show the numbers</summary>
+                <div class="an-table-scroll"><table><thead><tr><th>Month</th><th>Reviews</th><th>Average</th></tr></thead>
+                    <tbody>{% for m in rt.months %}<tr><td>{{ m.label }}</td><td>{{ m.count }}</td><td>{{ ('%.1f' | format(m.avg)) if m.avg is not none else '—' }}</td></tr>{% endfor %}</tbody></table></div>
+            </details>
+            {% endif %}
+        </div>
+
+        {# ------------------------------------------------------------- busiest days #}
+        {% set bd = analytics.busiest_days %}
+        <div class="an-card">
+            <h3>Busiest days</h3>
+            {% if bd.total == 0 %}
+            <p class="an-none">No bookings yet.</p>
+            {% else %}
+            <p class="an-big"><b>{{ bd.busiest | join(' &amp; ' | safe) }}</b> <small>{{ 'is' if bd.busiest | length == 1 else 'are' }} your busiest {{ 'day' if bd.busiest | length == 1 else 'days' }}</small></p>
+            <div class="an-hbars">
+                {% for d in bd.days %}
+                <div class="an-hrow"><span>{{ d.label }}</span><span class="an-bar-track h"><span class="an-bar-fill h" style="width: {{ analytics.day_bars[loop.index0] }}%"></span></span><span>{{ d.count }}</span></div>
+                {% endfor %}
+            </div>
+            <p class="an-note">Bookings by appointment weekday. Cancelled bookings are not counted.</p>
+            {% endif %}
+        </div>
+
+        {# ------------------------------------------------------------- top services #}
+        <div class="an-card">
+            <h3>Top services</h3>
+            {% if not analytics.top_services %}
+            <p class="an-none">No bookings yet.</p>
+            {% else %}
+            <ol class="an-top">
+                {% for s in analytics.top_services %}
+                <li><span class="an-top-name">{{ s.name }}</span><span class="an-top-count">{{ s.count }} booking{{ '' if s.count == 1 else 's' }}</span><span class="an-top-earned">{{ s.earned | money }}</span></li>
+                {% endfor %}
+            </ol>
+            <p class="an-note">Ranked by bookings (cancelled excluded); earned = completed and paid.</p>
+            {% endif %}
+        </div>
+
+        {# ------------------------------------------------------------- vehicle split #}
+        {% if analytics.split_available and analytics.vehicle == 'all' %}
+        <div class="an-card an-wide">
+            <h3>Four-wheelers vs two-wheelers</h3>
+            <div class="an-table-scroll"><table>
+                <thead><tr><th></th><th>Earned</th><th>Bookings</th><th>Reviews</th><th>Avg rating</th></tr></thead>
+                <tbody>{% for key in ('car', 'two_wheeler') %}{% set sp = analytics.split[key] %}
+                    <tr><th scope="row">{{ sp.label }}</th><td>{{ sp.earned | money }}</td><td>{{ sp.bookings }}</td><td>{{ sp.reviews }}</td><td>{{ ('%.1f' | format(sp.avg_rating)) if sp.avg_rating is not none else '—' }}</td></tr>{% endfor %}</tbody>
+            </table></div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</section>
+{% endif %}

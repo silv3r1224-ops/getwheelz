@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}About Us — Getwheelz{% endblock %}
+{% block page_description %}Getwheelz connects vehicle owners with verified local workshops — search by service, see real workshops near you, and book directly without the back-and-forth.{% endblock %}
+
+{% block head %}{% endblock %}
+
+{% block content %}
+{% from 'partials/robot.html' import robot %}
+<div class="index-con lp" id="mainCon">
+
+    {# ===================== HERO ===================== #}
+    <section class="lp-hero lp-atelier-hero">
+        <div class="lp-hero-kicker"><span>GETWHEELZ / 01</span><span>ABOUT THE PLATFORM</span></div>
+        <div class="lp-wrap lp-hero-grid">
+            <div>
+                <span class="lp-eyebrow"><i class='bx bx-info-circle'></i> About us</span>
+                <h1><span class="lp-title-line">About</span><span class="lp-title-line lp-title-accent">Getwheelz.</span></h1>
+                <p class="lp-lead">Connecting vehicle owners with trusted mechanics — search by the service you need, see real workshops near you, and book directly without the back-and-forth.</p>
+                <div class="lp-hero-note"><span class="lp-note-rule"></span><span>From day one, built for trust</span></div>
+
+                <div class="lp-chips">
+                    <span><i class='bx bx-search-alt'></i> Find workshops</span>
+                    <span><i class='bx bx-calendar-check'></i> Book online</span>
+                    <span><i class='bx bx-list-check'></i> Track your bookings</span>
+                </div>
+
+                <div class="lp-cta-row">
+                    <a class="lp-btn" href="#mission">Our mission <i class='bx bx-down-arrow-alt'></i></a>
+                    <a class="lp-ghost" href="{{ url_for('workshops.search') }}">See it in action</a>
+                </div>
+
+                <ul class="lp-trust">
+                    <li><i class='bx bx-search-alt'></i> Search without an account</li>
+                    <li><i class='bx bx-calendar-check'></i> Book in minutes</li>
+                    <li><i class='bx bx-group'></i> For drivers, owners &amp; mechanics</li>
+                </ul>
+            </div>
+
+            {# product preview (illustration + real numbers) #}
+            <div class="lp-stage" aria-hidden="true">
+                <div class="lp-robot">{{ robot('wave', 150, follow=False, roam=True) }}</div>
+
+                {% if stats %}
+                <div class="lp-card lp-card-main">
+                    <div class="lp-card-top">
+                        <div class="lp-card-icon"><i class='bx bx-flag'></i></div>
+                        <div>
+                            <strong>Getwheelz</strong>
+                            <small>at a glance</small>
+                        </div>
+                    </div>
+                    <div class="lp-rows">
+                        <div class="lp-row"><span>Workshops</span><b>{{ stats.workshops }}</b></div>
+                        <div class="lp-row"><span>Working mechanics</span><b>{{ stats.mechanics }}</b></div>
+                        <div class="lp-row"><span>Jobs completed</span><b>{{ stats.jobs }}</b></div>
+                    </div>
+                </div>
+                <span class="lp-preview-note">Live platform numbers</span>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    {# ===================== STATS (real numbers) ===================== #}
+    {% if stats %}
+    <section class="lp-stats reveal">
+        <div class="lp-wrap">
+            <div class="lp-stats-bar">
+                <div class="lp-stat"><strong data-count="{{ stats.workshops }}">{{ stats.workshops }}</strong><span>Workshops</span></div>
+                <div class="lp-stat"><strong data-count="{{ stats.mechanics }}">{{ stats.mechanics }}</strong><span>Working mechanics</span></div>
+                <div class="lp-stat"><strong data-count="{{ stats.services }}">{{ stats.services }}</strong><span>Services listed</span></div>
+                <div class="lp-stat"><strong data-count="{{ stats.jobs }}">{{ stats.jobs }}</strong><span>Jobs completed</span></div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    {# ===================== MISSION (scroll-scrubbed words) ===================== #}
+    <section class="lp-manifesto" id="mission" aria-label="Our mission">
+        <div class="lp-wrap">
+            <span class="lp-eyebrow"><i class='bx bx-flag'></i> Our mission</span>
+            <p class="fx-manifesto" data-scroll-words>Finding a reliable mechanic shouldn't mean asking around for recommendations or gambling on the nearest garage. Getwheelz keeps finding and booking a mechanic simple — search by the service you need, see real workshops near you, and book directly without the back-and-forth.</p>
+        </div>
+    </section>
+
+    {# ===================== WHAT WE OFFER ===================== #}
+    <section class="lp-services lp-motion-section reveal" id="what-we-offer" data-motion-scene="services">
+        <canvas class="lp-motion-canvas" aria-hidden="true"></canvas>
+        <div class="lp-wrap">
+            <div class="lp-section-head">
+                <span class="lp-eyebrow"><i class='bx bx-grid-alt'></i> What we offer</span>
+                <h2>One platform, four <span class="lp-ghellis-tail">ways to care.</span></h2>
+                <p>Tools for drivers, workshop owners and mechanics — everything in one calm place.</p>
+            </div>
+            <div class="lp-role-grid">
+                <article class="lp-role">
+                    <span class="ico"><i class='bx bx-search-alt'></i></span>
+                    <h3>Find workshops</h3>
+                    <p>Search by service type and location to discover mechanics near you.</p>
+                </article>
+                <article class="lp-role">
+                    <span class="ico"><i class='bx bx-calendar-check'></i></span>
+                    <h3>Book online</h3>
+                    <p>Send a booking request through the platform and follow its status — no phone calls needed.</p>
+                </article>
+                <article class="lp-role">
+                    <span class="ico"><i class='bx bx-wrench'></i></span>
+                    <h3>For workshop owners</h3>
+                    <p>List your services, show customers when you are open, and manage booking requests in one place.</p>
+                </article>
+                <article class="lp-role">
+                    <span class="ico"><i class='bx bx-group'></i></span>
+                    <h3>For mechanics</h3>
+                    <p>Join a workshop that fits your skills and let owners know when you are active for work.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    {# ===================== HOW IT WORKS ===================== #}
+    <section class="lp-how lp-motion-section reveal" id="how" data-motion-scene="how">
+        <canvas class="lp-motion-canvas" aria-hidden="true"></canvas>
+        <div class="lp-wrap">
+            <div class="lp-section-head">
+                <span class="lp-eyebrow"><i class='bx bx-route'></i> How it works</span>
+                <h2>Three steps to better <span class="lp-ghellis-tail">vehicle care.</span></h2>
+            </div>
+            <div class="lp-steps">
+                <div class="lp-step">
+                    <span class="lp-step-num">1</span>
+                    <h3>Search</h3>
+                    <p>Pick the service you need and see workshops near you on the map.</p>
+                </div>
+                <div class="lp-step">
+                    <span class="lp-step-num">2</span>
+                    <h3>Choose</h3>
+                    <p>Check which workshops are open right now and compare what they offer.</p>
+                </div>
+                <div class="lp-step">
+                    <span class="lp-step-num">3</span>
+                    <h3>Book</h3>
+                    <p>Send a request for a time that suits you and track it from My Bookings.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {# ===================== GET IN TOUCH / FINAL CTA ===================== #}
+    <section class="lp-final reveal">
+        <div class="lp-wrap">
+            <div class="lp-final-card">
+                <h2>Have a question? We'd love to <span class="lp-ghellis-tail">hear from you.</span></h2>
+                <p>Questions, feedback, or want to list your workshop? Reach out or create a free account to get started.</p>
+                <div class="lp-cta-row">
+                    <a class="lp-btn" href="{{ url_for('main.contact') }}">Contact us <i class='bx bx-right-arrow-alt'></i></a>
+                    {% if not session.get('user_id') %}
+                    <a class="lp-ghost" href="#" data-signup="signupBtn">Create your account</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+{# Auth pop-ups for signed-out visitors (header.js opens them by id; single source of truth: partials/px_auth_modals.html) #}
+{% include 'partials/px_auth_modals.html' %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/robot.js') }}"></script>
+<script src="{{ url_for('static', filename='js/premium-scroll.js', v='puzzle-4') }}" defer></script>
+<script src="{{ url_for('static', filename='js/motion-graphics.js', v='pixel-dissolve-12') }}" defer></script>
+<script src="{{ url_for('static', filename='js/scroll-fx.js', v='1') }}" defer></script>
+{% endblock %}

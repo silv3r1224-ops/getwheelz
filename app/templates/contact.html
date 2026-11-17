@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Us — Getwheelz{% endblock %}
+{% block page_description %}Get in touch with the Getwheelz team — questions, feedback, partnership inquiries, and booking help. We reply within 24 hours.{% endblock %}
+
+{% block head %}{% endblock %}
+
+{% block content %}
+{% from 'partials/robot.html' import robot %}
+<div class="index-con lp" id="mainCon">
+
+    {# ===================== HERO ===================== #}
+    <section class="lp-hero lp-atelier-hero">
+        <div class="lp-hero-kicker"><span>GETWHEELZ / 02</span><span>WE REPLY WITHIN 24H</span></div>
+        <div class="lp-wrap lp-hero-grid">
+            <div>
+                <span class="lp-eyebrow"><i class='bx bx-message-rounded-dots'></i> Contact</span>
+                <h1><span class="lp-title-line">Get</span><span class="lp-title-line lp-title-accent">in touch.</span></h1>
+                <p class="lp-lead">Questions, feedback, or partnership inquiries — we're listening.</p>
+                <div class="lp-hero-note"><span class="lp-note-rule"></span><span>Real people, real answers</span></div>
+
+                <div class="lp-chips">
+                    <span><i class='bx bx-help-circle'></i> Questions</span>
+                    <span><i class='bx bx-comment-detail'></i> Feedback</span>
+                    <span><i class='bx bx-group'></i> Partnerships</span>
+                </div>
+
+                <div class="lp-cta-row">
+                    <a class="lp-btn" href="#send-message">Send a message <i class='bx bx-down-arrow-alt'></i></a>
+                    <a class="lp-ghost" href="#faq">Quick answers</a>
+                </div>
+
+                <ul class="lp-trust">
+                    <li><i class='bx bx-envelope'></i> We answer within 24 hours</li>
+                    <li><i class='bx bx-user-check'></i> No bots, no runaround</li>
+                    <li><i class='bx bx-lock-alt'></i> Your details stay private</li>
+                </ul>
+            </div>
+
+            {# product preview (robot + direct contact card) #}
+            <div class="lp-stage" aria-hidden="true">
+                <div class="lp-robot">{{ robot('happy', 150, follow=False, roam=True) }}</div>
+
+                {% if contact_email %}
+                <div class="lp-card lp-card-main">
+                    <div class="lp-card-top">
+                        <div class="lp-card-icon"><i class='bx bx-envelope'></i></div>
+                        <div>
+                            <strong>Direct line</strong>
+                            <small>reach out anytime</small>
+                        </div>
+                    </div>
+                    <div class="lp-rows">
+                        <div class="lp-row"><span>Email</span><b><a href="mailto:{{ contact_email }}">{{ contact_email }}</a></b></div>
+                        {% if contact_phone %}
+                        <div class="lp-row"><span>Phone</span><b><a href="tel:{{ contact_phone|replace(' ', '') }}">{{ contact_phone }}</a></b></div>
+                        {% endif %}
+                        <div class="lp-row"><span>Location</span><b>{{ contact_location }}</b></div>
+                    </div>
+                </div>
+                <span class="lp-preview-note">Reach out directly</span>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    {# ===================== SEND A MESSAGE (info + form) ===================== #}
+    <section class="lp-services lp-motion-section reveal" id="send-message">
+        <canvas class="lp-motion-canvas" aria-hidden="true"></canvas>
+        <div class="lp-wrap">
+            <div class="lp-section-head">
+                <span class="lp-eyebrow"><i class='bx bx-message-rounded-dots'></i> Send a message</span>
+                <h2>Tell us <span class="lp-ghellis-tail">what's on your mind.</span></h2>
+                <p>Fill out the form below and we'll get back to you — usually within one working day.</p>
+            </div>
+
+            <div class="lp-contact-grid">
+                <div class="lp-contact-info">
+                    <h3>Contact information</h3>
+                    <p>Prefer writing directly? Use any of these.</p>
+                    <div class="lp-contact-list">
+                        <div class="lp-contact-item">
+                            <div class="lp-contact-icon"><i class='bx bx-envelope'></i></div>
+                            <div><strong>Email</strong><a href="mailto:{{ contact_email }}">{{ contact_email }}</a></div>
+                        </div>
+                        {% if contact_phone %}
+                        <div class="lp-contact-item">
+                            <div class="lp-contact-icon"><i class='bx bx-phone'></i></div>
+                            <div><strong>Phone</strong><a href="tel:{{ contact_phone|replace(' ', '') }}">{{ contact_phone }}</a></div>
+                        </div>
+                        {% endif %}
+                        <div class="lp-contact-item">
+                            <div class="lp-contact-icon"><i class='bx bx-map'></i></div>
+                            <div><strong>Location</strong><span>{{ contact_location }}</span></div>
+                        </div>
+                    </div>
+
+                    <div class="lp-map-frame">
+                        <div id="contact-map"></div>
+                    </div>
+                </div>
+
+                <form class="lp-contact-form" action="{{ url_for('main.contact') }}" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="contact-name">Name</label>
+                            <input type="text" id="contact-name" name="name" placeholder="Your name" maxlength="100"
+                                value="{{ prefill.name or '' }}" autocomplete="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contact-email">Email</label>
+                            <input type="email" id="contact-email" name="email" placeholder="you@example.com" maxlength="100"
+                                value="{{ prefill.email or '' }}" autocomplete="email" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-subject">Subject</label>
+                        <input type="text" id="contact-subject" name="subject" placeholder="What's this about?" maxlength="150">
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-message">Message</label>
+                        <textarea id="contact-message" name="message" rows="5" placeholder="Tell us more..." maxlength="2000"
+                            required></textarea>
+                    </div>
+                    <button type="submit" class="lp-btn">Send Message <i class='bx bx-send'></i></button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    {# ===================== FAQ ===================== #}
+    <section class="lp-faq reveal" id="faq">
+        <div class="lp-wrap lp-faq-grid">
+            <div class="lp-section-head">
+                <span class="lp-eyebrow"><i class='bx bx-help-circle'></i> FAQ</span>
+                <h2>Quick <span class="lp-ghellis-tail">answers.</span></h2>
+                <p>Short answers to what people ask most.</p>
+            </div>
+            <div class="lp-faq-list">
+                <details>
+                    <summary>How do I book a service?</summary>
+                    <p>Find a workshop, choose the service you need and send a booking request for the time you want. The workshop confirms it, and you can follow its status under My Bookings.</p>
+                </details>
+                <details>
+                    <summary>How do I know if a workshop is open?</summary>
+                    <p>Every workshop shows an Open or Closed badge in the search results and on its own page. You can still send a request to a closed workshop for a later time.</p>
+                </details>
+                <details>
+                    <summary>I forgot my password.</summary>
+                    <p>Choose "Forgot password?" in the login window and we will email you a link to set a new one. If you signed up with Google, you can simply keep using "Sign in with Google".</p>
+                </details>
+                <details>
+                    <summary>I own a workshop. How do I list it?</summary>
+                    <p>Sign up as a Workshop Owner, then add your workshop, its services and your opening status from the owner dashboard. Customers will find you in search.</p>
+                </details>
+                <details>
+                    <summary>I am a mechanic. How do I join a workshop?</summary>
+                    <p>Sign up as a Mechanic, browse workshops and send a join request. The owner reviews it, and once you are in you can mark yourself active or absent so the owner knows who is available.</p>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    {# ===================== FINAL CTA ===================== #}
+    <section class="lp-final reveal">
+        <div class="lp-wrap">
+            <div class="lp-final-card">
+                <h2>Prefer talking it through? <span class="lp-ghellis-tail">We're here.</span></h2>
+                <p>Whether it's a question or a partnership idea, don't be shy — reach out or create a free account.</p>
+                <div class="lp-cta-row">
+                    <a class="lp-btn" href="#send-message">Send a message <i class='bx bx-right-arrow-alt'></i></a>
+                    {% if not session.get('user_id') %}
+                    <a class="lp-ghost" href="#" data-signup="signupBtn">Create your account</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+{# Auth pop-ups for signed-out visitors (header.js opens them by id; single source of truth: partials/px_auth_modals.html) #}
+{% include 'partials/px_auth_modals.html' %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/pages/contact.js', v='1') }}" defer></script>
+<script src="{{ url_for('static', filename='js/premium-scroll.js', v='puzzle-4') }}" defer></script>
+<script src="{{ url_for('static', filename='js/motion-graphics.js', v='pixel-dissolve-12') }}" defer></script>
+<script src="{{ url_for('static', filename='js/scroll-fx.js', v='1') }}" defer></script>
+{% endblock %}

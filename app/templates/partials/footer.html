@@ -1,0 +1,96 @@
+{% from 'partials/robot.html' import neo_ico %}
+{# Footer built from the header's own language: same panel surface and hairlines, the GW / 26 label,
+   brand mark + wordmark, the nav-link hover treatment, SYSTEM LIVE pulse and the Login / Sign Up buttons.
+   Styles: static/css/footer.css #}
+<footer class="site-footer">
+    <div class="footer-neo" aria-hidden="true">{{ neo_ico('wave', 96, 'lime', wander=False) }}</div>
+
+    <div class="footer-bar">
+        <div class="footer-bar-left">
+            <span class="footer-label">GW / 26</span>
+            <a href="{{ url_for('main.index') }}" class="footer-logo" aria-label="Getwheelz home">
+                <span class="brand-mark" aria-hidden="true"><span class="brand-ring"></span><span class="brand-cut"></span></span><span class="brand-word">Getwheelz</span>
+            </a>
+        </div>
+
+        <nav class="footer-bar-center" aria-label="Footer">
+            <ul class="footer-links">
+                <li><a href="{{ url_for('main.index') }}">Home</a></li>
+                <li><a href="{{ url_for('workshops.search') }}">Find Workshops</a></li>
+                <li><a href="{{ url_for('main.about') }}">About Us</a></li>
+                <li><a href="{{ url_for('main.contact') }}">Contact</a></li>
+                <li><a href="{{ url_for('legal.terms') }}">Terms</a></li>
+                <li><a href="{{ url_for('legal.privacy') }}">Privacy</a></li>
+            </ul>
+        </nav>
+
+        <div class="footer-bar-right">
+            <span class="footer-live"><i></i> SYSTEM LIVE</span>
+            {% if not session.user_id %}
+            <div class="footer-cta">
+                <button type="button" class="footer-btn" data-login="loginBtn">Login</button>
+                <button type="button" class="footer-btn footer-btn-solid" data-signup="signupBtn">Sign Up</button>
+            </div>
+            {% else %}
+            <div class="footer-cta">
+                <a class="footer-btn" href="{{ url_for('auth.logout') }}">Logout</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="footer-grid">
+        <div class="footer-block footer-about">
+            <p class="footer-kicker">FIELD NETWORK</p>
+            <p class="footer-blurb">Find trusted mechanics near you, and book a service in minutes.</p>
+            <div class="footer-signature" aria-label="Getwheelz signature"><img loading="lazy" decoding="async" class="signature-vector" src="{{ url_for('static', filename='uploads/branding/getwheelz-signature.svg') }}" alt="" aria-hidden="true"><span>care, signed in motion</span></div>
+            <div class="footer-social">
+                <a href="#" title="Instagram" aria-label="Instagram"><i class='bx bxl-instagram'></i></a>
+                <a href="#" title="Twitter" aria-label="Twitter"><i class='bx bxl-twitter'></i></a>
+                <a href="#" title="Facebook" aria-label="Facebook"><i class='bx bxl-facebook'></i></a>
+            </div>
+        </div>
+
+        <div class="footer-block">
+            <h5>Services</h5>
+            <ul>
+                {% for svc in catalog_services[:5] %}
+                <li><a href="{{ url_for('workshops.search', service=svc.name) }}">{{ svc.name }}</a></li>
+                {% endfor %}
+                {% if catalog_services | length > 5 %}
+                <li><a href="{{ url_for('workshops.search') }}">More&hellip;</a></li>
+                {% endif %}
+            </ul>
+        </div>
+
+        <div class="footer-block">
+            <h5>Join Us</h5>
+            <ul>
+                {% if not session.user_id %}
+                <li><a href="#" data-signup="signupBtn">List Your Workshop</a></li>
+                <li><a href="#" data-signup="signupBtn">Join as a Mechanic</a></li>
+                <li><a href="#" data-login="loginBtn">Login</a></li>
+                {% else %}
+                    {% if session.role == 'owner' %}
+                    <li><a href="{{ url_for('dashboard.owner') }}">Owner Dashboard</a></li>
+                    {% elif session.role == 'mechanic' %}
+                    <li><a href="{{ url_for('mechanics.home') }}">Browse Workshops</a></li>
+                    {% elif session.role == 'admin' %}
+                    <li><a href="{{ url_for('dashboard.admin') }}">Admin Panel</a></li>
+                    {% endif %}
+                    <li><a href="{{ url_for('auth.logout') }}">Logout</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="footer-legal">
+        <span>&copy; 2026 Getwheelz. All rights reserved.</span>
+        <span class="footer-legal-links">
+            <a href="{{ url_for('legal.terms') }}">Terms &amp; Conditions</a>
+            <span class="footer-legal-sep" aria-hidden="true">&middot;</span>
+            <a href="{{ url_for('legal.privacy') }}">Privacy</a>
+        </span>
+        <span class="footer-legal-tag">GETWHEELZ / FIELD NETWORK &nbsp;&middot;&nbsp; EST. 2026 / ALWAYS IN MOTION</span>
+    </div>
+</footer>

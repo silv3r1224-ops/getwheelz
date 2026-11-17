@@ -1,0 +1,21 @@
+{# Line icons for the two vehicle types, drawn for Getwheelz (not from any icon set).
+   They use currentColor, so they follow the theme. Usage:
+       {% from 'partials/vehicle_icon.html' import vehicle_icon %}
+       {{ vehicle_icon('car') }}  {{ vehicle_icon('two_wheeler', 28) }} #}
+{% macro vehicle_icon(kind, size=20) -%}
+<svg class="gwv-ico" viewBox="0 0 24 24" width="{{ size }}" height="{{ size }}" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+{%- if kind == 'two_wheeler' %}
+    <circle cx="5.5" cy="16.5" r="3"/>
+    <circle cx="18.5" cy="16.5" r="3"/>
+    <path d="M5.5 16.5 9.2 9.5h5.3l4 7"/>
+    <path d="M14.5 9.5 13.6 6.4h3"/>
+    <path d="M8.2 9.5H6.4"/>
+{%- else %}
+    <path d="M4 16v-3.1c0-.5.1-1 .4-1.4l1.7-3a2 2 0 0 1 1.7-1h8.4a2 2 0 0 1 1.7 1l1.7 3c.3.4.4.9.4 1.4V16"/>
+    <path d="M4 16h16"/>
+    <path d="M6.6 11.8h10.8"/>
+    <circle cx="7.6" cy="16.6" r="1.8"/>
+    <circle cx="16.4" cy="16.6" r="1.8"/>
+{%- endif %}
+</svg>
+{%- endmacro %}

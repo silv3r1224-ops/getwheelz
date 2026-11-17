@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Workshop Owner Agreement — Getwheelz{% endblock %}
+{% block page_description %}The Workshop Owner Agreement for listing a workshop and taking bookings on Getwheelz.{% endblock %}
+{% block content %}
+<article class="legal-page">
+    {% include 'legal/_draft_banner.html' %}
+    <h1>Workshop Owner Agreement</h1>
+    <p class="legal-meta">Version {{ version }} · Getwheelz (demo platform)</p>
+    <p>This agreement is in addition to the <a href="{{ url_for('legal.terms') }}">Terms and Conditions</a> and the <a href="{{ url_for('legal.privacy') }}">Privacy Policy</a>. You accept it before you list a workshop.</p>
+
+    <h2 id="listing">1. Your listing</h2>
+    <ul>
+        <li>What you enter about your workshop (name, address, photos, services, vehicle types, phone and WhatsApp number) must be true and up to date.</li>
+        <li>You choose whether you serve four-wheelers, two-wheelers or both, and offer only services from the matching catalogs.</li>
+        <li>Your listing stays hidden until an admin approves it. If it is rejected you will see the reason; you can fix it and resubmit, or appeal once per rejection.</li>
+    </ul>
+
+    <h2 id="bookings">2. Bookings</h2>
+    <ul>
+        <li>Accept or decline each new booking. A request you do not answer within 48 hours is cancelled automatically, and you are reminded before that.</li>
+        <li>After a customer's booking is accepted they can only ask to cancel; you decide on their request.</li>
+        <li>After accepting, assign one of your mechanics, and move the job through In progress and Completed honestly.</li>
+        <li>The customer pays after the job is completed. Set the bill accurately.</li>
+    </ul>
+
+    <h2 id="people">3. Customers and mechanics</h2>
+    <p>Treat customers and your mechanics fairly. Customers' details are for dealing with their booking only. Your phone and WhatsApp number are shown to signed-in customers and mechanics so they can reach you; do not use theirs for anything else.</p>
+
+    <h2 id="reviews">4. Reviews</h2>
+    <p>You may post one public reply to each review of your workshop. Replies must be honest and respectful. You may not ask customers to remove reviews.</p>
+
+    <h2 id="enforcement">5. Reports and suspension</h2>
+    <p>Reports about your workshop or account are reviewed. You may be asked to respond within 72 hours. A verified report can lead to a warning or, for accounts, a suspension; you can appeal once per decision.</p>
+
+    <h2 id="changes">6. Changes</h2>
+    <p>If we change this agreement in a way that matters, we publish a new version and ask you to accept it again. We record which version you accepted and when.</p>
+</article>
+{% endblock %}

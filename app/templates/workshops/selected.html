@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+
+{% block title %}{{ workshop.name }} — Getwheelz{% endblock %}
+{% block page_description %}Book {{ workshop.name }} for your next service — see services offered, ratings, and location. Compare trusted workshops on Getwheelz.{% endblock %}
+
+{% block schema %}
+{% set has_coords = workshop.latitude is not none and workshop.longitude is not none %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": {{ workshop.name | tojson }},
+  "url": "{{ request.base_url }}"{% if workshop.photo_path %},
+  "image": "{{ url_for('static', filename=workshop.photo_path, _external=True) }}"{% endif %}{% if has_coords %},
+  "geo": {
+    "@type": "GeoCoordinates",
+    "latitude": {{ workshop.latitude }},
+    "longitude": {{ workshop.longitude }}
+  }{% endif %}{% if rating_count %},
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": {{ '%.1f' | format(rating_avg) }},
+    "reviewCount": {{ rating_count }}
+  }{% endif %},
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": {{ workshop.address | tojson }}
+  }
+}
+</script>
+{% endblock %}
+
+{% block head %}
+{% include 'partials/px_head.html' %}
+{% endblock %}
+
+{% block content %}
+{% from 'partials/robot.html' import neo_ico %}
+{% from 'partials/vehicle_icon.html' import vehicle_icon %}
+{% set has_coords = workshop.latitude is not none and workshop.longitude is not none %}
+<div class="px px-customer-page px-wp index-con" id="mainCon">
+    <section class="px-section" style="padding-top: 36px; padding-bottom: 80px;">
+        <div class="px-wrap">
+
+            {# ---------------- back link ---------------- #}
+            {% if not mech %}
+            <a class="px-back" href="{{ url_for('workshops.search') }}"><i class='bx bx-arrow-back'></i> Browse workshops</a>
+            {% endif %}
+
+            {# ---------------- banner ---------------- #}
+            <header class="px-banner"
+                {% if has_coords %}data-lat="{{ workshop.latitude }}" data-lng="{{ workshop.longitude }}"{% endif %}>
+                <div class="px-banner-media">
+                    {% if workshop.photo_path %}
+                    <button type="button" class="px-photo-open" aria-label="View {{ workshop.name }} photo" data-wp-lightbox>
+                        <img loading="lazy" decoding="async" src="{{ url_for('static', filename=workshop.photo_path) }}" alt="{{ workshop.name }}" data-wp-photo>
+                        <span class="px-photo-zoom" aria-hidden="true"><i class='bx bx-expand'></i></span>
+                    </button>
+                    {% else %}
+                    <div class="px-ph"><i class='bx bx-store'></i><small>No photo yet</small></div>
+                    {% endif %}
+                </div>
+                <div class="px-banner-body">
+                    <h1>{{ workshop.name }} <span class="oc-badge {{ 'oc-open' if workshop.is_open else 'oc-closed' }}">{{ 'Open now' if workshop.is_open else 'Closed right now' }}</span></h1>
+                    <div class="px-meta">
+                        {% if rating_count %}<a class="px-rating-chip" href="#reviews"><i class='bx bxs-star'></i> {{ '%.1f' | format(rating_avg) }} ({{ rating_count }})</a>{% else %}<a class="px-rating-chip none" href="#reviews"><i class='bx bx-star'></i> No ratings yet</a>{% endif %}
+                        {% for t in served_types %}<span class="gwv-badge">{{ vehicle_icon(t, 14) }} {{ VEHICLE_PLURAL[t] }}</span>{% endfor %}
+                        <span><i class='bx bx-wrench'></i> {{ services | length }} service{{ '' if services | length == 1 else 's' }}</span>
+                        {% if completed_jobs %}<span><i class='bx bx-check-circle'></i> {{ completed_jobs }} job{{ '' if completed_jobs == 1 else 's' }} completed</span>{% endif %}
+                    </div>
+                    {% if workshop.address %}
+                    <div class="px-contact-details">
+                        {% if has_coords %}
+                        <a class="px-info-chip" href="https://www.google.com/maps/dir/?api=1&destination={{ workshop.latitude }},{{ workshop.longitude }}" target="_blank" rel="noopener"><i class='bx bx-map'></i> {{ workshop.address }}</a>
+                        {% else %}
+                        <span class="px-info-chip"><i class='bx bx-map'></i> {{ workshop.address }}</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    <div class="px-banner-actions">
+                        <span class="px-dist"><i class='bx bx-navigation'></i><span class="px-dist-text"></span></span>
+                        {% if has_coords %}
+                        <a class="px-ghost sm" target="_blank" rel="noopener"
+                            href="https://www.google.com/maps/dir/?api=1&destination={{ workshop.latitude }},{{ workshop.longitude }}">
+                            <i class='bx bx-directions'></i> Get directions
+                        </a>
+                        {% endif %}
+                        {% include 'workshops/_contact_buttons.html' %}
+                        {% if session.get('role') == 'customer' %}
+                        <button type="button" class="px-ghost sm bm-btn {{ 'on' if is_bookmarked else '' }}"
+                            data-bm data-w-id="{{ workshop.w_id }}"
+                            aria-pressed="{{ 'true' if is_bookmarked else 'false' }}">
+                            <i class="bx {{ 'bxs-bookmark' if is_bookmarked else 'bx-bookmark' }}"></i>
+                            <span class="bm-label">{{ 'Saved' if is_bookmarked else 'Save' }}</span>
+                        </button>
+                        {% endif %}
+                        {% if session.get('user_id') and (not owner or session.get('user_id') != owner.u_id) %}
+                        <button type="button" class="px-ghost sm px-report-toggle" data-report-toggle aria-controls="reportPanelWorkshop">
+                            <i class='bx bx-flag'></i> Report workshop
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </header>
+
+            {% if session.get('user_id') and (not owner or session.get('user_id') != owner.u_id) %}
+            <div class="px-card px-report-panel" id="reportPanelWorkshop" data-report-panel style="display: none;">
+                <div class="px-section-head">
+                    <div>
+                        <span class="px-eyebrow"><i class='bx bxs-store-alt'></i> Moderation</span>
+                        <h3>Report {{ workshop.name }}</h3>
+                        <p>Reports are reviewed by Getwheelz admins before any action is taken. Give them enough detail to verify — false reports may be flagged.</p>
+                    </div>
+                </div>
+                <form method="POST" action="{{ url_for('main.report_workshop') }}" class="px-report-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="w_id" value="{{ workshop.w_id }}">
+                    <div class="px-reason-grid">
+                        {% for key, label in WORKSHOP_REPORT_CATEGORY_CHOICES %}
+                        <label class="px-reason">
+                            <input type="checkbox" name="reason" value="{{ key }}">
+                            {{ label }}
+                        </label>
+                        {% endfor %}
+                    </div>
+                    <textarea name="details" class="sa-field" rows="4" minlength="10" maxlength="2000"
+                              placeholder="Tell us what happened — dates, messages, anything an admin can check." required></textarea>
+                    <div class="px-report-actions">
+                        <button type="button" class="px-btn" data-report-cancel>Cancel</button>
+                        <button type="submit" class="px-btn px-report-send"><i class='bx bx-send'></i> Send report</button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+
+            {# ---------------- at a glance ---------------- #}
+            <div class="wp-stat-grid" style="margin-top: 18px;">
+                <div class="px-card px-stat"><b>{{ team | length }}/{{ workshop.capacity }}</b><span>Mechanics</span></div>
+                <div class="px-card px-stat"><b>{{ services | length }}</b><span>Services offered</span></div>
+                {% if completed_jobs %}<div class="px-card px-stat"><b>{{ completed_jobs }}</b><span>Jobs completed</span></div>{% endif %}
+                {% if rating_count %}<div class="px-card px-stat"><b>{{ '%.1f' | format(rating_avg) }} ★</b><span>{{ rating_count }} review{{ '' if rating_count == 1 else 's' }}</span></div>{% endif %}
+                {% if mech %}
+                <div class="px-card px-stat {{ 'hi' if mech.open_slots > 0 }}"><b>{{ [mech.open_slots, 0] | max }}</b><span>Open spots</span></div>
+                {% else %}
+                <div class="px-card px-stat status {{ 'hi' if workshop.is_open }}"><b>{{ 'Open now' if workshop.is_open else 'Closed right now' }}</b><span>Status</span></div>
+                {% endif %}
+            </div>
+
+            <div class="px-body-grid">
+                <div class="px-col">
+                {# ---------------- services ---------------- #}
+                <div class="px-card px-panel">
+                    <h2>{% if mech %}Services this workshop <span class="px-ghellis-tail">offers.</span>{% else %}Services <span class="px-ghellis-tail">offered.</span>{% endif %}</h2>
+                    {% if vehicle_mismatch %}
+                    <div class="gwv-notice" role="status">
+                        This workshop serves {% for t in served_types %}{{ VEHICLE_PLURAL[t] | lower }}{% if not loop.last %} and {% endif %}{% endfor %} only, but you are browsing {{ VEHICLE_PLURAL[vehicle_choice] | lower }}.
+                        {% for t in served_types %}<a href="{{ url_for('workshops.selected', w_id=workshop.w_id, vehicle=t) }}">See its {{ VEHICLE_SINGULAR[t] | lower }} services</a>{% if not loop.last %} · {% endif %}{% endfor %}
+                    </div>
+                    {% endif %}
+                    <div class="px-svc-list" data-more="6" data-more-block>
+                        {% for service in services %}
+                        <div class="px-svc">
+                            <div>
+                                <h3>{{ service.s_name }}{% if not vehicle_choice and served_types | length > 1 %} <span class="gwv-badge">{{ vehicle_icon(service.vehicle_type, 12) }} {{ VEHICLE_SINGULAR[service.vehicle_type] }}</span>{% endif %}</h3>
+                                <p>
+                                    {% if service.duration %}<span><i class='bx bx-time'></i> {{ service.duration }}</span>{% endif %}
+                                    {% if service.price_range %}<span><i class='bx bx-rupee'></i> {{ service.price_range }}</span>{% endif %}
+                                    {% if not service.duration and not service.price_range %}<span>Ask the workshop for details</span>{% endif %}
+                                </p>
+                            </div>
+                            {% if not mech %}
+                            <a href="{{ url_for('bookings.new', w_id=workshop.w_id, s_id=(service.s_id | seal('service')), vehicle=service.vehicle_type) }}" class="px-btn sm">Book</a>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="px-empty" style="padding: 26px 10px;">
+                            {{ neo_ico('neutral', 78, 'lime') }}
+                            <p style="margin-bottom: 0;">{% if vehicle_mismatch %}No services to show for {{ VEHICLE_PLURAL[vehicle_choice] | lower }} here.{% elif vehicle_choice %}This workshop hasn't listed any {{ VEHICLE_SINGULAR[vehicle_choice] | lower }} services yet.{% else %}This workshop hasn't listed any services yet.{% endif %}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {# ---------------- opening hours ---------------- #}
+                {% if hours %}
+                <div class="px-card px-panel" id="hours">
+                    <h2>Opening <span class="px-ghellis-tail">hours.</span></h2>
+                    <div class="px-hours-list">
+                        {% if hours_uniform %}
+                        <div class="px-hours-row">
+                            <span class="px-hours-day">Every day</span>
+                            <span class="px-hours-times">{{ hours[0].open_time.strftime('%H:%M') }} – {{ hours[0].close_time.strftime('%H:%M') }}</span>
+                        </div>
+                        {% else %}
+                        {% for h in hours %}
+                        <div class="px-hours-row {{ 'off' if not h.open_time }}">
+                            <span class="px-hours-day">{{ ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][h.dow] }}</span>
+                            {% if h.open_time %}
+                            <span class="px-hours-times">{{ h.open_time.strftime('%H:%M') }} – {{ h.close_time.strftime('%H:%M') }}</span>
+                            {% else %}
+                            <span class="px-hours-times closed">Closed</span>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {# ---------------- owner ---------------- #}
+                <div class="px-card px-panel" id="owner">
+                    <h2>Workshop <span class="px-ghellis-tail">owner.</span></h2>
+                    {% if owner %}
+                    <div class="px-people">
+                        <a class="px-person" href="{{ url_for('workshops.person', token=owner.u_id | utoken) }}">
+                            <span class="px-av">{% if owner.profile_picture %}<img loading="lazy" decoding="async" src="{{ url_for('static', filename=owner.profile_picture) }}" alt="{{ owner.name }}">{% else %}{{ owner.name[:1] | upper }}{% endif %}</span>
+                            <h3>{{ owner.name }}</h3>
+                            <small><i class='bx bxs-crown'></i> Workshop Owner</small>
+                            {% if owner.since %}<small><i class='bx bx-calendar'></i> Member since {{ owner.since.strftime('%b %Y') }}</small>{% endif %}
+                            <span class="px-hint">View profile</span>
+                        </a>
+                    </div>
+                    {% else %}
+                    <p class="px-note" style="margin: 0;">Owner profile not listed.</p>
+                    {% endif %}
+                </div>
+
+                {# ---------------- team ---------------- #}
+                <div class="px-card px-panel" id="team">
+                    <h2>Meet the <span class="px-ghellis-tail">team.</span> <span class="px-count">{{ team | length }}</span></h2>
+                    {% if team %}
+                    <div class="px-people" data-more="6" data-more-label="mechanics">
+                        {% for m in team %}
+                        <a class="px-person" href="{{ url_for('workshops.person', token=m.u_id | utoken) }}">
+                            <span class="px-av">{% if m.profile_picture %}<img loading="lazy" decoding="async" src="{{ url_for('static', filename=m.profile_picture) }}" alt="{{ m.name }}">{% else %}{{ m.name[:1] | upper }}{% endif %}</span>
+                            <h3>{{ m.name }}</h3>
+                            <small><i class='bx bx-medal'></i> {% if m.experience_yrs %}{{ m.experience_yrs }} yr{{ '' if m.experience_yrs == 1 else 's' }} experience{% else %}Experience not listed{% endif %}</small>
+                            {% if m.active_stat %}<span class="px-state {{ 'on' if m.active_stat | lower in ['active', 'available'] }}">{{ m.active_stat }}</span>{% endif %}
+                            <span class="px-hint">View profile</span>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="px-note" style="margin: 0;">No mechanics have joined this workshop yet.</p>
+                    {% endif %}
+                </div>
+                </div>{# /px-col #}
+
+                {# ---------------- sidebar ---------------- #}
+                <aside class="px-side">
+                    {% if has_coords %}
+                    <div class="px-card px-panel" style="padding: 12px;"><div id="profile-map"></div></div>
+                    {% endif %}
+
+                    {% if mech %}
+                    <div class="px-card px-mech">
+                        <span class="px-eyebrow" style="justify-self: start;"><i class='bx bx-show'></i> Mechanic preview</span>
+
+                        <div class="px-stat-line">
+                            <i class='bx bx-group'></i>
+                            <div>
+                                <strong>{{ mech.total }}/{{ mech.capacity }} mechanics</strong>
+                                <small>
+                                    {% if mech.open_slots > 0 %}{{ mech.open_slots }} opening{{ '' if mech.open_slots == 1 else 's' }}
+                                    {% else %}No openings right now{% endif %}
+                                </small>
+                            </div>
+                        </div>
+
+                        {% if mech.my_workshop == workshop.w_id %}
+                        <p class="px-note"><i class='bx bx-check-circle'></i> You work at this workshop.</p>
+                        {% elif mech.my_workshop %}
+                        <p class="px-note"><i class='bx bx-info-circle' style="color: #fbbf24;"></i> You already belong to another workshop. Leave it first to join this one.</p>
+                        {% elif mech.pending %}
+                        <form method="POST" action="{{ url_for('mechanics.cancel_join_request', w_id=workshop.w_id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="px-ghost block" style="width: 100%;">Request sent (cancel)</button>
+                        </form>
+                        {% elif mech.open_slots <= 0 %}
+                        <button type="button" class="px-btn block" disabled>Workshop full</button>
+                        {% else %}
+                        <form method="POST" action="{{ url_for('mechanics.send_join_request', w_id=workshop.w_id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="px-btn block">Request to join</button>
+                        </form>
+                        {% endif %}
+
+                        <a href="{{ url_for('mechanics.home') }}" class="px-ghost sm"><i class='bx bx-arrow-back'></i> Back to workshops</a>
+                    </div>
+                    {% else %}
+                    <div class="px-card px-mech">
+                        <div class="px-stat-line">
+                            <i class='bx bx-calendar-check'></i>
+                            <div>
+                                <strong>Ready to book?</strong>
+                                <small>Choose a service and a time. The workshop confirms your request.</small>
+                            </div>
+                        </div>
+                        {% if vehicle_mismatch %}
+                        <p class="gwv-notice" style="margin:0;">Booking is available for the vehicle types this workshop serves.</p>
+                        {% else %}
+                        <a href="{{ url_for('bookings.new', w_id=workshop.w_id, vehicle=vehicle_choice) }}" class="px-btn block">Book a service</a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </aside>
+            </div>
+            {% include 'workshops/_reviews.html' %}
+        </div>
+    </section>
+</div>
+
+{% if not session.get('user_id') %}
+{% include 'partials/px_auth_modals.html' %}
+{% endif %}
+
+{% if workshop.photo_path %}
+<div class="wl-backdrop" id="wlBackdrop" hidden>
+    <div class="wl-stage" role="dialog" aria-modal="true" aria-label="Workshop photo">
+        <button type="button" class="wl-close" aria-label="Close photo" data-wl-close><i class='bx bx-x'></i></button>
+        <img loading="lazy" decoding="async" id="wlImg" alt="{{ workshop.name }}" src="">
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    {# bookmark feature: only customers get the controls; seed the saved-workshop id set #}
+    window.GW_CUSTOMER = {{ 'true' if session.get('role') == 'customer' else 'false' }};
+    window.GW_BOOKMARKS = {{ ([workshop.w_id] if is_bookmarked else []) | tojson }};
+    window.GW_CSRF = {{ csrf_token() | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/bookmarks.js', v='1') }}" defer></script>
+<script>
+    const workshopLat = {{ workshop.latitude | float if workshop.latitude is not none else 'null' }};
+    const workshopLng = {{ workshop.longitude | float if workshop.longitude is not none else 'null' }};
+    const workshopName = {{ workshop.name | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/distance.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pages/workshop_selected_map.js', v='1') }}"></script>
+<script src="{{ url_for('static', filename='js/workshop-photo.js', v='5') }}" defer></script>
+{% if session.get('user_id') and (not owner or session.get('user_id') != owner.u_id) %}
+<script src="{{ url_for('static', filename='js/report-panel.js', v='2') }}"></script>
+{% endif %}
+{% endblock %}

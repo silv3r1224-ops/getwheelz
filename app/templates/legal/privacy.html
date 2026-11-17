@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Privacy Policy — Getwheelz{% endblock %}
+{% block page_description %}How Getwheelz collects, uses, and protects your personal data — our privacy practices explained.{% endblock %}
+{% block content %}
+<article class="legal-page">
+    {% include 'legal/_draft_banner.html' %}
+    <h1>Privacy Policy</h1>
+    <p class="legal-meta">Version {{ version }} · Getwheelz (demo platform)</p>
+
+    <h2 id="collect">1. What we collect</h2>
+    <ul>
+        <li><strong>Account:</strong> your name, email address, role, an encrypted (hashed) password, and an optional profile picture. If you use Google sign-in, we receive your name and verified email from Google.</li>
+        <li><strong>Bookings:</strong> the workshop, service, requested time, status, the vehicle type and the vehicle description you type, and the bill and payment status.</li>
+        <li><strong>Payments:</strong> the amount, method, a masked reference (for example the last digits of a card or a UPI id) and a receipt number. At this stage payment is a demonstration and no real money moves.</li>
+        <li><strong>Reviews:</strong> your rating and text. Owners' public replies are stored with them.</li>
+        <li><strong>Reports and appeals:</strong> what you write when you report someone, respond to a report, or appeal a decision, and the admin's notes.</li>
+        <li><strong>Workshops and owners:</strong> workshop name, address, map position, phone and WhatsApp number, photos and services.</li>
+        <li><strong>Consent record:</strong> which version of these documents you accepted, and when.</li>
+        <li><strong>Technical:</strong> a session cookie that keeps you signed in and a security (CSRF) token. We use your browser's location only to show distances; it is sent with your search and is not saved to your profile.</li>
+    </ul>
+
+    <h2 id="use">2. Why we use it</h2>
+    <p>To run accounts, show workshops and distances, handle bookings and payments, show ratings, keep the platform safe, review reports and appeals, and tell you what is happening through your inbox.</p>
+
+    <h2 id="see">3. Who can see what</h2>
+    <ul>
+        <li><strong>Everyone, even without an account:</strong> approved workshops, their services, ratings, public reviews (with first name and last initial) and owners' public replies.</li>
+        <li><strong>signed-in customers and mechanics:</strong> a workshop's phone and WhatsApp number, through the Call and WhatsApp buttons. Visitors who are not signed in are asked to log in instead and never see the number.</li>
+        <li><strong>A workshop owner and the assigned mechanic:</strong> the details of bookings at their workshop, including the customer's name, the service and the vehicle description.</li>
+        <li><strong>The customer:</strong> their own bookings, the mechanic assigned and the status.</li>
+        <li><strong>Admins:</strong> account details, bookings, reports, appeals and consent records, as needed to run and protect the platform. A person who is reported is never told who reported them.</li>
+    </ul>
+
+    <h2 id="messages">4. Notifications</h2>
+    <p>We use the Getwheelz inbox. We do not send notification emails for now. The only email we send is a password-reset link when you ask for one.</p>
+
+    <h2 id="share">5. Sharing</h2>
+    <p>We do not sell your data. We share it only as described above, with Google if you choose Google sign-in, and when the law requires it. A future payment provider would process payments under its own policy.</p>
+
+    <h2 id="keep">6. Keeping and deleting</h2>
+    <p>We keep your data while your account exists. You can ask for your account to be deleted; some records, such as completed bookings that a workshop needs, or the consent record, may be kept as needed to run the platform or meet legal duties. <em>[Placeholder: retention periods to be decided and reviewed.]</em></p>
+
+    <h2 id="rights">7. Your choices</h2>
+    <p>You can update your profile, choose whether to use Google sign-in, and contact us about your data. <em>[Placeholder: the rights and the grievance process under Indian data protection law need to be set out by a qualified reviewer.]</em></p>
+
+    <h2 id="changes">8. Changes</h2>
+    <p>If we change this policy in a way that matters, we publish a new version and ask you to accept it before you carry on.</p>
+
+    <p class="legal-links">See also: <a href="{{ url_for('legal.terms') }}">Terms and Conditions</a> · <a href="{{ url_for('legal.owner_agreement') }}">Workshop Owner Agreement</a></p>
+</article>
+{% endblock %}

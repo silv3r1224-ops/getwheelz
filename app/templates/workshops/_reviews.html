@@ -1,0 +1,76 @@
+{# Reviews for a workshop page (spec section 7). Needs: reviews, rating_avg, rating_count,
+   reviewable (this customer's unreviewed completed visits), is_workshop_owner, stars, review_text_max. #}
+<div class="px-card px-panel" id="reviews" style="margin-top: 18px;">
+    <h2>Reviews <span class="px-ghellis-tail">&amp; ratings.</span></h2>
+
+    {% if rating_count %}
+    <p class="rv-summary" aria-label="Average rating {{ '%.1f' | format(rating_avg) }} out of 5 from {{ rating_count }} review{{ '' if rating_count == 1 else 's' }}">
+        <span class="rv-stars" aria-hidden="true">{% for i in range(1, 6) %}<i class="bx {{ 'bxs-star' if i <= stars(rating_avg) else 'bx-star' }}"></i>{% endfor %}</span>
+        <b>{{ '%.1f' | format(rating_avg) }}</b> / 5 · {{ rating_count }} review{{ '' if rating_count == 1 else 's' }}
+    </p>
+    {% else %}
+    <p class="rv-empty">No reviews yet. Customers can review a workshop after their job is completed.</p>
+    {% endif %}
+
+    {% if session.get('role') == 'customer' %}
+        {% if reviewable %}
+        <form class="rv-form" method="POST" action="{{ url_for('workshops.post_review', w_id=workshop.w_id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <h3>Review your visit</h3>
+            {% if reviewable | length == 1 %}
+            <input type="hidden" name="b_id" value="{{ reviewable[0].b_id }}">
+            <p class="rv-visit">{{ reviewable[0].s_name }} · {{ reviewable[0].requested_time.strftime('%d %b %Y') }}</p>
+            {% else %}
+            <label>Which visit?
+                <select name="b_id" required>
+                    {% for v in reviewable %}<option value="{{ v.b_id }}" {{ 'selected' if request.args.get('review', type=int) == v.b_id }}>{{ v.s_name }} · {{ v.requested_time.strftime('%d %b %Y') }}</option>{% endfor %}
+                </select>
+            </label>
+            {% endif %}
+            <fieldset class="rv-rating">
+                <legend>Rating</legend>
+                {% for i in range(5, 0, -1) %}
+                <input type="radio" id="rv{{ i }}" name="rating" value="{{ i }}" {{ 'required' if i == 5 }}>
+                <label for="rv{{ i }}" title="{{ i }} star{{ '' if i == 1 else 's' }}"><i class="bx bxs-star"></i><span class="sr-only">{{ i }} star{{ '' if i == 1 else 's' }}</span></label>
+                {% endfor %}
+            </fieldset>
+            <label>Your review
+                <textarea name="comment" rows="4" maxlength="{{ review_text_max }}" required placeholder="What was it like?"></textarea>
+            </label>
+            <button type="submit" class="px-btn">Post review</button>
+        </form>
+        {% else %}
+        <p class="rv-note">You can review this workshop once you have a completed booking here.</p>
+        {% endif %}
+    {% endif %}
+
+    {% if reviews %}
+    <ul class="rv-list">
+        {% for r in reviews %}
+        <li class="rv-item" id="review-{{ r.r_id }}">
+            <div class="rv-head">
+                <span class="rv-stars" role="img" aria-label="{{ r.rating }} out of 5">{% for i in range(1, 6) %}<i class="bx {{ 'bxs-star' if i <= r.rating else 'bx-star' }}"></i>{% endfor %}</span>
+                <b>{{ r.reviewer_name }}</b>
+                <time datetime="{{ r.created_at.strftime('%Y-%m-%d') }}">{{ r.created_at.strftime('%d %b %Y') }}</time>
+            </div>
+            <p class="rv-text">{{ r.comment }}</p>
+            {% if r.owner_reply %}
+            <div class="rv-reply">
+                <b>Reply from the workshop</b> <time datetime="{{ r.owner_replied_at.strftime('%Y-%m-%d') }}">{{ r.owner_replied_at.strftime('%d %b %Y') }}</time>
+                <p>{{ r.owner_reply }}</p>
+            </div>
+            {% elif is_workshop_owner %}
+            <form class="rv-reply-form" method="POST" action="{{ url_for('workshops.reply_to_review', r_id=r.r_id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label>Reply publicly (one reply only)
+                    <textarea name="reply" rows="2" maxlength="{{ review_text_max }}" required></textarea>
+                </label>
+                <button type="submit" class="px-ghost sm">Post reply</button>
+            </form>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+    {% if rating_count > reviews | length %}<p class="rv-note">Showing the latest {{ reviews | length }} of {{ rating_count }} reviews.</p>{% endif %}
+    {% endif %}
+</div>

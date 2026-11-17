@@ -1,0 +1,34 @@
+{% from 'partials/robot.html' import robot %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ code }} · {{ title }} — Getwheelz</title>
+    <link rel="icon" href="{{ url_for('static', filename='logo/getwheelz-icon.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css', v='unified-103') }}">
+    <script>
+        /* same saved theme as every other page, applied before the first paint */
+        (function () {
+            try { if (localStorage.getItem("theme") === "light") { document.documentElement.setAttribute("data-theme", "light"); document.documentElement.classList.add("theme-light"); } } catch (e) { }
+        })();
+    </script>
+</head>
+
+<body style="margin:0">
+    <script>if (document.documentElement.classList.contains("theme-light")) document.body.classList.add("light");</script>
+    {# Standalone on purpose (no base.html): this page has to render even when the database is down. #}
+    <main class="neo-err">
+        <div class="neo-err-box">
+            {{ robot(mood, 190, skin=skin, follow=not wander, wander=wander, label='NEO') }}
+            <p class="neo-err-code">{{ code }}</p>
+            <h1>{{ title }}</h1>
+            <p class="neo-err-text">{{ text }}</p>
+            <a class="neo-err-btn" href="{{ url_for('main.index') }}">Back to home</a>
+        </div>
+    </main>
+    <script src="{{ url_for('static', filename='js/robot.js') }}"></script>
+</body>
+
+</html>

@@ -1,0 +1,475 @@
+{% extends "base.html" %}
+
+{% block title %}Getwheelz — Trusted Workshops for Four-Wheelers and Two-Wheelers{% endblock %}
+{% block page_description %}Find trusted workshops for your four-wheeler or two-wheeler on Getwheelz — compare services, prices, and ratings, then book an appointment online in minutes.{% endblock %}
+
+{% block head %}{% endblock %}
+
+{% block content %}
+{% from 'partials/robot.html' import robot %}
+{% from 'partials/vehicle_icon.html' import vehicle_icon %}
+<div class="index-con lp" id="mainCon">
+
+    {# ===================== HERO ===================== #}
+    <section class="lp-hero lp-atelier-hero">
+        <div class="lp-hero-kicker"><span>GETWHEELZ / 01</span><span>CARE, CRAFTED LOCALLY</span></div>
+        <div class="lp-wrap lp-hero-grid">
+            <div>
+                <div class="lp-signature lp-signature-hero" aria-label="Getwheelz wordmark">
+                    <span class="sig-stage">
+                        <svg class="signature-vector sig-ghost" viewBox="0 0 2070 1144" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
+                        <svg class="signature-vector sig-ink" viewBox="0 0 2070 1144" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                            <defs>
+                                <mask id="sig-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="2070" height="1144">
+                                    <rect id="sig-wipe" x="0" y="0" width="0" height="1144" fill="#fff"></rect>
+                                </mask>
+                                <circle class="sig-pen" cx="0" cy="0" r="30"></circle>
+                            </defs>
+                        </svg>
+                        <svg class="signature-vector sig-final" viewBox="0 0 2070 1144" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
+                    </span>
+                    <span>crafted for the road</span>
+                </div>
+                <span class="lp-eyebrow"><i class='bx bxs-check-shield'></i> Four-wheelers and two-wheelers, made simple</span>
+                <h1><span class="lp-title-line">Care beyond</span><span class="lp-title-line lp-title-accent">the ordinary.</span></h1>
+                <p class="lp-lead">A more considered way to maintain your four-wheeler or two-wheeler—trusted workshops, thoughtful service, and every appointment in one calm place.</p>
+                <div class="lp-hero-note"><span class="lp-note-rule"></span><span>For the miles ahead</span></div>
+
+                {% if not vehicle_choice %}
+                {# step one: what are you bringing in? Answered before any service search. #}
+                <div class="gwv-picker" style="text-align:left;padding:18px 0 4px;" role="group" aria-label="Choose your vehicle type">
+                    <p style="margin-bottom:12px;"><b>What are you bringing in?</b></p>
+                    <div class="gwv-cards">
+                        {% for t in VEHICLE_TYPES %}
+                        <a class="gwv-card" href="{{ url_for('main.index', vehicle=t) }}">
+                            {{ vehicle_icon(t, 40) }}<span>{{ VEHICLE_PLURAL[t] }}</span>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <p class="gwv-switch" style="margin-top:14px;">
+                    <span class="gwv-badge">{{ vehicle_icon(vehicle_choice, 16) }} {{ VEHICLE_PLURAL[vehicle_choice] }}</span>
+                    {% for t in VEHICLE_TYPES if t != vehicle_choice %}<a href="{{ url_for('main.index', vehicle=t) }}">Switch to {{ VEHICLE_PLURAL[t] | lower }}</a>{% endfor %}
+                </p>
+                <form action="{{ url_for('workshops.search') }}" method="get" class="lp-search" role="search">
+                    <input type="hidden" name="vehicle" value="{{ vehicle_choice }}">
+                    <i class='bx bx-search' aria-hidden="true"></i>
+                    <input type="text" name="service" placeholder="What does your {{ VEHICLE_SINGULAR[vehicle_choice] | lower }} need today?" aria-label="Search for a service"
+                           autocomplete="off" spellcheck="false"
+                           role="combobox" aria-expanded="false" aria-controls="searchSuggestions" aria-autocomplete="list">
+                    <button class="lp-btn" type="submit">Begin your search</button>
+                    <div class="lp-search-suggest" id="searchSuggestions" role="listbox" aria-label="Service suggestions" hidden></div>
+                </form>
+
+                {% set popular = catalog_services | selectattr('count') | sort(attribute='name') | sort(attribute='count', reverse=true) | list %}
+                {% if popular %}
+                <div class="lp-chips">
+                    <span>Popular:</span>
+                    {% for svc in popular[:4] %}
+                    <a class="lp-chip" href="{{ url_for('workshops.search', vehicle=vehicle_choice, service=svc.name) }}">{{ svc.name }}</a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endif %}
+
+                <div class="lp-cta-row">
+                    <a class="lp-btn" href="#" data-signup="signupBtn">Start your journey <i class='bx bx-right-arrow-alt'></i></a>
+                    <a class="lp-ghost" href="#how">Our approach</a>
+                </div>
+
+                <ul class="lp-trust">
+                    <li><i class='bx bx-map-pin'></i> Workshops near you</li>
+                    <li><i class='bx bx-calendar-check'></i> Book in minutes</li>
+                    <li><i class='bx bx-group'></i> Real mechanics, real owners</li>
+                </ul>
+            </div>
+
+            {# product preview (illustration) #}
+            <div class="lp-stage" aria-hidden="true">
+                <div class="lp-robot">{{ robot('neutral', 150, follow=False, roam=True) }}</div>
+                <div class="lp-toast"><i class='bx bx-check'></i> Request sent</div>
+
+                <div class="mech-console" aria-label="NEO vehicle care diagnostic console">
+                    <div class="mech-console-top"><span><i class='bx bx-chip'></i> NEO / FIELD UNIT 07</span><b><i></i> ONLINE</b></div>
+                    <div class="mech-console-body">
+                        <pre class="mech-ascii" aria-hidden="true">      .──────────────.
+   .─´  ◉       ◉     `─.
+  /     ┌──────────┐      \
+ |      │  N E O   │       |
+ |  ╭───┴──────────┴───╮   |
+  \  ╰─┬─╮  ◇  ╭─┬─╯  /
+   `───┴─┴──────┴─┴───´
+        ╲  ░░░░  ╱
+         `──────´</pre>
+                        <div class="mech-readout"><span>SCAN</span><strong>READY</strong><i class="mech-bars"></i><small>vehicle care protocol</small></div>
+                    </div>
+                    <div class="mech-console-foot"><span>SYS // CALIBRATED</span><span class="mech-signal"><i></i><i></i><i></i><i></i><i></i></span></div>
+                </div>
+
+                <div class="lp-card lp-card-main">
+                    <div class="lp-card-top">
+                        <div class="lp-card-icon"><i class='bx bx-wrench'></i></div>
+                        <div>
+                            <strong>Brake service</strong>
+                            <small>Sample workshop</small>
+                        </div>
+                    </div>
+                    <div class="lp-rows">
+                        <div class="lp-row"><span>Date</span><b>Tomorrow, 10:30 AM</b></div>
+                        <div class="lp-row"><span>Duration</span><b>About 2 hours</b></div>
+                        <div class="lp-row"><span>Status</span><em class="lp-status">Confirmed</em></div>
+                    </div>
+                    <div class="lp-track">
+                        <span class="dot on"></span><span class="bar on"></span>
+                        <span class="dot on"></span><span class="bar"></span>
+                        <span class="dot"></span>
+                    </div>
+                    <div class="lp-track-labels"><span>Requested</span><span>Confirmed</span><span>Completed</span></div>
+                </div>
+
+                <div class="lp-card lp-card-back">
+                    <h4>Workshops near you</h4>
+                    <div class="lp-near"><i class='bx bx-map-pin'></i><b>Workshop one</b><span>Nearby</span></div>
+                    <div class="lp-near"><i class='bx bx-map-pin'></i><b>Workshop two</b><span>Nearby</span></div>
+                    <div class="lp-near"><i class='bx bx-map-pin'></i><b>Workshop three</b><span>Nearby</span></div>
+                </div>
+
+                <span class="lp-preview-note">Illustrative preview</span>
+            </div>
+        </div>
+    </section>
+
+    {# ===================== STATS (real numbers) ===================== #}
+    {% if stats %}
+    <section class="lp-stats reveal">
+        <div class="lp-wrap">
+            <div class="lp-stats-bar">
+                <div class="lp-stat"><strong data-count="{{ stats.workshops }}">{{ stats.workshops }}</strong><span>Workshops</span></div>
+                <div class="lp-stat"><strong data-count="{{ stats.mechanics }}">{{ stats.mechanics }}</strong><span>Working mechanics</span></div>
+                <div class="lp-stat"><strong data-count="{{ stats.services }}">{{ stats.services }}</strong><span>Services listed</span></div>
+                <div class="lp-stat"><strong data-count="{{ stats.jobs }}">{{ stats.jobs }}</strong><span>Jobs completed</span></div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    {# ===================== MANIFESTO (scroll-scrubbed words; edit the text freely) ===================== #}
+    <section class="lp-manifesto" aria-label="About Getwheelz">
+        <div class="lp-wrap">
+            <span class="lp-eyebrow"><i class='bx bx-wrench'></i> Our approach</span>
+            <p class="fx-manifesto" data-scroll-words>Find trusted workshops, book in minutes, and keep every appointment in one calm place. From the first warning light to the last road test, Getwheelz keeps the care moving.</p>
+        </div>
+    </section>
+
+    {# ===================== EDITION NAV ===================== #}
+    <section class="lp-edition-nav" aria-label="Explore Getwheelz">
+        <div class="lp-wrap">
+            <div class="edition-nav-top"><span>THE GETWHEELZ EDITION</span><span class="edition-progress">01 / 05</span></div>
+            <nav class="edition-links">
+                <a class="is-active" href="#services" data-chapter="01">Services</a>
+                <a href="#near-you" data-chapter="02">Near you</a>
+                <a href="#how" data-chapter="03">How it works</a>
+                <a href="#roles" data-chapter="04">For everyone</a>
+                <a href="#faq" data-chapter="05">FAQ</a>
+            </nav>
+        </div>
+    </section>
+
+    <div class="lp-edition-marquee" aria-hidden="true"><span>CARE IN MOTION&nbsp;&nbsp; / &nbsp;&nbsp;BUILT FOR THE ROAD&nbsp;&nbsp; / &nbsp;&nbsp;CARE IN MOTION&nbsp;&nbsp; / &nbsp;&nbsp;BUILT FOR THE ROAD&nbsp;&nbsp; / &nbsp;&nbsp;</span></div>
+
+    {# ===================== SERVICES ===================== #}
+    <section class="lp-services lp-motion-section reveal" id="services" data-motion-scene="services">
+        <canvas class="lp-motion-canvas" aria-hidden="true"></canvas>
+        <div class="lp-wrap">
+            <div class="lp-head-row">
+                <div class="lp-section-head">
+                    <span class="lp-eyebrow"><i class='bx bx-cog'></i> Services</span>
+                    <h2>Whatever your {% if vehicle_choice %}{{ VEHICLE_SINGULAR[vehicle_choice] | lower }}{% else %}four-wheeler or two-wheeler{% endif %} needs, <span class="lp-ghellis-tail">start here.</span></h2>
+                    <p>{% if vehicle_choice %}Pick a service and see the {{ VEHICLE_SINGULAR[vehicle_choice] | lower }} workshops that offer it, nearest first.{% else %}Choose four-wheelers or two-wheelers first, then pick a service.{% endif %}</p>
+                </div>
+                <div class="lp-wave">{{ robot('wave', 150, follow=True) }}</div>
+            </div>
+            <div class="lp-tiles" data-more="10" data-more-label="services" data-more-all-href="{{ url_for('workshops.search', vehicle=vehicle_choice) }}">
+                {% for svc in catalog_services %}
+                {% set n = svc.name | lower %}
+                {% set icon = 'bx-cog' if 'engine' in n
+                    else 'bx-bolt-circle' if ('electr' in n or 'battery' in n)
+                    else 'bx-disc' if ('tire' in n or 'tyre' in n or 'wheel' in n)
+                    else 'bx-wind' if ('ac' in n.split() or 'a/c' in n or 'air' in n.split() or 'conditioning' in n or 'cooling' in n)
+                    else 'bx-stop-circle' if 'brake' in n
+                    else 'bx-droplet' if ('oil' in n.split() or 'fluid' in n)
+                    else 'bx-brush' if ('paint' in n or 'body' in n.split() or 'denting' in n)
+                    else 'bx-water' if ('wash' in n or 'clean' in n or 'detail' in n)
+                    else 'bx-wrench' %}
+                <a class="lp-tile" href="{{ url_for('workshops.search', vehicle=vehicle_choice, service=svc.name) }}">
+                    <i class='bx {{ icon }} main'></i><b>{{ svc.name }}</b>
+                    <span class="go">Browse <i class='bx bx-right-arrow-alt'></i></span>
+                </a>
+                {% else %}
+                <p style="grid-column: 1 / -1; color: var(--text-muted);">{% if vehicle_choice %}{{ VEHICLE_PLURAL[vehicle_choice] }} services will appear here once the admin adds them to the catalog.{% else %}Services will appear here once the admin adds them to the catalog.{% endif %}</p>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    {# ===================== FIELD IMAGE BREAK ===================== #}
+    <section class="lp-px lp-field-break lp-motion-section reveal" data-motion-scene="field-break" aria-label="Vehicle care in motion">
+        <canvas class="lp-px-canvas" data-px-image="{{ url_for('static', filename='uploads/branding/apocalyptic-car-wreck.jpg') }}" data-px-focus="0.5" aria-hidden="true"></canvas>
+        <div class="lp-field-break-image" role="img" aria-label="A weathered vehicle waiting for repair"></div>
+        <div class="lp-field-break-scan" aria-hidden="true"></div>
+        <div class="lp-pixel-vanish" aria-hidden="true"></div>
+        <div class="lp-wrap lp-field-break-content">
+            <span class="lp-eyebrow"><i class='bx bx-radio-circle-marked'></i> FIELD NOTE / 02</span>
+            <h2>Every repair has a <span class="lp-ghellis-tail">starting point.</span></h2>
+            <p>From the first warning light to the last road test, Getwheelz keeps the care moving.</p>
+            <div class="lp-field-readout"><span>VEHICLE STATUS</span><b>READY TO RESTORE</b><i></i><i></i><i></i><i></i></div>
+        </div>
+    </section>
+
+    {# ===================== THE GARAGE ===================== #}
+    {# Workshop parts as live ASCII / pixel 3D (static/js/gw-objects.js + garage.js) #}
+    <section class="lp-garage reveal" id="garage" aria-label="The garage: interactive 3D workshop equipment">
+        <div class="lp-wrap">
+            <div class="lp-section-head">
+                <span class="lp-eyebrow"><i class='bx bx-cog'></i> The garage</span>
+                <h2>Every tool, drawn in code.</h2>
+                <p>Wrenches, engines, turbos and more, rendered live in ASCII or pixels. Drag a part to spin it, or pick one from the list.</p>
+            </div>
+            <div class="gw-garage">
+                <div class="gw-stage" data-gw-manual data-gw-object="wrench" data-gw-mode="ascii" role="img" aria-label="Interactive 3D model of workshop equipment, drawn in ASCII or pixels">
+                    <span class="gw-corner tl"></span><span class="gw-corner tr"></span><span class="gw-corner bl"></span><span class="gw-corner br"></span>
+                    <div class="gw-hud gw-hud-tl"><i></i><span data-gw-idx>01 / 08</span></div>
+                    <div class="gw-hud gw-hud-bl"><strong data-gw-name>Combination wrench</strong><span data-gw-spec>Ring end + open end</span></div>
+                    <div class="gw-hud gw-hud-br">Drag to rotate</div>
+                </div>
+                <aside class="gw-side">
+                    <div class="gw-modes" role="group" aria-label="Render style">
+                        <button type="button" data-gw-mode-btn="ascii" class="is-on" aria-pressed="true">ASCII</button>
+                        <button type="button" data-gw-mode-btn="pixel" aria-pressed="false">PIXEL</button>
+                    </div>
+                    <ol class="gw-list" aria-label="Parts"></ol>
+                    <p class="gw-note">Real-time three.js &middot; no image files</p>
+                </aside>
+            </div>
+        </div>
+    </section>
+
+    {# ===================== MAP ===================== #}
+    <section class="lp-map lp-motion-section reveal" id="near-you" data-motion-scene="map">
+        <canvas class="lp-motion-canvas" aria-hidden="true"></canvas>
+        <div class="lp-wrap">
+            <div class="lp-section-head">
+                <span class="lp-eyebrow"><i class='bx bx-map-alt'></i> Near you</span>
+                <h2>Workshops on your <span class="lp-ghellis-tail">doorstep.</span></h2>
+                <p>See every listed workshop on the map and open one to view its services and book.</p>
+            </div>
+            <div class="lp-map-frame">
+                <div id="map"></div>
+                <p class="lp-map-note"><i class='bx bx-current-location'></i> Allow location access and the map centres on you.</p>
+            </div>
+        </div>
+    </section>
+
+    {# ===================== HOW IT WORKS ===================== #}
+    <section class="lp-how lp-motion-section reveal" id="how" data-motion-scene="how">
+        <canvas class="lp-motion-canvas" aria-hidden="true"></canvas>
+        <div class="lp-wrap">
+            <div class="lp-section-head">
+                <span class="lp-eyebrow"><i class='bx bx-list-check'></i> How it works</span>
+                <h2>Three steps to better <span class="lp-ghellis-tail">vehicle care.</span></h2>
+            </div>
+            <div class="lp-steps">
+                <div class="lp-step">
+                    <span class="lp-step-num">1</span>
+                    <h3>Search</h3>
+                    <p>Find workshops by service and location.</p>
+                </div>
+                <div class="lp-step">
+                    <span class="lp-step-num">2</span>
+                    <h3>Book</h3>
+                    <p>Choose the service and time that suit you.</p>
+                </div>
+                <div class="lp-step">
+                    <span class="lp-step-num">3</span>
+                    <h3>Drive on</h3>
+                    <p>Keep track of your booking from one place.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {# ===================== RESTORATION IMAGE BREAK ===================== #}
+    <section class="lp-px lp-restoration-break lp-motion-section reveal" data-motion-scene="restoration" aria-label="Restoration in progress">
+        <canvas class="lp-px-canvas" data-px-image="{{ url_for('static', filename='uploads/branding/apocalyptic-car-wreck.jpg') }}" data-px-focus="0.62" aria-hidden="true"></canvas>
+        <div class="lp-restoration-image" role="img" aria-label="Close-up of a damaged vehicle panel"></div>
+        <div class="lp-restoration-grid" aria-hidden="true"></div>
+        <div class="lp-pixel-vanish" aria-hidden="true"></div>
+        <div class="lp-wrap lp-restoration-content">
+            <span class="lp-eyebrow"><i class='bx bx-wrench'></i> RESTORATION / 03</span>
+            <h2>Good care leaves a <span class="lp-ghellis-tail">trace.</span></h2>
+            <p>Find the people who know what your vehicle needs, and leave the workshop ready for the next mile.</p>
+            <a class="lp-ghost" href="{{ url_for('workshops.search') }}">Find your workshop <i class='bx bx-right-arrow-alt'></i></a>
+        </div>
+    </section>
+
+    {# ===================== ROLES ===================== #}
+    {# Pinned section: vertical scroll turns into a sideways slide (static/js/hscroll.js), then hands back to normal scrolling.
+       Without JS or with reduced motion it stays the plain 3-column grid. #}
+    <section class="lp-roles lp-hscroll" id="roles" data-hscroll>
+        <div class="lp-wrap lp-hs-pin">
+            <div class="lp-hs-track">
+            <div class="lp-section-head">
+                <span class="lp-eyebrow"><i class='bx bx-group'></i> Who it's for</span>
+                <h2>Built for everyone in <span class="lp-ghellis-tail">vehicle care.</span></h2>
+                <p>One platform for the people who drive, the people who run workshops, and the people who fix.</p>
+            </div>
+            <div class="lp-role-grid">
+                <article class="lp-role">
+                    <span class="ico"><i class='bx bx-car'></i></span>
+                    <h3>Customers</h3>
+                    <ul>
+                        <li><i class='bx bxs-check-circle'></i> Find and compare workshops near you</li>
+                        <li><i class='bx bxs-check-circle'></i> Book a service in minutes</li>
+                        <li><i class='bx bxs-check-circle'></i> Track every booking in one place</li>
+                    </ul>
+                    <a href="#" class="lp-ghost" data-signup="signupBtn" data-role="customer">Sign up as a customer</a>
+                </article>
+                <article class="lp-role">
+                    <span class="ico"><i class='bx bx-store'></i></span>
+                    <h3>Workshop owners</h3>
+                    <ul>
+                        <li><i class='bx bxs-check-circle'></i> List your workshop and services</li>
+                        <li><i class='bx bxs-check-circle'></i> Manage bookings and prices</li>
+                        <li><i class='bx bxs-check-circle'></i> Build your team and set capacity</li>
+                    </ul>
+                    <a href="#" class="lp-ghost" data-signup="signupBtn" data-role="owner">Sign up as an owner</a>
+                </article>
+                <article class="lp-role">
+                    <span class="ico"><i class='bx bx-wrench'></i></span>
+                    <h3>Mechanics</h3>
+                    <ul>
+                        <li><i class='bx bxs-check-circle'></i> Browse workshops that are hiring</li>
+                        <li><i class='bx bxs-check-circle'></i> Send a joining request in one tap</li>
+                        <li><i class='bx bxs-check-circle'></i> See your team and workshop bookings</li>
+                    </ul>
+                    <a href="#" class="lp-ghost" data-signup="signupBtn" data-role="mechanic">Sign up as a mechanic</a>
+                </article>
+                {% set parts = [
+                    {'id': 'wrench', 'icon': 'bx-wrench', 'label': 'Combination wrench', 'spec': 'Ring end + open end'},
+                    {'id': 'engine', 'icon': 'bx-bolt-circle', 'label': 'Inline-4 engine', 'spec': 'Four pistons, live'},
+                    {'id': 'turbo', 'icon': 'bx-wind', 'label': 'Turbocharger', 'spec': 'Compressor + turbine'}
+                ] %}
+                {% for part in parts %}
+                <article class="lp-role lp-role-parts">
+                    <div class="lp-role-parts-head">
+                        <span class="ico"><i class='bx {{ part.icon }}'></i></span>
+                        <div class="lp-role-parts-title">
+                            <h3>Live parts</h3>
+                            <p>The machines, drawn in code.</p>
+                        </div>
+                        <div class="gw-modes" role="group" aria-label="Render style">
+                            <button type="button" data-gw-mode-btn="ascii" class="is-on" aria-pressed="true">ASCII</button>
+                            <button type="button" data-gw-mode-btn="pixel" aria-pressed="false">PIXEL</button>
+                        </div>
+                    </div>
+                    <div class="gw-stage gw-stage-card" data-gw-manual data-gw-object="{{ part.id }}" data-gw-mode="ascii" role="img" aria-label="Interactive 3D model of a {{ part.label }}, drawn in ASCII or pixels">
+                        <span class="gw-corner tl"></span><span class="gw-corner tr"></span><span class="gw-corner bl"></span><span class="gw-corner br"></span>
+                        <div class="gw-hud gw-hud-tl"><i></i><span data-gw-name>{{ part.label }}</span></div>
+                        <div class="gw-hud gw-hud-bl"><span data-gw-spec>{{ part.spec }}</span></div>
+                        <div class="gw-hud gw-hud-br">Drag to rotate</div>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+            </div>
+            <div class="lp-hs-hud" aria-hidden="true"><span>SCROLL <i class='bx bx-right-arrow-alt'></i></span><span class="lp-hs-bar"><i></i></span><span class="lp-hs-count">01 / 03</span></div>
+        </div>
+    </section>
+
+    {# ===================== FAQ ===================== #}
+    <section class="lp-faq reveal" id="faq">
+        <div class="lp-wrap lp-faq-grid">
+            <div class="lp-section-head">
+                <span class="lp-eyebrow"><i class='bx bx-help-circle'></i> FAQ</span>
+                <h2>Questions, <span class="lp-ghellis-tail">answered.</span></h2>
+                <p>Anything else you'd like to know? Reach us from the Contact page.</p>
+            </div>
+            <div class="lp-faq-list">
+                <details>
+                    <summary>How do I book a service?</summary>
+                    <p>Search for a workshop or browse by service, open its page, choose a service and a time, and send the request. The workshop confirms it and you can follow its status under My Bookings.</p>
+                </details>
+                <details>
+                    <summary>Do I need an account?</summary>
+                    <p>You can search and look at workshops without one. You need a free account to book, and it only takes a minute to create.</p>
+                </details>
+                <details>
+                    <summary>Which services can I find?</summary>
+                    <p>Engine repair, electrical work, tires, AC service and general servicing, plus anything else workshops add to their listing.</p>
+                </details>
+                <details>
+                    <summary>How do mechanics join a workshop?</summary>
+                    <p>A mechanic sends a joining request from a workshop's page. The owner reviews it and accepts it if the workshop has an open spot.</p>
+                </details>
+                <details>
+                    <summary>Can a mechanic leave a workshop?</summary>
+                    <p>Yes. They send a leave request and the owner decides, so the team is never left short without notice.</p>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    {# ===================== FINAL CTA ===================== #}
+    <section class="lp-final reveal">
+        <div class="lp-wrap">
+            <div class="lp-final-card">
+                <h2>Ready to get your vehicle <span class="lp-ghellis-tail">looked after?</span></h2>
+                <p>Join Getwheelz today and find a workshop you can rely on.</p>
+                <div class="lp-cta-row">
+                    <a class="lp-btn" href="#" data-signup="signupBtn">Create your account <i class='bx bx-right-arrow-alt'></i></a>
+                    <a class="lp-ghost" href="{{ url_for('workshops.search') }}">Browse workshops</a>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+{# Auth pop-ups for signed-out visitors (header.js opens them by id; single source of truth: partials/px_auth_modals.html) #}
+{% include 'partials/px_auth_modals.html' %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/robot.js') }}"></script>
+<script src="{{ url_for('static', filename='js/premium-scroll.js', v='puzzle-4') }}" defer></script>
+<script src="{{ url_for('static', filename='js/motion-graphics.js', v='pixel-dissolve-12') }}" defer></script>
+<script src="{{ url_for('static', filename='js/pixel-dissolve.js', v='2') }}" defer></script>
+<script src="{{ url_for('static', filename='js/scroll-fx.js', v='1') }}" defer></script>
+<script src="{{ url_for('static', filename='js/hscroll.js', v='3') }}" defer></script>
+<script src="{{ url_for('static', filename='js/gw-objects.js', v='1') }}" defer></script>
+<script src="{{ url_for('static', filename='js/garage.js', v='1') }}" defer></script>
+<script src="{{ url_for('static', filename='js/hscroll-garage.js', v='1') }}" defer></script>
+<script type="application/json" id="serviceNames">{{ catalog_services | map(attribute='name') | list | tojson }}</script>
+<script src="{{ url_for('static', filename='js/search-suggest.js', v='1') }}" defer></script>
+<script src="{{ url_for('static', filename='js/hero-signature.js', v='10') }}" defer></script>
+
+<script>
+    const mapCenterOnUser = true;
+    const mapClickToInteract = true;
+
+    const workshopData = [
+        {% for workshop in workshops %}
+    {
+        url: {{ url_for('workshops.selected', w_id=workshop.w_id) | tojson }},
+        name: {{ workshop.name | tojson }},
+        address: {{ (workshop.address or '') | tojson }},
+        lat: {{ workshop.latitude | float if workshop.latitude is not none else 'null' }},
+        lng: {{ workshop.longitude | float if workshop.longitude is not none else 'null' }}
+    } {% if not loop.last %}, {% endif %}
+    {% endfor %}
+    ];
+</script>
+
+<script src="{{ url_for('static', filename='js/map.js', v='2') }}"></script>
+
+{% endblock %}

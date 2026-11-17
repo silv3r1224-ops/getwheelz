@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}My Bookings — Getwheelz{% endblock %}
+
+{% block head %}
+{% include 'partials/px_head.html' %}
+{% endblock %}
+
+{% block content %}
+{% from 'partials/robot.html' import neo_ico %}
+{% set upcoming = bookings | selectattr('status', 'in', ['pending', 'confirmed', 'in_progress']) | list %}
+{% set done = bookings | selectattr('status', 'equalto', 'completed') | list %}
+{% set cancelled = bookings | selectattr('status', 'equalto', 'cancelled') | list %}
+{% set to_pay = bookings | selectattr('to_pay') | list %}
+<div class="px px-customer-booking">
+
+    {# ===================== HERO ===================== #}
+    <section class="px-hero reveal">
+        <div class="neo-side" aria-hidden="true">{{ neo_ico('screwing', 170, 'lime', wander=False) }}</div>
+        <div class="px-wrap">
+            <a class="px-back" href="{{ url_for('customer.home') }}"><i class='bx bx-arrow-back'></i> Back to home</a>
+            <div class="px-kicker-row"><span>CUSTOMER / 03</span><span>MY BOOKINGS</span></div>
+            <span class="px-eyebrow"><i class='bx bx-calendar-check'></i> My bookings</span>
+            <h1 class="px-title">
+                <span class="px-title-line">Your</span>
+                <span class="px-title-line px-title-accent">appointments.</span>
+            </h1>
+            <p class="px-lead">Every request you have made, and where it stands.</p>
+
+            <ul class="px-trust">
+                <li><i class='bx bx-time'></i> Pending requests</li>
+                <li><i class='bx bx-credit-card'></i> Pay after the job is done</li>
+                <li><i class='bx bxs-check-circle'></i> Follow every status here</li>
+            </ul>
+        </div>
+    </section>
+
+    {# ===================== MARQUEE ===================== #}
+    <div class="px-edition-marquee" aria-hidden="true">
+        <span>REQUESTED&nbsp;&nbsp; / &nbsp;&nbsp;CONFIRMED&nbsp;&nbsp; / &nbsp;&nbsp;COMPLETED&nbsp;&nbsp; / &nbsp;&nbsp;REQUESTED&nbsp;&nbsp; / &nbsp;&nbsp;</span>
+    </div>
+
+    {# ===================== BOOKINGS LIST ===================== #}
+    <section class="px-section reveal">
+        <div class="px-wrap">
+            {% if bookings %}
+            <div class="px-section-head">
+                <div>
+                    <span class="px-eyebrow"><i class='bx bx-filter-alt'></i> Overview</span>
+                    <h2>Where your <span class="px-ghellis-tail">requests stand.</span></h2>
+                    <p>Upcoming appointments first, then history newest-first.</p>
+                </div>
+            </div>
+
+            <div class="px-toolbar" style="margin-top: 0;">
+                <div class="px-seg" role="tablist" aria-label="Filter bookings" id="booking-filter">
+                    <button type="button" class="active" data-filter="all">All ({{ bookings | length }})</button>
+                    <button type="button" data-filter="upcoming">Upcoming ({{ upcoming | length }})</button>
+                    {% if to_pay %}<button type="button" data-filter="topay">To pay ({{ to_pay | length }})</button>{% endif %}
+                    <button type="button" data-filter="completed">Completed ({{ done | length }})</button>
+                    <button type="button" data-filter="cancelled">Cancelled ({{ cancelled | length }})</button>
+                </div>
+                <a class="px-ghost sm" href="{{ url_for('workshops.search') }}"><i class='bx bx-plus'></i> New booking</a>
+            </div>
+
+            <div class="px-list" id="booking-list">
+                {% for b in bookings %}
+                <article class="px-card px-booking" data-group="{{ 'upcoming' if b.status in ('pending', 'confirmed', 'in_progress') else b.status }}" data-pay="{{ 1 if b.to_pay else 0 }}">
+                    <div class="px-date">
+                        <b>{{ b.requested_time.strftime('%d') }}</b>
+                        <span>{{ b.requested_time.strftime('%b') }}</span>
+                    </div>
+
+                    <div class="px-booking-info">
+                        <h3>{{ b.s_name }}</h3>
+                        {% if b.vehicle_description %}<p class="gwv-veh">{{ VEHICLE_SINGULAR[b.vehicle_type] }}: {{ b.vehicle_description }}</p>{% endif %}
+                        <p>
+                            <span><i class='bx bx-store'></i> {{ b.workshop_name }}</span>
+                            <span><i class='bx bx-time'></i> {{ b.requested_time.strftime('%a, %I:%M %p') }}</span>
+                            {% if b.mechanic_name and b.status in ('confirmed', 'in_progress', 'completed') %}
+                            <span><i class='bx bx-wrench'></i> {{ b.mechanic_name }}</span>
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div class="px-booking-side">
+                        <span class="px-badge {{ b.status }}">{{ b.status_label }}</span>
+                        {% if b.cancel_request_status == 'requested' and b.status in ('confirmed', 'in_progress') %}
+                        <span class="px-badge pending">Cancellation requested</span>
+                        {% elif b.cancel_request_status == 'declined' and b.status in ('confirmed', 'in_progress') %}
+                        <span class="px-badge cancelled" title="The workshop declined your cancellation request">Cancellation declined</span>
+                        {% endif %}
+                        {% if b.status == 'cancelled' and b.cancelled_by %}
+                        <span class="px-pay-note">{{ {'customer': 'Cancelled by you', 'owner': 'Declined by the workshop', 'system': 'No answer in 48 hours'}[b.cancelled_by] }}</span>
+                        {% endif %}
+                        {% if b.status == 'completed' %}
+                        {% if b.reviewed %}<span class="px-pay-note">Reviewed</span>
+                        {% else %}<a class="px-ghost sm" href="{{ url_for('workshops.selected', w_id=b.w_id, review=b.b_id) }}#reviews"><i class='bx bx-star'></i> Leave a review</a>{% endif %}
+                        {% endif %}
+                        {% if b.status == 'pending' and b.hours_left is not none %}
+                        <span class="px-pay-note">{% if b.hours_left > 0 %}Cancels automatically in {{ b.hours_left }}h if the workshop doesn't answer{% else %}Cancelling now: no answer within 48 hours{% endif %}</span>
+                        {% endif %}
+                        {% if b.paid_reference %}
+                        <span class="px-badge confirmed" title="Receipt {{ b.paid_reference }}">Paid {{ b.paid_label }}</span>
+                        {% endif %}
+                        <div class="px-booking-actions">
+                            {% if b.cancel_mode == 'cancel' %}
+                            <form method="POST" action="{{ url_for('bookings.cancel', b_id=b.b_id) }}"
+                                data-confirm-title="Cancel this booking?"
+                                data-confirm-text="{{ b.s_name }} at {{ b.workshop_name }} will be cancelled."
+                                data-confirm-yes="Yes, cancel it"
+                                data-confirm-tone="danger">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="px-ghost sm danger">Cancel</button>
+                            </form>
+                            {% elif b.cancel_mode == 'request' %}
+                            <details class="px-cancel-request">
+                                <summary class="px-ghost sm danger">Request cancellation</summary>
+                                <form method="POST" action="{{ url_for('bookings.request_cancel', b_id=b.b_id) }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <label>Why do you need to cancel? (optional)
+                                        <input type="text" name="reason" maxlength="300">
+                                    </label>
+                                    <small>The workshop already accepted this booking, so it decides on your request.</small>
+                                    <button type="submit" class="px-ghost sm danger">Send request</button>
+                                </form>
+                            </details>
+                            {% endif %}
+                            {% if b.paid_reference %}
+                            <a href="{{ url_for('bookings.receipt', b_id=b.b_id) }}" class="px-ghost sm"><i class='bx bx-receipt'></i> Receipt</a>
+                            {% elif b.to_pay %}
+                            {% if b.due_label %}
+                            <a href="{{ url_for('bookings.pay', b_id=b.b_id) }}" class="px-btn sm"><i class='bx bx-credit-card'></i> Pay {{ b.due_label }}</a>
+                            {% if b.due_is_estimate %}<span class="px-pay-note">estimate</span>{% endif %}
+                            {% else %}
+                            <span class="px-pay-note">Bill pending</span>
+                            {% endif %}
+                            {% endif %}
+                            <a href="{{ url_for('workshops.selected', w_id=b.w_id) }}" class="px-ghost sm">View workshop</a>
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+
+            <div class="px-card px-empty" id="booking-empty" hidden>
+                {{ neo_ico('neutral', 84, 'violet') }}
+                <h3>Nothing here</h3>
+                <p>No bookings match this filter.</p>
+            </div>
+            {% else %}
+            <div class="px-card px-empty" style="margin-top: 12px;">
+                {{ neo_ico('wave', 110, '', wander=False) }}
+                <h3>No bookings yet</h3>
+                <p>When you book a service it shows up here, with its status from request to completion.</p>
+                <a class="px-btn sm" href="{{ url_for('workshops.search') }}">Find a workshop</a>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/premium-scroll.js', v='puzzle-4') }}" defer></script>
+<script src="{{ url_for('static', filename='js/confirm.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/pages/my_bookings.js', v='1') }}"></script>
+{% endblock %}

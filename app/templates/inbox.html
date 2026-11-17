@@ -1,0 +1,685 @@
+{% extends "base.html" %}
+
+{% block title %}Mailbox & Notifications — Getwheelz{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/inbox.css', v='1') }}">
+{% endblock %}
+
+{% block content %}
+{% from 'partials/robot.html' import neo_ico %}
+
+{# ------------------------------------------------------------------------------------------
+   One compact row per mail: icon, title, one-line preview, relative time, unread marker. The full
+   message lives in a <template> and is shown in the popup (static/js/inbox.js), which marks the mail
+   read when it opens and has a floating Delete button when the mail can be deleted.
+   ------------------------------------------------------------------------------------------ #}
+{% macro row(kind, id, icon, title, preview, time, unread=false, badge='', badge_cls='', mark_url='', del_url='', del_kind='', deletable=false) %}
+<li class="mail-row{{ ' is-unread' if unread }}" data-kind="{{ kind }}" data-id="{{ id }}"
+    data-mark-url="{{ mark_url if unread else '' }}"
+    data-del-url="{{ del_url if deletable else '' }}" data-del-kind="{{ del_kind }}"
+    data-deletable="{{ 1 if deletable else 0 }}">
+    <button type="button" class="mail-row-btn" data-open aria-haspopup="dialog">
+        <span class="mail-icon" aria-hidden="true"><i class='bx {{ icon }}'></i></span>
+        <span class="mail-main">
+            <span class="mail-title">{{ title }}</span>
+            <span class="mail-preview">{{ preview | preview }}</span>
+        </span>
+        <span class="mail-side">
+            {% if badge %}<span class="mail-badge {{ badge_cls }}">{{ badge }}</span>{% endif %}
+            <time class="mail-time"{% if time %} datetime="{{ time.strftime('%Y-%m-%dT%H:%M') }}" title="{{ time.strftime('%d %b %Y, %I:%M %p') }}"{% endif %}>{{ time | rel_time }}</time>
+        </span>
+        <span class="mail-dot" aria-label="Unread"{% if not unread %} hidden{% endif %}></span>
+    </button>
+    <template class="mail-body" data-title="{{ title }}" data-icon="{{ icon }}">{{ caller() }}</template>
+</li>
+{% endmacro %}
+
+{% macro status_cls(status) -%}
+{%- if status in ('confirmed', 'accepted', 'assigned', 'in_progress') -%}status-confirmed
+{%- elif status in ('completed', 'done') -%}status-completed
+{%- elif status in ('cancelled', 'cancel', 'rejected', 'declined') -%}status-cancelled
+{%- else -%}status-pending{%- endif -%}
+{%- endmacro %}
+
+{% macro when(t) %}{{ t.strftime('%d %b %Y, %I:%M %p') if t else '' }}{% endmacro %}
+
+{% macro next_inbox() %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="next" value="inbox">{% endmacro %}
+
+{# Admin-only report state label: a verified report with no action yet is "Verified (action pending)". #}
+{% macro report_state(r) -%}
+{%- if r.res_status -%}{{ r.res_status | title }}{%- elif r.rv and r.rv.verified -%}Verified{%- else -%}Open{%- endif -%}
+{%- endmacro %}
+
+{# Admin-only: how a report was resolved, OR the review steps (spec section 9):
+   evidence -> ask for a response (72h) or skip -> Verify -> Warn / Suspend (locked until verified) or Dismiss (always). #}
+{% macro resolution_block(r, allow_suspend) %}
+{% if r.res_status %}
+<div class="report-resolution {{ r.res_status }}">
+    <i class='bx {{ "bx-check-shield" if r.res_status == "verified" else "bx-shield-x" }}'></i>
+    <span><strong>{{ 'Verified' if r.res_status == 'verified' else 'Dismissed' }}{% if r.res_outcome == 'suspend' %} · account suspended{% elif r.res_outcome == 'warn' %} · warning sent{% endif %}</strong>
+        — {{ r.res_by or 'an admin' }}{% if r.res_at %}, {{ r.res_at.strftime('%d %b %Y, %I:%M %p') }}{% endif %}</span>
+    {% if r.res_note %}<p>Note: {{ r.res_note }}</p>{% endif %}
+</div>
+{% elif r.can_resolve %}
+{% set rv = r.rv %}
+<div class="rv-steps">
+    {% if r.evidence %}
+    <div class="rv-step rv-evidence">
+        <h4><i class='bx bx-search-alt'></i> Evidence</h4>
+        <p class="mail-muted">{{ r.evidence.warnings }} earlier warning{{ '' if r.evidence.warnings == 1 else 's' }} and {{ r.evidence.past_reports | length }} other report{{ '' if r.evidence.past_reports | length == 1 else 's' }} on this account.</p>
+        <strong>Bookings between the two</strong>
+        {% if r.evidence.bookings %}
+        <div class="table-scroll"><table>
+            <thead><tr><th>#</th><th>Date</th><th>Workshop</th><th>Service</th><th>Status</th></tr></thead>
+            <tbody>{% for b in r.evidence.bookings %}<tr><td>{{ b.b_id }}</td><td>{{ b.requested_time.strftime('%d %b %Y') }}</td><td>{{ b.workshop }}</td><td>{{ b.s_name }}</td><td>{{ b.status | status_label }}</td></tr>{% endfor %}</tbody>
+        </table></div>
+        {% else %}<p class="mail-muted">No bookings between these two accounts.</p>{% endif %}
+        <strong>Past reports on this account</strong>
+        {% if r.evidence.past_reports %}
+        <div class="table-scroll"><table>
+            <thead><tr><th>#</th><th>Date</th><th>Reason</th><th>Outcome</th></tr></thead>
+            <tbody>{% for p in r.evidence.past_reports %}<tr><td>{{ p.id }}</td><td>{{ p.time.strftime('%d %b %Y') }}</td><td>{{ p.subject }}</td><td>{% if not p.status %}Open{% elif p.outcome == 'warn' %}Warned{% elif p.outcome == 'suspend' %}Suspended{% else %}Dismissed{% endif %}</td></tr>{% endfor %}</tbody>
+        </table></div>
+        {% else %}<p class="mail-muted">No earlier reports.</p>{% endif %}
+    </div>
+    {% endif %}
+
+    <div class="rv-step">
+        <h4><i class='bx bx-message-rounded-dots'></i> 1. Their side — {{ rv.state_label }}</h4>
+        {% if rv.state == 'not_decided' %}
+        <p class="mail-muted">Choose whether to ask the reported person to respond. They are told a report exists, never who filed it, and get 72 hours.</p>
+        <div class="mail-actions">
+            <form method="POST" action="{{ url_for('main.inbox_report_response', msg_id=r.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="mode" value="request">
+                <button type="submit" class="sa-btn confirm"><i class='bx bx-time-five'></i> Ask them to respond (72h)</button>
+            </form>
+        </div>
+        <form method="POST" action="{{ url_for('main.inbox_report_response', msg_id=r.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="mode" value="skip">
+            <label class="mail-muted" for="skip{{ r.id }}">Urgent safety case? Skip the request (the reason is recorded on the report)</label>
+            <input id="skip{{ r.id }}" type="text" name="reason" minlength="10" maxlength="300" required placeholder="Why skip the response request?">
+            <button type="submit" class="sa-btn"><i class='bx bx-fast-forward'></i> Skip the request</button>
+        </form>
+        {% elif rv.state == 'waiting' %}
+        <p class="mail-text">Asked {{ when(rv.requested_at) }}. They have until {{ when(rv.deadline) }} ({{ rv.hours_left }}h left). You can verify once they respond or the window ends. Dismiss is always available.</p>
+        {% elif rv.state == 'responded' %}
+        <p class="mail-foot">Responded {{ when(rv.responded_at) }}</p>
+        <div class="rv-response">{{ rv.response_text }}</div>
+        {% elif rv.state == 'window_ended' %}
+        <p class="mail-text">Asked {{ when(rv.requested_at) }}; the window ended {{ when(rv.deadline) }} with no response. You can decide without it.</p>
+        {% else %}
+        <p class="mail-text">Skipped. Reason recorded: {{ rv.skip_reason }}</p>
+        {% endif %}
+    </div>
+
+    <div class="rv-step">
+        <h4><i class='bx bx-check-shield'></i> 2. Verify</h4>
+        {% if rv.verified %}
+        <p class="mail-text">Verified {{ when(rv.verified_at) }}. Warn and Suspend are unlocked.</p>
+        {% else %}
+        <form method="POST" action="{{ url_for('main.inbox_report_verify', msg_id=r.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="sa-btn confirm" {{ 'disabled' if not rv.can_verify }}><i class='bx bx-check-shield'></i> Mark as Verified</button>
+            {% if not rv.can_verify %}<small class="mail-muted">Available once the response step is settled (answered, 72 hours passed, or skipped).</small>{% endif %}
+        </form>
+        {% endif %}
+    </div>
+
+    <div class="rv-step">
+        <h4><i class='bx bx-gavel'></i> 3. Decide</h4>
+        <form class="report-resolve" method="POST" action="{{ url_for('main.inbox_report_resolve', msg_id=r.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <textarea name="note" maxlength="500" placeholder="Optional note, shared with the people involved"></textarea>
+            <div class="mail-actions">
+                <button type="submit" name="outcome" value="warn" class="sa-btn confirm {{ 'rv-locked' if not r.can_sanction }}" {{ 'disabled' if not r.can_sanction }} {% if not r.can_sanction %}title="Locked until the report is verified"{% endif %}><i class='bx {{ "bx-error" if r.can_sanction else "bx-lock-alt" }}'></i> Warn</button>
+                {% if allow_suspend %}
+                <button type="submit" name="outcome" value="suspend" class="sa-btn confirm {{ 'rv-locked' if not r.can_sanction }}" {{ 'disabled' if not r.can_sanction }} {% if not r.can_sanction %}title="Locked until the report is verified"{% endif %}><i class='bx {{ "bx-user-x" if r.can_sanction else "bx-lock-alt" }}'></i> Suspend</button>
+                {% endif %}
+                <button type="submit" name="outcome" value="dismiss" class="sa-btn"><i class='bx bx-shield-x'></i> Dismiss</button>
+            </div>
+            <small class="mail-muted">The reporter is always told the outcome. The reported person is only notified if the report is verified, and never learns who reported them.</small>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endmacro %}
+
+{# Eligibility and derived lists are defined BEFORE the sidebar <aside> so the sidebar sees them. #}
+{% set updates_eligible = role in ('owner', 'mechanic', 'customer') %}
+{% set joins_eligible = role in ('owner', 'mechanic') %}
+{% set leaves_eligible = role == 'owner' %}
+{% set reports_label = 'Report Mails' if role == 'admin' else 'Reports' %}
+{% set updates = items | selectattr('type', 'in', ['booking', 'job']) | list if role != 'admin' else [] %}
+{% set joins = items | selectattr('type', 'eq', 'join_request') | list if role in ('owner', 'mechanic') else [] %}
+{% set leaves = items | selectattr('type', 'eq', 'leave_request') | list if role == 'owner' else [] %}
+{% set reports = items if role == 'admin' else reports | default([]) %}
+{% set account_reports = account_reports | default([]) %}
+{% set reported_accounts = reported_accounts | default([]) %}
+{% set workshop_reports = workshop_reports | default([]) %}
+{% set report_mail = report_mail | default([]) %}
+{% set appeals_list = appeals_list | default([]) %}
+{% set reports_count = reports | length + account_reports | length + reported_accounts | length + workshop_reports | length + report_mail | length + appeals_list | length %}
+
+<div class="admin-layout" id="adminLayout">
+
+    <aside class="admin-sidebar" id="sideBar">
+        <div class="sidebar-header">
+            <i class='bx bxs-envelope'></i>
+            <span>Mailbox</span>
+        </div>
+        <nav class="sidebar-nav">
+            {% if role == 'admin' %}
+            <a href="{{ url_for('dashboard.admin') }}" class="sidebar-link"><i class='bx bx-arrow-back'></i> Back to dashboard</a>
+            {% elif role == 'owner' %}
+            <a href="{{ url_for('dashboard.owner') }}" class="sidebar-link"><i class='bx bx-arrow-back'></i> Back to panel</a>
+            {% elif role == 'mechanic' %}
+            <a href="{{ url_for('mechanics.home') }}" class="sidebar-link"><i class='bx bx-arrow-back'></i> Back to panel</a>
+            {% else %}
+            <a href="{{ url_for('customer.home') }}" class="sidebar-link"><i class='bx bx-arrow-back'></i> Back to home</a>
+            {% endif %}
+            <span class="sidebar-group-label">Sections</span>
+            <button type="button" class="sidebar-link js-inbox-nav active" data-panel="panelNotices">
+                <i class='bx bx-megaphone'></i> Notices
+                <span class="nav-mail-dot" data-dot="notices" {% if not panel_unread.get('notices') %}hidden{% endif %} aria-hidden="true"></span>
+            </button>
+            {% if updates_eligible %}
+            <button type="button" class="sidebar-link js-inbox-nav" data-panel="panelUpdates">
+                <i class='bx bx-receipt'></i> Updates
+                <span class="nav-mail-dot" data-dot="updates" {% if not panel_unread.get('updates') %}hidden{% endif %} aria-hidden="true"></span>
+            </button>
+            {% endif %}
+            {% if joins_eligible %}
+            <button type="button" class="sidebar-link js-inbox-nav" data-panel="panelJoins">
+                <i class='bx bx-user-plus'></i> Join Requests
+                <span class="nav-mail-dot" data-dot="joins" {% if not panel_unread.get('joins') %}hidden{% endif %} aria-hidden="true"></span>
+            </button>
+            {% endif %}
+            {% if leaves_eligible %}
+            <button type="button" class="sidebar-link js-inbox-nav" data-panel="panelLeaves">
+                <i class='bx bx-log-out-circle'></i> Leave Requests
+                <span class="nav-mail-dot" data-dot="leaves" {% if not panel_unread.get('leaves') %}hidden{% endif %} aria-hidden="true"></span>
+            </button>
+            {% endif %}
+            <button type="button" class="sidebar-link js-inbox-nav" data-panel="panelReports">
+                <i class='bx bx-flag'></i> {{ reports_label }}
+                <span class="nav-mail-dot" data-dot="reports" {% if not panel_unread.get('reports') %}hidden{% endif %} aria-hidden="true"></span>
+            </button>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-link"><i class='bx bx-log-out'></i> Logout</a>
+        </div>
+    </aside>
+
+    <main class="admin-main wp-main">
+        <div class="profile-head" id="overview">
+            <div class="team-avatar mail-avatar">
+                <i class='bx bx-envelope'></i>
+            </div>
+            <div class="profile-head-text">
+                <h1>Mailbox & Notifications</h1>
+                <p>
+                    <i class='bx bx-shield-quarter'></i> Secured Account Inbox
+                    <i class='bx bx-envelope'></i> {{ session.get('user_name', 'Member') }}
+                </p>
+            </div>
+            <div class="profile-head-actions">
+                <a href="javascript:history.back()" class="sa-btn"><i class='bx bx-arrow-back'></i> Go back</a>
+            </div>
+        </div>
+
+        {% if is_main_admin %}
+        <section class="admin-section wp-panel mail-compose">
+            <h2>Broadcast / Send <span class="px-ghellis-tail">mail.</span></h2>
+            <p class="leave-text">Send an official notification or direct message to users, mechanics, owners, or all accounts.</p>
+            <form method="POST" action="{{ url_for('main.inbox') }}" class="mail-compose-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="mail-compose-grid">
+                    <div>
+                        <label for="noticeTarget">Target Audience</label>
+                        <select id="noticeTarget" name="target" class="sa-select" required>
+                            <option value="all">Broadcast to All Users</option>
+                            <option value="customer">All Customers</option>
+                            <option value="owner">All Workshop Owners</option>
+                            <option value="mechanic">All Mechanics</option>
+                            <option value="admin">All Admins</option>
+                            <optgroup label="Specific User">
+                                {% for u in users_list %}
+                                <option value="user:{{ u.u_id }}">{{ u.name }} ({{ u.role }})</option>
+                                {% endfor %}
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="noticeCategory">Category</label>
+                        <select id="noticeCategory" name="category" class="sa-select" required>
+                            {% for key, label, icon in notice_categories %}
+                            <option value="{{ key }}">{{ label }}{% if key == 'important' %} (also shown as a banner at login){% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="noticeSubject">Subject</label>
+                        <input id="noticeSubject" type="text" name="subject" class="sa-field" placeholder="Notification subject" required maxlength="150">
+                    </div>
+                </div>
+                <div>
+                    <label for="noticeBody">Message Body</label>
+                    <textarea id="noticeBody" name="body" class="sa-field" rows="4" placeholder="Write message..." required maxlength="2000"></textarea>
+                </div>
+                <div>
+                    <button type="submit" class="sa-btn confirm"><i class='bx bx-send'></i> Send / Broadcast Mail</button>
+                </div>
+            </form>
+        </section>
+        {% endif %}
+
+        <section class="admin-section wp-panel mail-feed">
+            <h2>Inbox <span class="px-ghellis-tail">feed.</span></h2>
+
+            <div class="inbox-tabs" id="inboxTabs" role="tablist">
+                <button type="button" class="inbox-tab" data-panel="panelNotices" data-count="{{ msg_items | length }}" role="tab" aria-selected="false">
+                    <i class='bx bx-megaphone'></i> Notices <span class="count" data-count-for="notices">{{ msg_items | rejectattr('is_read') | list | length }} new</span>
+                </button>
+                {% if updates_eligible %}
+                <button type="button" class="inbox-tab" data-panel="panelUpdates" data-count="{{ updates | length }}" role="tab" aria-selected="false">
+                    <i class='bx bx-receipt'></i> Updates <span class="count" data-count-for="updates">{{ updates | rejectattr('is_read') | list | length }} new</span>
+                </button>
+                {% endif %}
+                {% if joins_eligible %}
+                <button type="button" class="inbox-tab" data-panel="panelJoins" data-count="{{ joins | length }}" role="tab" aria-selected="false">
+                    <i class='bx bx-user-plus'></i> Join Requests <span class="count" data-count-for="joins">{{ joins | rejectattr('is_read') | list | length }} new</span>
+                </button>
+                {% endif %}
+                {% if leaves_eligible %}
+                <button type="button" class="inbox-tab" data-panel="panelLeaves" data-count="{{ leaves | length }}" role="tab" aria-selected="false">
+                    <i class='bx bx-log-out-circle'></i> Leave Requests <span class="count" data-count-for="leaves">{{ leaves | rejectattr('is_read') | list | length }} new</span>
+                </button>
+                {% endif %}
+                <button type="button" class="inbox-tab" data-panel="panelReports" data-count="{{ reports_count }}" role="tab" aria-selected="false">
+                    <i class='bx bx-flag'></i> {{ reports_label }} <span class="count" data-count-for="reports">{{ reports_count }}</span>
+                </button>
+            </div>
+
+            <div id="inboxPanels" data-mark-url="{{ url_for('main.inbox_mark_read') }}" data-delete-url="{{ url_for('main.inbox_delete') }}"
+                 data-delete-all-url="{{ url_for('main.inbox_delete_all') }}" data-csrf="{{ csrf_token() }}">
+
+                {# ===================================================== NOTICES ===================================================== #}
+                <div class="inbox-panel" id="panelNotices" data-section="notices"
+                     data-delete-note="Direct mail is removed for good; broadcasts are only hidden for you.">
+                    <div class="inbox-panel-head">
+                        <span class="inbox-panel-title"><i class='bx bx-megaphone'></i> Notices</span>
+                        <span class="inbox-panel-sub">Official mail from Getwheelz administrators &amp; system alerts.</span>
+                    </div>
+                    <ul class="mail-list">
+                        {% for m in msg_items %}
+                        {% call row('message', m.id, m.category | cat_icon, m.subject, m.message, m.time, not m.is_read,
+                                    m.category | cat_label, 'cat-' ~ m.category,
+                                    url_for('main.inbox_mark_read'), url_for('main.inbox_delete'), 'message', true) %}
+                        <div class="mail-meta">
+                            <span class="mail-badge cat-{{ m.category }}"><i class='bx {{ m.category | cat_icon }}'></i> {{ m.category | cat_label }}</span>
+                            <span class="mail-badge">{{ 'Direct Mail' if m.recipient_id else 'Broadcast' }}</span>
+                        </div>
+                        <p class="mail-text">{{ m.message }}</p>
+                        <p class="mail-foot">From: {{ m.sender_name }}{% if m.target_role %} (To: {{ m.target_role | title }}){% endif %} · {{ when(m.time) }}</p>
+                        {% if m.appeal %}
+                        {% if m.appeal.can_appeal %}
+                        <form class="rv-step" method="POST" action="{{ url_for('appeals.listing_appeal') }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="w_id" value="{{ m.appeal.w_id }}">
+                            <h4><i class='bx bx-revision'></i> Think this is wrong?</h4>
+                            <textarea name="message" rows="4" minlength="10" maxlength="1000" required placeholder="Explain why the decision should be reconsidered."></textarea>
+                            <button type="submit" class="sa-btn confirm"><i class='bx bx-send'></i> Appeal this decision</button>
+                            <small class="mail-muted">You can appeal once for each rejection. An admin will answer with a note.</small>
+                        </form>
+                        {% elif m.appeal.open %}
+                        <p class="mail-readonly"><i class='bx bx-time-five'></i> Your appeal is under review.</p>
+                        {% elif m.appeal.state == 'rejected' %}
+                        <p class="mail-readonly"><i class='bx bx-info-circle'></i> You have already appealed this decision. Fix the details and save to resubmit instead.</p>
+                        {% endif %}
+                        {% endif %}
+                        {% endcall %}
+                        {% endfor %}
+                    </ul>
+                    <div class="inbox-panel-empty"{% if msg_items %} hidden{% endif %}><i class='bx bx-envelope-open'></i> No notices yet — official mail from Getwheelz admins lands here.</div>
+                </div>
+
+                {# ===================================================== UPDATES ===================================================== #}
+                {% if updates_eligible %}
+                <div class="inbox-panel" id="panelUpdates" data-section="updates"
+                     data-delete-note="Finished bookings are hidden from your inbox only. Anything still waiting for an answer stays.">
+                    <div class="inbox-panel-head">
+                        <span class="inbox-panel-title"><i class='bx bx-receipt'></i> Updates</span>
+                        <span class="inbox-panel-sub">{% if role == 'owner' %}Booking activity at your workshop. Answer requests right here.{% elif role == 'mechanic' %}Jobs assigned to you.{% else %}Your bookings and their progress.{% endif %}</span>
+                    </div>
+                    <ul class="mail-list">
+                        {% for item in updates %}
+                        {% set e = item.extra or {} %}
+                        {% set who = item.sender_name %}
+                        {% set title = ('Booking — ' ~ who) if role == 'owner' else (('Job — ' ~ who) if role == 'mechanic' else ('Booking at ' ~ who)) %}
+                        {% set vehicle = e.vehicle_description or '' %}
+                        {% call row('booking', item.id, 'bx-receipt', title,
+                                    item.detail ~ ' · ' ~ item.status_label ~ (' · cancellation requested' if item.cancel_requested else ''),
+                                    item.time, not item.is_read, item.status_label, status_cls(item.status),
+                                    url_for('main.inbox_mark_read'), url_for('main.inbox_dismiss'), 'booking', item.resolved) %}
+                        <div class="mail-meta">
+                            <span class="mail-badge {{ status_cls(item.status) }}">{{ item.status_label }}</span>
+                            {% if item.cancel_requested %}<span class="mail-badge status-pending">Cancellation requested</span>{% endif %}
+                        </div>
+                        <dl class="mail-facts">
+                            <dt>Service</dt><dd>{{ item.detail }}</dd>
+                            <dt>{{ 'Customer' if role == 'owner' else 'Workshop' }}</dt><dd>{{ who }}</dd>
+                            {% if vehicle %}<dt>Vehicle</dt><dd>{{ vehicle }}</dd>{% endif %}
+                            <dt>Requested for</dt><dd>{{ when(item.time) }}</dd>
+                            {% if e.mechanic_name %}<dt>Mechanic</dt><dd>{{ e.mechanic_name }}</dd>{% endif %}
+                            {% if e.payment_status == 'paid' %}<dt>Payment</dt><dd>Paid</dd>{% endif %}
+                            {% if item.status == 'pending' and item.hours_left is not none %}<dt>Answer due</dt><dd>within {{ item.hours_left }}h, or it is cancelled automatically</dd>{% endif %}
+                        </dl>
+                        {% if item.cancel_requested and e.cancel_request_reason %}<p class="mail-text">Reason for cancelling: {{ e.cancel_request_reason }}</p>{% endif %}
+
+                        {% if role == 'owner' %}
+                        <div class="mail-actions">
+                            {% if item.status == 'pending' %}
+                            <form method="POST" action="{{ url_for('dashboard.update_booking_status', booking_id=item.id, action='confirm') }}">{{ next_inbox() }}<button type="submit" class="mini-btn confirm"><i class='bx bx-check'></i> Accept</button></form>
+                            <form method="POST" action="{{ url_for('dashboard.update_booking_status', booking_id=item.id, action='decline') }}">{{ next_inbox() }}<button type="submit" class="mini-btn cancel"><i class='bx bx-x'></i> Decline</button></form>
+                            {% elif item.cancel_requested %}
+                            <form method="POST" action="{{ url_for('dashboard.review_cancellation', booking_id=item.id, decision='approve') }}">{{ next_inbox() }}<button type="submit" class="mini-btn cancel"><i class='bx bx-check'></i> Approve cancellation</button></form>
+                            <form method="POST" action="{{ url_for('dashboard.review_cancellation', booking_id=item.id, decision='decline') }}">{{ next_inbox() }}<button type="submit" class="mini-btn confirm"><i class='bx bx-x'></i> Keep booking</button></form>
+                            {% elif item.status == 'confirmed' %}
+                            <form method="POST" action="{{ url_for('dashboard.update_booking_status', booking_id=item.id, action='start') }}">{{ next_inbox() }}<button type="submit" class="mini-btn confirm"><i class='bx bx-play'></i> Start work</button></form>
+                            {% elif item.status == 'in_progress' %}
+                            <form method="POST" action="{{ url_for('dashboard.update_booking_status', booking_id=item.id, action='complete') }}">{{ next_inbox() }}<button type="submit" class="mini-btn confirm"><i class='bx bx-check-double'></i> Mark complete</button></form>
+                            {% endif %}
+                        </div>
+                        {% if item.status in ('confirmed', 'in_progress') %}
+                        <form class="mail-assign" method="POST" action="{{ url_for('dashboard.assign_booking', booking_id=item.id) }}">
+                            {{ next_inbox() }}
+                            <label for="assign{{ item.id }}">{{ 'Assigned mechanic' if e.mechanic_name else 'Needs a mechanic' }}</label>
+                            {% if mechanics %}
+                            <select id="assign{{ item.id }}" name="m_id">
+                                <option value="">— No mechanic —</option>
+                                {% for m in mechanics %}<option value="{{ m.m_id }}" {{ 'selected' if e.assigned_m_id == m.m_id }}>{{ m.name }}</option>{% endfor %}
+                            </select>
+                            <button type="submit" class="mini-btn confirm"><i class='bx bx-user-check'></i> Assign</button>
+                            {% else %}
+                            <span class="mail-muted">Add a mechanic to your team to assign this job.</span>
+                            {% endif %}
+                        </form>
+                        {% endif %}
+                        {% else %}
+                        <p class="mail-readonly"><i class='bx bx-lock-alt'></i> {% if role == 'customer' %}This is a read-only update. Manage your booking from <a href="{{ url_for('bookings.my_bookings') }}">My Bookings</a>.{% else %}This is a read-only update. Manage your jobs from <a href="{{ url_for('mechanics.home') }}">your panel</a>.{% endif %}</p>
+                        {% endif %}
+                        {% endcall %}
+                        {% endfor %}
+                    </ul>
+                    <div class="inbox-panel-empty"{% if updates %} hidden{% endif %}><i class='bx bx-receipt'></i> No updates yet — booking &amp; job activity on your account lands here.</div>
+                </div>
+                {% endif %}
+
+                {# ===================================================== JOIN REQUESTS ===================================================== #}
+                {% if joins_eligible %}
+                <div class="inbox-panel" id="panelJoins" data-section="joins"
+                     data-delete-note="Answered requests are hidden from your inbox only. Pending requests stay.">
+                    <div class="inbox-panel-head">
+                        <span class="inbox-panel-title"><i class='bx bx-user-plus'></i> Join Requests</span>
+                        <span class="inbox-panel-sub">Workshop team applications &amp; hiring updates.</span>
+                    </div>
+                    <ul class="mail-list">
+                        {% for item in joins %}
+                        {% call row('join_request', item.id, 'bx-user-plus', 'Join request — ' ~ item.sender_name, item.detail, item.time,
+                                    not item.is_read, item.status | status_label, status_cls(item.status),
+                                    url_for('main.inbox_mark_read'), url_for('main.inbox_dismiss'), 'join_request', item.status != 'pending') %}
+                        <div class="mail-meta"><span class="mail-badge {{ status_cls(item.status) }}">{{ item.status | status_label }}</span></div>
+                        <p class="mail-text">{{ item.detail }}</p>
+                        <p class="mail-foot">{{ item.sender_name }} · {{ when(item.time) }}</p>
+                        {% if role == 'owner' and item.status == 'pending' %}
+                        <div class="mail-actions">
+                            <form method="POST" action="{{ url_for('dashboard.review_mechanic', jr_id=item.id, action='accept') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="mini-btn confirm"><i class='bx bx-check'></i> Accept</button></form>
+                            <form method="POST" action="{{ url_for('dashboard.review_mechanic', jr_id=item.id, action='reject') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="mini-btn cancel"><i class='bx bx-x'></i> Reject</button></form>
+                        </div>
+                        {% endif %}
+                        {% endcall %}
+                        {% endfor %}
+                    </ul>
+                    <div class="inbox-panel-empty"{% if joins %} hidden{% endif %}><i class='bx bx-user-plus'></i> No join requests yet — workshop team applications land here.</div>
+                </div>
+                {% endif %}
+
+                {# ===================================================== LEAVE REQUESTS ===================================================== #}
+                {% if leaves_eligible %}
+                <div class="inbox-panel" id="panelLeaves" data-section="leaves"
+                     data-delete-note="Declined requests are hidden from your inbox only. Pending requests stay.">
+                    <div class="inbox-panel-head">
+                        <span class="inbox-panel-title"><i class='bx bx-log-out-circle'></i> Leave Requests</span>
+                        <span class="inbox-panel-sub">Mechanics asking to leave your workshop.</span>
+                    </div>
+                    <ul class="mail-list">
+                        {% for item in leaves %}
+                        {% set jobs = item.active_jobs or [] %}
+                        {% call row('leave_request', item.id, 'bx-log-out-circle', 'Leave request — ' ~ item.sender_name,
+                                    item.reason or item.detail, item.time, not item.is_read, item.status | status_label, status_cls(item.status),
+                                    url_for('main.inbox_mark_read'), url_for('main.inbox_dismiss'), 'leave_request', item.status == 'rejected') %}
+                        <div class="mail-meta"><span class="mail-badge {{ status_cls(item.status) }}">{{ item.status | status_label }}</span></div>
+                        <p class="mail-text">{{ item.sender_name }} asked to leave {{ item.detail }}.</p>
+                        {% if item.reason %}<p class="mail-quote"><i class='bx bx-message-detail'></i> Reason: {{ item.reason }}</p>{% endif %}
+                        <p class="mail-foot">{{ when(item.time) }}</p>
+                        {% if role == 'owner' and item.status == 'pending' %}
+                        {% if jobs %}
+                        <div class="mail-warn" role="alert">
+                            <strong><i class='bx bx-error'></i> {{ item.sender_name }} has {{ jobs | length }} active job{{ '' if jobs | length == 1 else 's' }}.</strong>
+                            <ul>{% for j in jobs %}<li>#{{ j.b_id }} · {{ j.s_name }} · {{ j.status | status_label }} · {{ when(j.requested_time) }}</li>{% endfor %}</ul>
+                            <p>You can still approve. These jobs go back to “needs a mechanic” and you will get a notice to reassign them.</p>
+                        </div>
+                        {% endif %}
+                        <div class="mail-actions">
+                            <form method="POST" action="{{ url_for('dashboard.review_leave', lr_id=item.id, action='approve') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="mini-btn confirm"><i class='bx bx-check'></i> {{ 'Approve anyway' if jobs else 'Let go' }}</button></form>
+                            <form method="POST" action="{{ url_for('dashboard.review_leave', lr_id=item.id, action='reject') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="mini-btn cancel"><i class='bx bx-x'></i> Decline</button></form>
+                        </div>
+                        {% endif %}
+                        {% endcall %}
+                        {% endfor %}
+                    </ul>
+                    <div class="inbox-panel-empty"{% if leaves %} hidden{% endif %}><i class='bx bx-log-out-circle'></i> No leave requests yet — mechanics asking to leave your workshop land here.</div>
+                </div>
+                {% endif %}
+
+                {# ===================================================== REPORTS ===================================================== #}
+                <div class="inbox-panel" id="panelReports" data-section="reports"
+                     data-delete-note="Your report mail is removed. {% if role == 'admin' %}Reports filed to the admins are kept as evidence.{% else %}Reports still under review are kept.{% endif %}">
+                    <div class="inbox-panel-head">
+                        <span class="inbox-panel-title"><i class='bx bx-flag'></i> {{ reports_label }}</span>
+                        <span class="inbox-panel-sub">{% if role == 'admin' %}Contact form submissions &amp; account reports.{% else %}Updates on reports you've filed, and notices about reports on your account.{% endif %}</span>
+                    </div>
+
+                    <ul class="mail-list">
+                        {% for m in report_mail %}
+                        {% call row('message', m.id, 'bxs-user-flag' if m.kind == 'report_notice' else 'bx-flag', m.subject, m.message, m.time, not m.is_read,
+                                    'About your account' if m.kind == 'report_notice' else 'Your report', 'status-pending' if m.kind == 'report_notice' else 'status-completed',
+                                    url_for('main.inbox_mark_read'), url_for('main.inbox_delete'), 'message', true) %}
+                        <div class="mail-meta"><span class="mail-badge {{ 'status-pending' if m.kind == 'report_notice' else 'status-completed' }}">{{ 'About your account' if m.kind == 'report_notice' else 'Your report' }}</span></div>
+                        <p class="mail-text report-pre">{{ m.message }}</p>
+                        <p class="mail-foot">From: Getwheelz Trust &amp; Safety · {{ when(m.time) }}</p>
+                        {% if m.review %}
+                        {% if m.review.can_respond %}
+                        <form class="rv-step" method="POST" action="{{ url_for('main.inbox_report_respond', msg_id=m.ref_id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <h4><i class='bx bx-message-rounded-dots'></i> Your response ({{ m.review.hours_left }}h left)</h4>
+                            <textarea name="response" rows="5" maxlength="2000" required placeholder="Give your side. You can respond once."></textarea>
+                            <button type="submit" class="sa-btn confirm"><i class='bx bx-send'></i> Send response</button>
+                        </form>
+                        {% elif m.review.state == 'responded' %}
+                        <div class="rv-step"><h4><i class='bx bx-check'></i> You responded {{ when(m.review.responded_at) }}</h4><div class="rv-response">{{ m.review.response_text }}</div></div>
+                        {% elif m.review.state == 'window_ended' %}
+                        <p class="mail-readonly"><i class='bx bx-time-five'></i> The response window has ended. The review team will decide without a response.</p>
+                        {% endif %}
+                        {% endif %}
+                        {% endcall %}
+                        {% endfor %}
+
+                        {% if role == 'admin' %}
+                        {% for item in reports %}
+                        {% call row('feedback', item.id, 'bx-envelope', item.name ~ (' — ' ~ item.subject if item.subject else ''), item.message, item.time, not item.is_read,
+                                    'Read' if item.is_read else 'Feedback', 'status-completed' if item.is_read else 'status-pending',
+                                    url_for('main.inbox_mark_read'), url_for('main.inbox_delete'), 'feedback', is_main_admin) %}
+                        <div class="mail-meta"><span class="mail-badge">Contact form</span></div>
+                        <p class="mail-text">{{ item.message }}</p>
+                        <p class="mail-foot">{{ item.name }} &lt;{{ item.email }}&gt; · {{ when(item.time) }}</p>
+                        {% endcall %}
+                        {% endfor %}
+                        {% endif %}
+
+                        {% set all_reports = account_reports if role == 'admin' else reports %}
+                        {% for r in all_reports %}
+                        {% if role != 'admin' and r.kind == 'account_report' %}{% set rtitle = 'You reported ' ~ r.reported_name ~ ' — ' ~ r.subject %}
+                        {% elif role != 'admin' and r.kind == 'workshop_report' %}{% set rtitle = 'You reported ' ~ (r.workshop_name or ('Workshop #' ~ r.w_id)) ~ ' — ' ~ r.subject %}
+                        {% else %}{% set rtitle = r.subject %}{% endif %}
+                        {% set rstate = 'Under review' if not r.res_status else ('Action taken' if r.res_status == 'verified' else 'No violation found') %}
+                        {% call row('report', r.id, 'bx-flag', rtitle, r.details if r.kind == 'workshop_report' else r.message, r.time, false,
+                                    (rstate if role != 'admin' and r.kind in ('account_report', 'workshop_report') else ('Account report' if r.kind == 'account_report' else ('Workshop report' if r.kind == 'workshop_report' else 'Report'))),
+                                    ('status-pending' if not r.res_status else ('status-confirmed' if r.res_status == 'verified' else 'status-cancelled')) if role != 'admin' and r.kind in ('account_report', 'workshop_report') else 'status-completed',
+                                    '', url_for('main.inbox_delete'), 'report', is_main_admin or (role != 'admin' and (r.kind == 'report' or r.res_status))) %}
+                        <div class="mail-meta">
+                            <span class="mail-badge status-completed">{{ 'Account report' if r.kind == 'account_report' else ('Workshop report' if r.kind == 'workshop_report' else 'Report') }}</span>
+                            {% if role != 'admin' and r.kind in ('account_report', 'workshop_report') %}<span class="mail-badge {{ 'status-pending' if not r.res_status else ('status-confirmed' if r.res_status == 'verified' else 'status-cancelled') }}">{{ rstate }}</span>{% endif %}
+                        </div>
+                        <p class="mail-text">{{ r.details if r.kind == 'workshop_report' else r.message }}</p>
+                        <p class="mail-foot">{% if role == 'admin' %}by {{ r.sender_name }} · {% endif %}{{ when(r.time) }}</p>
+                        {% endcall %}
+                        {% endfor %}
+
+                        {% if role == 'admin' %}
+                        {% for r in reported_accounts %}
+                        {% call row('report', r.id, 'bxs-user-flag', r.reported_name ~ ' — ' ~ r.subject, r.message, r.time, false,
+                                    report_state(r), 'status-pending' if not r.res_status else ('status-confirmed' if r.res_status == 'verified' else 'status-cancelled'),
+                                    '', url_for('main.inbox_delete'), 'report', is_main_admin) %}
+                        <div class="mail-meta">
+                            <span class="mail-badge {{ 'status-cancelled' if r.reported_suspended else 'status-pending' }}">{{ 'Banned' if r.reported_suspended else (r.reported_role or 'account') | title }}</span>
+                            <span class="mail-badge {{ 'status-pending' if not r.res_status else ('status-confirmed' if r.res_status == 'verified' else 'status-cancelled') }}">{{ report_state(r) }}</span>
+                        </div>
+                        <p class="mail-text">{{ r.message }}</p>
+                        <p class="mail-foot">Report by {{ r.reporter_name }}{% if r.reporter_role %} ({{ r.reporter_role }}){% endif %} · {{ when(r.time) }}</p>
+                        <div class="mail-actions">
+                            {% if r.reporter_u_id and r.reporter_role in ('owner', 'mechanic') %}
+                            <a class="sa-btn" href="{{ url_for('workshops.person', token=r.reporter_u_id | utoken) }}"><i class='bx bx-user'></i> Reporter profile</a>
+                            {% elif r.reporter_u_id and r.reporter_role == 'customer' %}
+                            <a class="sa-btn" href="{{ url_for('dashboard.admin_user_profile', token=r.reporter_u_id | utoken) }}"><i class='bx bx-user'></i> Reporter profile</a>
+                            {% endif %}
+                            {% if r.reported_u_id and r.reported_role in ('owner', 'mechanic') %}
+                            <a class="sa-btn" href="{{ url_for('workshops.person', token=r.reported_u_id | utoken) }}"><i class='bx bx-user-check'></i> Report profile</a>
+                            {% elif r.reported_u_id and r.reported_role == 'customer' %}
+                            <a class="sa-btn" href="{{ url_for('dashboard.admin_user_profile', token=r.reported_u_id | utoken) }}"><i class='bx bx-user-check'></i> Report profile</a>
+                            {% endif %}
+                            {% if r.can_ban %}
+                            <form method="POST" action="{{ url_for('dashboard.set_user_suspension', u_id=r.reported_u_id, action='restore' if r.reported_suspended else 'suspend') }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="sa-btn {{ 'neutral' if r.reported_suspended else 'confirm' }}"><i class='bx {{ "bx-undo" if r.reported_suspended else "bx-user-x" }}'></i> {{ 'Restore account' if r.reported_suspended else 'Ban account' }}</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                        {{ resolution_block(r, r.can_ban and not r.reported_suspended) }}
+                        {% endcall %}
+                        {% endfor %}
+
+                        {% for r in workshop_reports %}
+                        {% call row('report', r.id, 'bxs-store-alt', (r.workshop.name if r.workshop else 'Workshop #' ~ r.w_id) ~ ' — ' ~ r.subject, r.details or r.subject, r.time, false,
+                                    report_state(r), 'status-pending' if not r.res_status else ('status-confirmed' if r.res_status == 'verified' else 'status-cancelled'),
+                                    '', url_for('main.inbox_delete'), 'report', is_main_admin) %}
+                        <div class="mail-meta">
+                            <span class="mail-badge status-pending">Workshop report</span>
+                            <span class="mail-badge {{ 'status-pending' if not r.res_status else ('status-confirmed' if r.res_status == 'verified' else 'status-cancelled') }}">{{ report_state(r) }}</span>
+                        </div>
+                        {% if r.details %}<p class="mail-text">{{ r.details }}</p>{% endif %}
+                        <p class="mail-foot">Report by {{ r.reporter_name }}{% if r.reporter_role %} ({{ r.reporter_role }}){% endif %} · {{ when(r.time) }}</p>
+                        <div class="mail-actions">
+                            {% if r.reporter_u_id and r.reporter_role in ('owner', 'mechanic') %}
+                            <a class="sa-btn" href="{{ url_for('workshops.person', token=r.reporter_u_id | utoken) }}"><i class='bx bx-user'></i> Reporter profile</a>
+                            {% elif r.reporter_u_id and r.reporter_role == 'customer' %}
+                            <a class="sa-btn" href="{{ url_for('dashboard.admin_user_profile', token=r.reporter_u_id | utoken) }}"><i class='bx bx-user'></i> Reporter profile</a>
+                            {% endif %}
+                            {% if r.workshop %}
+                            <a class="sa-btn" href="{{ url_for('dashboard.admin_workshop_preview', token=r.workshop.w_id | wtoken) }}"><i class='bx bx-store'></i> Inspect workshop</a>
+                            {% endif %}
+                        </div>
+                        {{ resolution_block(r, false) }}
+                        {% endcall %}
+                        {% endfor %}
+                        {% for a in appeals_list %}
+                        {% call row('appeal', a.id, 'bx-revision', 'Appeal — ' ~ a.appellant_name ~ (' (' ~ ('suspension' if a.kind == 'suspension' else 'rejected listing') ~ ')'), a.message, a.time, false,
+                                    a.status | title, 'status-pending' if a.status == 'open' else ('status-confirmed' if a.status == 'overturned' else 'status-cancelled'),
+                                    '', '', '', false) %}
+                        <div class="mail-meta">
+                            <span class="mail-badge">{{ 'Suspension appeal' if a.kind == 'suspension' else 'Listing appeal' }}</span>
+                            <span class="mail-badge {{ 'status-pending' if a.status == 'open' else ('status-confirmed' if a.status == 'overturned' else 'status-cancelled') }}">{{ a.status | title }}</span>
+                            {% if a.needs_second_reviewer %}<span class="mail-badge status-cancelled">Needs a second reviewer</span>{% endif %}
+                        </div>
+                        <dl class="mail-facts">
+                            <dt>Appellant</dt><dd>{{ a.appellant_name }} ({{ a.appellant_role }})</dd>
+                            {% if a.kind == 'listing' %}<dt>Workshop</dt><dd>{{ a.workshop_name }}</dd>{% if a.rejection_reason %}<dt>Rejected because</dt><dd>{{ a.rejection_reason }}</dd>{% endif %}{% endif %}
+                            <dt>Original decision by</dt><dd>{{ a.decided_by_name or 'unknown (earlier than this record)' }}</dd>
+                            <dt>Appealed</dt><dd>{{ when(a.time) }}</dd>
+                        </dl>
+                        <p class="mail-text">{{ a.message }}</p>
+                        {% if a.needs_second_reviewer %}
+                        <div class="mail-warn"><strong><i class='bx bx-error'></i> You made the original decision and no other admin covers this area.</strong>
+                            <p>The appeal waits for you and is flagged as needing a second reviewer. Adding a sub-admin for this area would let someone else decide next time.</p></div>
+                        {% endif %}
+                        {% if a.status != 'open' %}
+                        <div class="report-resolution {{ 'verified' if a.status == 'overturned' else 'dismissed' }}"><i class='bx bx-check-shield'></i>
+                            <span><strong>{{ a.status | title }}</strong> — {{ a.reviewed_by_name or 'an admin' }}, {{ when(a.reviewed_at) }}</span><p>Note: {{ a.decision_note }}</p></div>
+                        {% elif a.can_review %}
+                        <form class="rv-step" method="POST" action="{{ url_for('appeals.decide', ap_id=a.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <h4><i class='bx bx-gavel'></i> Your answer</h4>
+                            <textarea name="note" rows="3" minlength="5" maxlength="500" required placeholder="Required note explaining your decision (the person will see it)"></textarea>
+                            <div class="mail-actions">
+                                <button type="submit" name="decision" value="overturn" class="sa-btn confirm"><i class='bx bx-undo'></i> Overturn (restore)</button>
+                                <button type="submit" name="decision" value="uphold" class="sa-btn"><i class='bx bx-shield'></i> Uphold</button>
+                            </div>
+                        </form>
+                        {% endif %}
+                        {% endcall %}
+                        {% endfor %}
+                        {% endif %}
+                    </ul>
+                    <div class="inbox-panel-empty"{% if reports_count %} hidden{% endif %}><i class='bx bx-flag'></i> {% if role == 'admin' %}No reports yet.{% else %}No reports on file.{% endif %}</div>
+                </div>
+            </div>
+
+            {# The bottom bar acts only on the section being viewed (spec section 8). #}
+            <div class="mail-bar" id="mailBar" role="toolbar" aria-label="Actions for this section">
+                <span class="mail-bar-label" id="mailBarLabel">Notices</span>
+                <button type="button" class="mail-bar-btn" id="markAllRead"><i class='bx bx-check-double'></i> Mark All as Read</button>
+                <button type="button" class="mail-bar-btn danger" id="deleteAll"><i class='bx bx-trash'></i> Delete All</button>
+            </div>
+        </section>
+    </main>
+</div>
+
+{# One shared popup for every mail, and one confirmation for Delete All. Filled in by inbox.js. #}
+<div class="mail-pop" id="mailPop" role="dialog" aria-modal="true" aria-labelledby="mailPopTitle" hidden>
+    <div class="mail-pop-card" tabindex="-1">
+        <header class="mail-pop-head">
+            <span class="mail-icon" aria-hidden="true"><i class='bx bx-envelope' id="mailPopIcon"></i></span>
+            <h3 id="mailPopTitle"></h3>
+            <button type="button" class="mail-pop-close" id="mailPopClose" aria-label="Close"><i class='bx bx-x'></i></button>
+        </header>
+        <div class="mail-pop-body" id="mailPopBody"></div>
+        <button type="button" class="mail-pop-delete" id="mailPopDelete" hidden><i class='bx bx-trash'></i> Delete</button>
+    </div>
+</div>
+<div class="mail-pop" id="confirmPop" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmText" hidden>
+    <div class="mail-pop-card mail-confirm" tabindex="-1">
+        <h3 id="confirmTitle">Delete all?</h3>
+        <p id="confirmText"></p>
+        <div class="mail-actions">
+            <button type="button" class="mail-bar-btn" id="confirmCancel">Cancel</button>
+            <button type="button" class="mail-bar-btn danger" id="confirmOk"><i class='bx bx-trash'></i> Delete all</button>
+        </div>
+    </div>
+</div>
+<div class="mail-toast" id="mailToast" role="status" aria-live="polite" hidden></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin.js', v='3') }}" defer></script>
+<script src="{{ url_for('static', filename='js/inbox.js', v='1') }}" defer></script>
+{% endblock %}

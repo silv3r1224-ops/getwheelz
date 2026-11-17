@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {# Performance tier, decided before first paint so weak devices never start the heavy effects.
+    perf-lite = clearly weak hardware (<=2 GB / <=2 cores / data saver / 2G), OR remembered from an earlier slow
+        measurement (24 h), OR forced with ?perf=lite. ?perf=full clears it. js/motion-governor.js refines this by
+        measuring real frame times. #} <script>(function(){try{var d=document.documentElement,q=new
+        URLSearchParams(location.search).get('perf'),K='gw:perf',t=+localStorage.getItem(K)||0,c=navigator.connection||{};
+        if(q==='full'){localStorage.removeItem(K);return}
+        var weak=(navigator.deviceMemory&&navigator.deviceMemory
+        <=2)||(navigator.hardwareConcurrency&&navigator.hardwareConcurrency<=2)||c.saveData||
+            /(^|-)2g$/.test(c.effectiveType||''); if(q==='lite' ){localStorage.setItem(K,''+Date.now())} if(q==='lite'
+            ||weak||(t&&Date.now()-t<864e5))d.classList.add('perf-lite')}catch(e){}})();</script>
+            <title>{% block title %}Getwheelz{% endblock %}</title>
+            {# SEO: canonical, meta description, Open Graph, and minimal JSON-LD (Organization + WebSite). #}
+            <link rel="canonical" href="{{ request.base_url }}">
+            <meta name="description"
+                content="{% block page_description %}Getwheelz connects four-wheeler and two-wheeler owners with trusted local workshops — browse services, compare ratings, and book appointments in minutes.{% endblock %}">
+            {% if session.get('user_id') %}
+            <meta name="robots" content="noindex, nofollow">{% endif %}
+            <meta property="og:site_name" content="Getwheelz">
+            <meta property="og:type" content="website">
+            <meta property="og:title" content="{{ self.title() }}">
+            <meta property="og:description" content="{{ self.page_description() }}">
+            <meta property="og:url" content="{{ request.url }}">
+            <meta property="og:image"
+                content="{{ url_for('static', filename='logo/getwheelz-og.png', _external=True) }}">
+            {# Premium type system: Bricolage Grotesque for confident display headlines, Plus Jakarta Sans for readable
+            product
+            UI. #}
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link rel="preconnect" href="https://unpkg.com" crossorigin>
+            {# Fontshare Satoshi: free professional display family; Plus Jakarta remains the UI body face. #}
+            <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
+            {# Editorial heading pairing: Instrument Serif italic accent + Satoshi sans display. #}
+            {# Rounded display treatment inspired by Buttermax's bold, soft wordmark; not a copy of its branding. #}
+            <link
+                href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+                rel="stylesheet">
+            {# Icon font and Leaflet are self-hosted (static/vendor): no third-party round trip before first paint, and
+            they work offline. #}
+            <link rel="preload" href="{{ url_for('static', filename='vendor/boxicons/fonts/boxicons.woff2') }}"
+                as="font" type="font/woff2" crossorigin>
+            <link href="{{ url_for('static', filename='vendor/boxicons/css/boxicons.min.css', v='2.1.4') }}"
+                rel="stylesheet">
+            <link rel="icon" href="{{ url_for('static', filename='logo/getwheelz-icon.png')}}">
+            <link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css', v='1.9.4') }}">
+            {# One stylesheet for the whole app. app.css holds every CSS file merged in
+            its original load order, so the same rules still win. Bump the v= tag
+            whenever you change it, so returning browsers fetch the new copy. #}
+            <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css', v='unified-131') }}">
+            <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Getwheelz",
+      "url": "{{ request.url_root.rstrip('/') }}",
+      "logo": "{{ url_for('static', filename='logo/getwheelz-icon.png', _external=True) }}"
+    }
+    </script>
+            <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Getwheelz",
+      "url": "{{ request.url_root.rstrip('/') }}",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "{{ url_for('workshops.search', _external=True) }}?service={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+            {% block schema %}{% endblock %}
+            {% block head %}{% endblock %}
+</head>
+
+<body data-live="{{ 'off' if request.endpoint in LIVE_OFF_ENDPOINTS else 'on' }}">
+    {% include 'partials/robot_defs.html' %}
+    {# Preloader (static/css/loader.css + static/js/loader.js). Sits first in
+
+    <body> so it covers the page from the first paint. #}
+        <div class="site-loader" aria-hidden="true">
+            <div class="ld-top"><span>GW / 26</span><span class="ld-boot"><i></i> SYSTEM BOOT</span><span>FIELD
+                    NETWORK</span></div>
+            <div class="ld-center">
+                <span class="brand-mark ld-mark"><span class="brand-ring"></span><span class="brand-cut"></span></span>
+                <div class="ld-trace-wrap">
+                    <svg class="ld-trace" viewBox="0 0 2172 724" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                        <path class="ld-flow-ghost" d=""></path>
+                    </svg>
+                </div>
+                <p class="ld-tag">care, in motion</p>
+            </div>
+            <div class="ld-bottom">
+                <div class="ld-bar"><i></i></div>
+                <div class="ld-foot"><span class="ld-status">Starting up</span><span class="ld-count"><b
+                            class="ld-num">000</b><small>%</small></span></div>
+            </div>
+        </div>
+        <script src="{{ url_for('static', filename='js/loader.js', v='13') }}"></script>
+        <script>
+            /* Apply the saved theme before the page paints, so light mode never flashes dark first.
+               html[data-theme] drives NEO's comic bubbles (ink shadow in light, red shadow + white outline in dark). */
+            (function () {
+                try {
+                    var light = localStorage.getItem("theme") === "light";
+                    document.body.classList.toggle("light", light);
+                    document.documentElement.setAttribute("data-theme", light ? "light" : "dark");
+                } catch (e) { /* keep the dark default */ }
+            })();
+        </script>
+        {% include 'partials/navbar.html' %}
+        {# NEO's message template: js/flash.js clones it for GW.neoToast (location problems, bookmarks, ...) #}
+        {% from 'partials/neo_chip.html' import neo_chip %}
+        <template id="neoToastTpl">
+            <div class="flash-container" data-neo-toast aria-live="polite">
+                <div class="flash-item" data-cat="error" role="alert">
+                    <div class="flash-robot" aria-hidden="true">{{ neo_chip('error', 56) }}</div>
+                    <div class="flash-message hud flash-error">
+                        <i class="hud-c tl"></i><i class="hud-c tr"></i><i class="hud-c bl"></i>
+                        <i class="bx bx-error-circle flash-ico" aria-hidden="true"></i>
+                        <span></span>
+                        <button type="button" class="flash-close" aria-label="Dismiss message">&times;</button>
+                        <b class="flash-timer" aria-hidden="true"></b>
+                    </div>
+                </div>
+            </div>
+        </template>
+        <main>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-container" aria-live="polite">
+                {# NEO sits to the left of every message: happy on success, worried on anything else #}
+                {% for category, message in messages %}
+                {% set ok = (category == 'success') %}
+                <div class="flash-item" data-cat="{{ 'success' if ok else 'error' }}"
+                    role="{{ 'status' if ok else 'alert' }}">
+                    <div class="flash-robot" aria-hidden="true">{{ neo_chip('happy' if ok else 'error', 56) }}</div>
+                    <div class="flash-message hud flash-{{ 'success' if ok else 'error' }}">
+                        <i class="hud-c tl"></i><i class="hud-c tr"></i><i class="hud-c bl"></i>
+                        <i class="bx {{ 'bx-check-circle' if ok else 'bx-error-circle' }} flash-ico"
+                            aria-hidden="true"></i>
+                        <span>{{ message }}</span>
+                        <button type="button" class="flash-close" aria-label="Dismiss message">&times;</button>
+                        <b class="flash-timer" aria-hidden="true"></b>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+            {% include 'partials/login_banner.html' %}
+            {% block content %}
+            {% endblock %}
+        </main>
+        {% include 'partials/mobile_bottom_nav.html' %}
+        {% if session.role != 'admin' and session.role != 'owner' and session.role != 'customer' and session.role !=
+        'mechanic' %}
+        {% include 'partials/footer.html' %}
+        {% endif %}
+
+        <div class="cursor-smoke" aria-hidden="true"><span class="cursor-orbit cursor-orbit-a"></span><span
+                class="cursor-orbit cursor-orbit-b"></span><span class="smoke-core"></span><span
+                class="cursor-ring"></span><span class="cursor-crosshair"></span><span class="cursor-label">MOVE /
+                01</span></div>
+        {# signed-out visitors: an excited robot appears beside the login / sign-up pop-ups #}
+        {% if not session.get('user_id') %}
+        {% from 'partials/robot.html' import robot %}
+        <div class="auth-robot" id="authRobot" aria-hidden="true">{{ robot('excited', 150, follow=False) }}</div>
+        {% endif %}
+        {# NEO's guided tour: first login (tour_pending) or when the ? button in the navbar is pressed #}
+        {% if session.get('user_id') %}
+        {% include 'partials/tour.html' %}
+        {% endif %}
+        {# robot.js runs for everyone now: the flash messages use NEO #}
+        <script src="{{ url_for('static', filename='js/robot.js') }}" defer></script>
+
+        <script src="{{ url_for('static', filename='js/flash.js', v='1') }}" defer></script>
+        <script src="{{ url_for('static', filename='js/main.js', v='nav-skip-loader-1') }}" defer></script>
+        <script src="{{ url_for('static', filename='js/reason-check-fx.js', v='1') }}" defer></script>
+        <script src="{{ url_for('static', filename='js/marquee.js', v='1') }}" defer></script>
+        <script src="{{ url_for('static', filename='js/distance.js') }}" defer></script>
+        <script src="{{ url_for('static', filename='js/header.js', v='inbox-badge-merged') }}" defer></script>
+        <script src="{{ url_for('static', filename='js/stay-put.js') }}" defer></script>
+        <script src="{{ url_for('static', filename='js/ux-polish.js', v='1') }}" defer></script>
+        <script src="{{ url_for('static', filename='js/motion-governor.js', v='4') }}" defer></script>
+        <script src="{{ url_for('static', filename='js/more.js') }}" defer></script>
+        <script src="{{ url_for('static', filename='js/premium-chrome.js', v='cursor-orbit-2') }}" defer></script>
+
+        {# live.js runs right here, before any page script, so it sees everything the page's scripts change #}
+        <script src="{{ url_for('static', filename='js/live.js', v='5') }}"></script>
+        <script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js', v='1.9.4') }}"></script>
+        {% block scripts %}{% endblock %}
+
+
+    </body>
+
+</html>

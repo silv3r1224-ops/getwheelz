@@ -1,0 +1,18 @@
+{# Important notices shown ONCE after login (spec section 8). Dismissing only hides it on this page;
+   the server already recorded that this person has seen it, so it never comes back. #}
+{% if login_banner %}
+<div class="login-banner-stack" role="region" aria-label="Important notices">
+    {% for n in login_banner %}
+    <div class="login-banner" role="alert">
+        <i class='bx bxs-error login-banner-icon' aria-hidden="true"></i>
+        <div class="login-banner-text">
+            <strong>{{ n.subject }}</strong>
+            <span>{{ n.message | preview(160) }}</span>
+        </div>
+        <a class="login-banner-link" href="{{ url_for('main.inbox') }}#panelNotices">Read</a>
+        <button type="button" class="login-banner-close" aria-label="Dismiss this notice"><i class='bx bx-x'></i></button>
+    </div>
+    {% endfor %}
+</div>
+<script src="{{ url_for('static', filename='js/login_banner.js', v='1') }}" defer></script>
+{% endif %}

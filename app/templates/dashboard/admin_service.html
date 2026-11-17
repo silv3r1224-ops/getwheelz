@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}Service Catalog — Admin — Getwheelz{% endblock %}
+
+{% block head %}{% endblock %}
+
+{% block content %}
+{% from 'partials/robot.html' import neo_ico %}
+{% from 'partials/vehicle_icon.html' import vehicle_icon %}
+<div class="admin-layout" id="adminLayout">
+
+    <aside class="admin-sidebar" id="sideBar">
+        <div class="sidebar-header">
+            <i class='bx bxs-shield-alt-2'></i>
+            <span>Admin Panel</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('dashboard.admin') }}" class="sidebar-link">
+                <i class='bx bx-grid-alt'></i> Back to Dashboard
+            </a>
+            <a href="{{ url_for('dashboard.admin_services') }}" class="sidebar-link active">
+                <i class='bx bx-detail'></i> Service Catalog
+            </a>
+            {% if session.get('is_main_admin') %}
+            <a href="{{ url_for('dashboard.admin_subadmins') }}" class="sidebar-link">
+                <i class='bx bx-user-plus'></i> Sub-admin Management
+            </a>
+            {% endif %}
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-link">
+                <i class='bx bx-log-out'></i> Logout
+            </a>
+        </div>
+    </aside>
+
+    <main class="admin-main">
+
+        <header class="admin-hero">
+            <div class="admin-hero-top">
+                <div class="admin-hero-left">
+                    <div class="admin-hero-icon"><i class='bx bx-detail'></i></div>
+                    <div class="admin-hero-text">
+                        <span class="admin-eyebrow"><i class='bx bxs-dashboard'></i> Catalog</span>
+                        <h1>Service <span class="accent">Catalog</span></h1>
+                        <p>The master lists of services, one for four-wheelers and one for two-wheelers. Workshop owners pick from the catalogs that match the vehicles they serve.</p>
+                    </div>
+                </div>
+                <div class="neo-corner">{{ neo_ico('working', 120, '', wander=False) }}</div>
+            </div>
+
+            <div class="admin-hero-strip">
+                <div class="strip-cell">
+                    <span class="strip-lab"><i class='bx bx-list-check'></i> Total</span>
+                    <span class="strip-val strip-stat">{{ stats.total }}</span>
+                </div>
+                <div class="strip-cell">
+                    <span class="strip-lab"><i class='bx bx-store-alt'></i> In use</span>
+                    <span class="strip-val strip-stat">{{ stats.in_use }}</span>
+                </div>
+                <div class="strip-cell">
+                    <span class="strip-lab"><i class='bx bx-hourglass'></i> Unused</span>
+                    <span class="strip-val strip-stat">{{ stats.unused }}</span>
+                </div>
+                <a href="{{ url_for('dashboard.admin') }}" class="strip-cell">
+                    <span class="strip-lab"><i class='bx bx-arrow-back'></i> Dashboard</span>
+                    <span class="strip-val">Back to overview</span>
+                </a>
+            </div>
+        </header>
+
+        {# ---------------- which catalog ---------------- #}
+        <nav class="gwv-tabs" aria-label="Service catalogs">
+            {% for t in VEHICLE_TYPES %}
+            <a class="gwv-tab {{ 'active' if t == catalog_type }}"
+                href="{{ url_for('dashboard.admin_services', type=t) }}"
+                {% if t == catalog_type %}aria-current="page"{% endif %}>
+                {{ vehicle_icon(t, 18) }} {{ VEHICLE_PLURAL[t] }}
+                <span class="gwv-count">{{ catalog_counts[t] }}</span>
+            </a>
+            {% endfor %}
+        </nav>
+
+        {# ---------------- add ---------------- #}
+        <section class="admin-section">
+            <h2>Add a {{ VEHICLE_SINGULAR[catalog_type] | lower }} <span class="px-ghellis-tail">service.</span></h2>
+            <form method="POST" action="{{ url_for('dashboard.admin_services', type=catalog_type) }}" class="cat-add-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="vehicle_type" value="{{ catalog_type }}">
+                <input class="cat-field" type="text" name="s_name" maxlength="100" required
+                    placeholder="{{ 'Service name, e.g. Chain Lubrication' if catalog_type == 'two_wheeler' else 'Service name, e.g. Brake Repair' }}"
+                    aria-label="New {{ VEHICLE_SINGULAR[catalog_type] | lower }} service name">
+                <button type="submit" class="cat-btn"><i class='bx bx-plus'></i> Add to {{ VEHICLE_SINGULAR[catalog_type] | lower }} catalog</button>
+            </form>
+            <p class="cat-hint">Names are checked for duplicates ignoring capital letters. The same name may exist in both catalogs.</p>
+        </section>
+
+        {# ---------------- list ---------------- #}
+        <section class="admin-section">
+            <h2>All {{ VEHICLE_SINGULAR[catalog_type] | lower }} <span class="px-ghellis-tail">services.</span></h2>
+
+            {% if catalog %}
+            <div class="cat-toolbar">
+                <div class="cat-search">
+                    <i class='bx bx-search'></i>
+                    <input class="cat-field" type="search" id="catSearch" placeholder="Search services"
+                        aria-label="Search services" autocomplete="off">
+                </div>
+                <select class="cat-select" id="catSort" aria-label="Sort services">
+                    <option value="name-asc">Name A to Z</option>
+                    <option value="name-desc">Name Z to A</option>
+                    <option value="used-desc">Most used</option>
+                    <option value="used-asc">Least used</option>
+                </select>
+                <span class="cat-count" id="catCount" aria-live="polite"></span>
+            </div>
+
+            <div class="cat-table-wrap">
+                <table class="admin-table cat-table">
+                    <thead>
+                        <tr>
+                            <th>Service</th>
+                            <th class="num">Workshops</th>
+                            <th class="num">Bookings</th>
+                            <th class="actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="catBody">
+                        {% for c in catalog %}
+                        <tr data-row data-name="{{ c.s_name | lower }}" data-used="{{ c.workshop_count }}">
+                            <td>
+                                <span class="cat-name-view cat-name">{{ c.s_name }}</span>
+                                <form class="cat-edit-form" method="POST"
+                                    action="{{ url_for('dashboard.rename_catalog_service', sc_id=c.sc_id) }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input class="cat-field" type="text" name="s_name" value="{{ c.s_name }}"
+                                        maxlength="100" required aria-label="Rename {{ c.s_name }}">
+                                    <button type="submit" class="cat-btn"><i class='bx bx-check'></i> Save</button>
+                                    <button type="button" class="cat-btn ghost" data-cancel-edit>Cancel</button>
+                                </form>
+                            </td>
+                            <td class="num">
+                                {% if c.workshop_count %}
+                                <span class="cat-pill is-used"><i class='bx bx-store'></i> {{ c.workshop_count }}</span>
+                                {% else %}
+                                <span class="cat-pill is-unused">Not used</span>
+                                {% endif %}
+                            </td>
+                            <td class="num cat-booking-count">{{ c.booking_count }}</td>
+                            <td class="actions">
+                                <span class="cat-row-actions">
+                                    <button type="button" class="cat-icon-btn" data-edit title="Rename"
+                                        aria-label="Rename {{ c.s_name }}"><i class='bx bx-edit-alt'></i></button>
+                                    {% if c.workshop_count %}
+                                    <button type="button" class="cat-icon-btn danger" disabled
+                                        title="Offered by {{ c.workshop_count }} workshop{{ '' if c.workshop_count == 1 else 's' }}, so it can't be removed"
+                                        aria-label="Cannot remove {{ c.s_name }}: in use"><i class='bx bx-trash'></i></button>
+                                    {% else %}
+                                    <button type="button" class="cat-icon-btn danger deleteAcc" title="Remove"
+                                        data-name="{{ c.s_name }}"
+                                        data-delete-url="{{ url_for('dashboard.delete_catalog_service', sc_id=c.sc_id) }}"
+                                        aria-label="Remove {{ c.s_name }}"><i class='bx bx-trash'></i></button>
+                                    {% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="cat-empty" id="catNoMatch" hidden>
+                    {{ neo_ico('neutral', 76, 'violet') }}
+                    No service matches your search.
+                </div>
+            </div>
+            {% else %}
+            <div class="cat-empty">
+                {{ neo_ico('wave', 100, '', wander=False) }}
+                No {{ VEHICLE_SINGULAR[catalog_type] | lower }} services in the catalog yet. Add the first one above.
+            </div>
+            {% endif %}
+        </section>
+    </main>
+</div>
+
+{# remove confirmation: same pop-up admin.js drives on the dashboard #}
+<div class="delete-con" id="deleteCon" role="dialog" aria-modal="true" aria-labelledby="deleteTitle">
+    <h2 id="deleteTitle">Remove this service?</h2>
+    <p id="deleteMsg">This service will be removed from the catalog.</p>
+    <div class="delete-actions">
+        <form id="deleteForm" method="post" action="">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button id="confirmDel" type="submit" class="sure-btn danger">Yes, remove</button>
+        </form>
+        <button type="button" id="cancelDel" class="sure-btn cancel">Cancel</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin.js', v='3') }}" defer></script>
+<script src="{{ url_for('static', filename='js/pages/admin_service.js', v='1') }}"></script>
+{% endblock %}

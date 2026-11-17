@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}{{ person.name }} — Getwheelz{% endblock %}
+
+{% block content %}
+{% from 'partials/robot.html' import neo_ico %}
+<div class="admin-layout">
+
+    <aside class="admin-sidebar" id="sideBar">
+        <div class="sidebar-header">
+            <i class='bx bxs-wrench'></i>
+            <span>Mechanic Panel</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('mechanics.home') }}" class="sidebar-link"><i class='bx bx-arrow-back'></i> Back to my panel</a>
+            <a href="#overview" class="sidebar-link active"><i class='bx bx-user'></i> Profile</a>
+            {% if person.role == 'owner' %}
+            <a href="#pfWorkshops" class="sidebar-link"><i class='bx bx-store'></i> Workshops</a>
+            {% else %}
+            <a href="#pfWorks" class="sidebar-link"><i class='bx bx-store'></i> Works at</a>
+            {% endif %}
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-link"><i class='bx bx-log-out'></i> Logout</a>
+        </div>
+    </aside>
+
+    <main class="admin-main wp-main">
+
+        {# ---------------- slim profile header (no hero card) ---------------- #}
+        <div class="profile-head" id="overview">
+            <div class="team-avatar">
+                {% if person.profile_picture %}
+                <img loading="lazy" decoding="async" src="{{ url_for('static', filename=person.profile_picture) }}" alt="{{ person.name }}">
+                {% else %}
+                <span>{{ person.name[:1] | upper }}</span>
+                {% endif %}
+            </div>
+            <div class="profile-head-text">
+                <h1>{{ person.name }}</h1>
+                <p>
+                    <i class='bx bx-show'></i> Profile preview
+                    {% if person.role == 'owner' %}<i class='bx bxs-crown'></i> Workshop Owner
+                    {% else %}<i class='bx bxs-wrench'></i> Mechanic{% endif %}
+                    <i class='bx bx-envelope'></i> {{ person.email }}
+                </p>
+            </div>
+            <div class="profile-head-actions">
+                <a href="javascript:history.back()" class="sa-btn"><i class='bx bx-arrow-back'></i> Go back</a>
+            </div>
+        </div>
+
+        <div class="admin-hero-strip">
+            {% if person.role == 'owner' %}
+            <div class="strip-cell">
+                <span class="strip-lab"><i class='bx bxs-buildings'></i> Workshops</span>
+                <span class="strip-val strip-stat">{{ workshops | length }}</span>
+            </div>
+            <div class="strip-cell">
+                <span class="strip-lab"><i class='bx bxs-group'></i> Mechanics employed</span>
+                <span class="strip-val strip-stat">{{ workshops | sum(attribute='team_size') }}</span>
+            </div>
+            <div class="strip-cell">
+                <span class="strip-lab"><i class='bx bx-check-double'></i> Jobs completed</span>
+                <span class="strip-val strip-stat">{{ jobs }}</span>
+            </div>
+            <div class="strip-cell">
+                <span class="strip-lab"><i class='bx bx-calendar'></i> Member since</span>
+                <span class="strip-val">{{ person.created_at.strftime('%b %Y') if person.created_at else '—' }}</span>
+            </div>
+            {% else %}
+            <div class="strip-cell">
+                <span class="strip-lab"><i class='bx bx-medal'></i> Experience</span>
+                <span class="strip-val strip-stat">{{ mech.experience_yrs if mech.experience_yrs else '—' }}{% if mech.experience_yrs %} yrs{% endif %}</span>
+            </div>
+            <div class="strip-cell {{ 'hot' if mech.active_stat and mech.active_stat | lower in ['active', 'available'] else '' }}">
+                <span class="strip-lab"><i class='bx bx-pulse'></i> Availability</span>
+                <span class="strip-val" style="text-transform:capitalize;">{{ mech.active_stat or '—' }}</span>
+            </div>
+            <div class="strip-cell">
+                <span class="strip-lab"><i class='bx bxs-store'></i> Works at</span>
+                <span class="strip-val">{{ mech.workshop_name or 'Not assigned' }}</span>
+            </div>
+            <div class="strip-cell">
+                <span class="strip-lab"><i class='bx bx-calendar'></i> Member since</span>
+                <span class="strip-val">{{ person.created_at.strftime('%b %Y') if person.created_at else '—' }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        {# ---------------- workshops (owner) / works at (mechanic) ---------------- #}
+        {% if person.role == 'owner' %}
+        <section class="admin-section wp-panel" id="pfWorkshops">
+            <h2>Workshops</h2>
+            {% if workshops %}
+            <div class="workshop-join-list">
+                {% for w in workshops %}
+                <a class="workshop-join-card" href="{{ url_for('mechanics.workshop_preview', token=w.w_id | wtoken) }}">
+                    <div class="workshop-join-card-photo">
+                        {% if w.photo_path %}
+                        <img loading="lazy" decoding="async" src="{{ url_for('static', filename=w.photo_path) }}" alt="{{ w.name }}">
+                        {% else %}
+                        <div class="workshop-join-photo-placeholder"><i class='bx bx-store'></i></div>
+                        {% endif %}
+                    </div>
+                    <div class="workshop-join-card-info">
+                        <h3>{{ w.name }}</h3>
+                        <p><i class='bx bx-map'></i> {{ w.address or 'Address not listed' }}</p>
+                    </div>
+                    <div class="workshop-capacity"><i class='bx bx-group'></i><span>{{ w.team_size }}/{{ w.capacity }}</span></div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'lime') }}No workshops listed yet.</p>
+            {% endif %}
+        </section>
+        {% else %}
+        <section class="admin-section wp-panel" id="pfWorks">
+            <h2>Works at</h2>
+            <div class="workshop-join-list">
+                <a class="workshop-join-card" href="{{ url_for('mechanics.workshop_preview', token=mech.w_id | wtoken) }}">
+                    <div class="workshop-join-card-photo">
+                        {% if mech.photo_path %}
+                        <img loading="lazy" decoding="async" src="{{ url_for('static', filename=mech.photo_path) }}" alt="{{ mech.workshop_name }}">
+                        {% else %}
+                        <div class="workshop-join-photo-placeholder"><i class='bx bx-store'></i></div>
+                        {% endif %}
+                    </div>
+                    <div class="workshop-join-card-info">
+                        <h3>{{ mech.workshop_name }}</h3>
+                        <p><i class='bx bx-map'></i> {{ mech.address or 'Address not listed' }}</p>
+                    </div>
+                </a>
+            </div>
+        </section>
+        {% endif %}
+    </main>
+</div>
+{% endblock %}
+{% block script %}
+<script src="{{ url_for('static', filename='js/admin.js', v='3') }}" defer></script>
+{% endblock %}

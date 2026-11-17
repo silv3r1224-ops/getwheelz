@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Terms and Conditions — Getwheelz{% endblock %}
+{% block page_description %}The terms of use for Getwheelz — how bookings, payments, responsibilities, and platform rules work.{% endblock %}
+{% block content %}
+<article class="legal-page">
+    {% include 'legal/_draft_banner.html' %}
+    <h1>Terms and Conditions</h1>
+    <p class="legal-meta">Version {{ version }} · Getwheelz (demo platform)</p>
+
+    <h2 id="about">1. What Getwheelz is</h2>
+    <p>Getwheelz is a platform where customers find and book four-wheeler and two-wheeler workshops. Owners run the workshops, mechanics work at them, and admins oversee the platform. Getwheelz connects these people; the repair or service itself is agreed and carried out between the customer and the workshop.</p>
+
+    <h2 id="accounts">2. Accounts</h2>
+    <p>You sign up as a customer, a workshop owner or a mechanic, and you must give accurate details and keep your password safe. We do not verify email addresses or phone numbers at this stage. Admin accounts are created by the platform's main admin.</p>
+
+    <h2 id="bookings">3. Bookings and cancellation</h2>
+    <ul>
+        <li>A booking is a request. The workshop owner must accept or decline it.</li>
+        <li>You can cancel freely until the owner accepts. After acceptance you can send a cancellation request, and the owner decides whether to approve it.</li>
+        <li>If the owner does not answer a new request within 48 hours, it is cancelled automatically and you are told.</li>
+        <li>After accepting, the owner assigns one of the workshop's mechanics. Progress is shown as Accepted, In progress and Completed.</li>
+        <li>Each booking records the vehicle type and a description you type (for example make and model). We do not keep saved vehicle profiles.</li>
+    </ul>
+
+    <h2 id="payment">4. Payment</h2>
+    <p>Nothing is paid upfront. You pay after the job is completed, online, through the site's own payment step. At this stage that step is a demonstration only: no real money is taken. Any real payment provider added later will have its own terms.</p>
+
+    <h2 id="reviews">5. Reviews</h2>
+    <p>Only a customer with a completed booking can review that workshop, once per booking, with a rating and some text. Reviews are public and show your first name and last initial. The workshop owner may post one public reply to each review. Reviews must be honest and about your own visit.</p>
+
+    <h2 id="reports">6. Reports, warnings, suspensions and appeals</h2>
+    <ul>
+        <li>You can report an account or a workshop. A report is reviewed before any action is taken.</li>
+        <li>The person reported may be asked to respond, and has 72 hours to do so. They are told a report exists but never who made it.</li>
+        <li>Only a verified report can lead to a warning or a suspension. A report that is not verified is dismissed.</li>
+        <li>If your account is suspended or your workshop listing is rejected, you can appeal once per decision. An admin must answer the appeal with a note. If it is overturned, your account or listing is restored.</li>
+    </ul>
+
+    <h2 id="listings">7. Workshop listings</h2>
+    <p>A new workshop listing stays hidden from the public until an admin approves it. A rejected listing comes with a reason, and the owner can fix it and resubmit, or appeal. Owners also agree to the <a href="{{ url_for('legal.owner_agreement') }}">Workshop Owner Agreement</a> before listing.</p>
+
+    <h2 id="contact">8. Contact between users</h2>
+    <p>There is no chat on the site. A workshop can show a phone and a WhatsApp number, visible only to signed-in customers and mechanics, so you can call or message them directly. Please use those numbers only to deal with the workshop.</p>
+
+    <h2 id="conduct">9. Acceptable use</h2>
+    <p>Do not post false information, harass others, try to break into the site or other people's accounts, or use the platform for anything unlawful. We may suspend accounts that break these rules, following the process above.</p>
+
+    <h2 id="notices">10. Notices</h2>
+    <p>We notify you through your Getwheelz inbox. We do not send notification emails for now, so please check your inbox for booking updates and important notices. The only email we send is a password-reset link when you ask for one.</p>
+
+    <h2 id="changes">11. Changes to these terms</h2>
+    <p>If we change these terms in a way that matters, we publish a new version and ask you to accept it before you carry on. We keep a record of which version you accepted and when.</p>
+
+    <p class="legal-links">See also: <a href="{{ url_for('legal.privacy') }}">Privacy Policy</a> · <a href="{{ url_for('legal.owner_agreement') }}">Workshop Owner Agreement</a></p>
+</article>
+{% endblock %}

@@ -1,0 +1,43 @@
+{# NEO's guided tour. Included by base.html for signed-in people only.
+   tour_pending is True until the person finishes or skips the tour (see inject_tour in app/__init__.py). #}
+{% from 'partials/neo_chip.html' import neo_chip %}
+<div class="nt-spot" id="ntSpot" hidden><span class="nt-ring" aria-hidden="true"></span></div>
+<div class="nt-card" id="ntCard" role="dialog" aria-modal="false" aria-label="Guided tour with NEO" aria-labelledby="ntTitle" hidden>
+    <div class="nt-row">
+        <div class="nt-bot" id="ntBotWrap" aria-hidden="true">{{ neo_chip('happy', 76, id='ntBot', label='NEO') }}</div>
+        <div class="nt-panel hud">
+            <i class="hud-c tl"></i><i class="hud-c tr"></i><i class="hud-c bl"></i>
+            <div class="nt-step"><span id="ntCount">01 / 01</span><div class="nt-bar" id="ntBar" role="progressbar" aria-label="Tour progress" aria-valuemin="0" aria-valuenow="0"><span id="ntBarFill"></span></div></div>
+            <h3 id="ntTitle"></h3>
+            <div class="nt-body" id="ntBody">
+                <span class="nt-dots" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+                <p id="ntText" aria-hidden="true"></p>
+                <p class="nt-sr" id="ntSr" role="status" aria-live="polite"></p>
+            </div>
+            <div class="nt-actions">
+                <button type="button" class="nt-link" id="ntSkip">skip tour?</button>
+                <span class="nt-gap"></span>
+                <button type="button" class="nt-btn ghost" id="ntBack">Back</button>
+                <button type="button" class="nt-btn" id="ntNext">Next</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    window.GW_TOUR = {
+        uid: {{ session.get('user_id') | tojson }},
+        role: {{ (session.get('role') or '') | tojson }},
+        name: {{ (session.get('user_name') or '') | tojson }},
+        pending: {{ 'true' if tour_pending else 'false' }},
+        csrf: {{ csrf_token() | tojson }},
+        doneUrl: {{ url_for('main.tour_done') | tojson }},
+        urls: {
+            home: {{ url_for({'admin': 'dashboard.admin', 'customer': 'customer.home', 'owner': 'dashboard.owner', 'mechanic': 'mechanics.home'}.get(session.get('role'), 'main.index')) | tojson }},
+            profile: {{ url_for('dashboard.profile') | tojson }},
+            bookings: {{ url_for('bookings.my_bookings') | tojson }},
+            adminServices: {{ url_for('dashboard.admin_services') | tojson }},
+            adminSubadmins: {{ url_for('dashboard.admin_subadmins') | tojson }}
+        }
+    };
+</script>
+<script src="{{ url_for('static', filename='js/tour.js', v='3') }}" defer></script>

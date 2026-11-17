@@ -1,0 +1,97 @@
+{# Receipt-printer component partial — ported from receipt_printer_flask.zip.
+   Consumes rp_* variables (see the receipt page for the values).
+   CSS lives in app.css; the page owns loading js/receipt_printer.js. #}
+<section
+  class="receipt-printer"
+  data-receipt-printer
+  data-stage="{{ rp_stage }}"
+  data-feed-motion="{{ rp_feed_motion }}"
+  data-animate="{{ 'true' if rp_animate else 'false' }}"
+  aria-label="Receipt printer"
+>
+  <div class="printer-machine">
+    <div class="printer-header">
+      <div class="printer-brand" aria-hidden="true">
+        <span class="brand-dot"></span>
+        <span>WHEELZ<span class="brand-light"> / PRINT</span></span>
+      </div>
+      <span class="printer-led" aria-hidden="true"></span>
+    </div>
+
+    <div class="printer-screen">
+      <div class="screen-topline">
+        <span>THERMAL SYSTEM</span>
+        <span>80 MM</span>
+      </div>
+      <div class="screen-main">
+        <span class="status-indicator" aria-hidden="true">
+          <svg class="status-spinner" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="8.5"></circle>
+          </svg>
+          <svg class="status-check" viewBox="0 0 24 24">
+            <path d="m5 12.5 4.3 4.2L19.5 6.8"></path>
+          </svg>
+        </span>
+        <span class="screen-state" data-printer-label>{{ rp_status_label }}</span>
+      </div>
+      <div class="screen-progress" aria-hidden="true"><span></span></div>
+    </div>
+
+    <div class="printer-mouth" aria-hidden="true">
+      <span class="mouth-slot"></span>
+      <span class="mouth-highlight"></span>
+    </div>
+
+    <div class="receipt-output">
+      <div class="receipt-feed" data-receipt-feed aria-hidden="true">
+        <article class="receipt-paper">
+          <div class="receipt-content">
+            <div class="receipt-logo">GETWHEELZ</div>
+            <p class="receipt-subtitle">SERVICE CONFIRMATION</p>
+            <div class="receipt-rule"></div>
+            <div class="receipt-meta">
+              <span>ORDER</span><strong>#{{ rp_reference }}</strong>
+            </div>
+            <div class="receipt-meta">
+              <span>DATE</span><strong>{{ rp_order_date }}</strong>
+            </div>
+            <div class="receipt-rule dotted"></div>
+            <div class="receipt-meta">
+              <span>WORKSHOP</span><strong>{{ rp_workshop }}</strong>
+            </div>
+            <div class="receipt-meta">
+              <span>SERVICE</span><strong>{{ rp_service }}</strong>
+            </div>
+            <div class="receipt-meta">
+              <span>AMOUNT</span><strong>{{ rp_amount }}</strong>
+            </div>
+            <div class="receipt-meta">
+              <span>METHOD</span><strong>{{ rp_method }}</strong>
+            </div>
+            {% if rp_mechanic %}
+            <div class="receipt-meta">
+              <span>MECHANIC</span><strong>{{ rp_mechanic }}</strong>
+            </div>
+            {% endif %}
+            <div class="receipt-rule dotted"></div>
+            <div class="receipt-total"><span>STATUS</span><strong data-receipt-status>{{ rp_receipt_status }}</strong></div>
+            <div class="receipt-barcode" aria-hidden="true"></div>
+            <p class="receipt-center receipt-footer">PLEASE KEEP THIS RECEIPT</p>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <div class="printer-base" aria-hidden="true">
+      <span class="base-ridge"></span>
+    </div>
+  </div>
+
+  <div class="printer-status" role="status" aria-live="polite" aria-atomic="true">
+    <span class="status-indicator status-indicator-small" aria-hidden="true">
+      <svg class="status-spinner" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"></circle></svg>
+      <svg class="status-check" viewBox="0 0 24 24"><path d="m5 12.5 4.3 4.2L19.5 6.8"></path></svg>
+    </span>
+    <span data-live-status>{{ rp_status_label }}</span>
+  </div>
+</section>

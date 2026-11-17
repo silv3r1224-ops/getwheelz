@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Account suspended — Getwheelz{% endblock %}
+
+{% block content %}
+<section class="suspended-screen">
+    <div class="suspended-card">
+        <i class='bx bx-block suspended-icon' aria-hidden="true"></i>
+        <h1>Your account is suspended</h1>
+        <p class="suspended-lead">Hi {{ user.name }}, you can't log in right now because an admin suspended your account{% if suspended_at %} on {{ suspended_at.strftime('%d %b %Y') }}{% endif %}.</p>
+
+        {% if state.last and state.last.status == 'open' %}
+        <div class="suspended-box">
+            <strong><i class='bx bx-time-five'></i> Your appeal is under review</strong>
+            <p>You sent it on {{ state.last.created_at.strftime('%d %b %Y, %I:%M %p') }}. An admin must answer it. Come back to this page later by logging in again: the answer will show here.</p>
+        </div>
+        {% elif state.last and state.last.status == 'upheld' and not state.can_appeal %}
+        <div class="suspended-box">
+            <strong><i class='bx bx-info-circle'></i> Your appeal was reviewed</strong>
+            <p>The suspension stands.{% if state.last.decision_note %} Note from the reviewer: {{ state.last.decision_note }}{% endif %}</p>
+        </div>
+        {% endif %}
+
+        {% if state.can_appeal %}
+        <form method="POST" action="{{ url_for('appeals.suspended_appeal') }}" class="suspended-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="t" value="{{ token }}">
+            <label for="appealMessage">If you think this was a mistake, tell us why</label>
+            <textarea id="appealMessage" name="message" rows="5" minlength="10" maxlength="1000" required
+                      placeholder="Explain what happened and why the suspension should be reconsidered."></textarea>
+            <button type="submit" class="px-btn"><i class='bx bx-send'></i> Appeal this decision</button>
+            <small>You can appeal once for each suspension. An admin will answer with a note.</small>
+        </form>
+        {% endif %}
+
+        <a class="px-ghost sm" href="{{ url_for('main.index') }}"><i class='bx bx-arrow-back'></i> Back to the home page</a>
+    </div>
+</section>
+{% endblock %}

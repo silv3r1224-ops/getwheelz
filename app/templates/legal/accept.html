@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Please review our terms — Getwheelz{% endblock %}
+{% block page_description %}Review and accept the latest Getwheelz Terms, Privacy Policy, and Owner Agreement to continue using the platform.{% endblock %}
+{% block content %}
+<section class="legal-accept">
+    <div class="legal-accept-card">
+        <i class='bx bx-file-find' aria-hidden="true"></i>
+        <h1>Please review our terms</h1>
+        <p>Before you continue, please read and accept the following. We record which version you accepted and when.</p>
+        <ul class="legal-accept-docs">
+            {% for doc in missing %}
+            <li><a href="{{ url_for('legal.' ~ doc) }}" target="_blank" rel="noopener">{{ titles[doc] }}</a> <small>(version {{ versions[doc] }})</small></li>
+            {% endfor %}
+        </ul>
+        <form method="POST" action="{{ url_for('legal.accept') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="next" value="{{ next_url }}">
+            <label class="legal-check">
+                <input type="checkbox" name="agree" required>
+                <span>I have read and agree to {% for doc in missing %}{% if loop.last and not loop.first %} and {% elif not loop.first %}, {% endif %}the {{ titles[doc] }}{% endfor %}.</span>
+            </label>
+            <button type="submit" class="px-btn">Accept and continue</button>
+        </form>
+        <a class="px-ghost sm" href="{{ url_for('auth.logout') }}">Log out instead</a>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,91 @@
+{# Login / sign-up pop-ups for visitors who are not signed in (header.js opens them).
+   Instrument-panel styling lives in css/modals.css (.auth-modal block); keep the
+   #loginModal / #signUpModal ids, .login-form / .signup-form classes and .fw-btn-con
+   submit wrapper — header.js and main.js depend on them. #}
+<div class="login-modal auth-modal" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+    <div class="auth-rail">
+        <span class="auth-label">GW / 26</span>
+        <span class="brand-mark auth-mark" aria-hidden="true"><span class="brand-ring"></span><span class="brand-cut"></span></span>
+        <span class="auth-brand">Getwheelz</span>
+        <span class="auth-live"><i></i> SYSTEM LIVE</span>
+        <button type="button" class="icon-btn auth-close" data-auth-close aria-label="Close"><i class='bx bx-x'></i></button>
+    </div>
+    <form action="{{ url_for('auth.login') }}" method="post" class="login-form" aria-label="Log in">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <p class="auth-kicker">IDENTITY / 01</p>
+        <h2 id="loginTitle">Welcome back</h2>
+        <p class="auth-sub">Sign in to manage your bookings and workshop activity.</p>
+        <label class="field">
+            <span class="field-h"><span class="field-label">Email</span></span>
+            <input type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+        </label>
+        <label class="field">
+            <span class="field-h"><span class="field-label">Password</span><a class="forgot-link" href="{{ url_for('auth.forgot_password') }}">Forgot password?</a></span>
+            <div class="pw-wrap">
+                <input type="password" name="password" placeholder="••••••••" autocomplete="current-password" data-lpignore="true" spellcheck="false" required>
+                <button type="button" class="pw-toggle" aria-label="Show password"><i class='bx bx-show'></i></button>
+            </div>
+        </label>
+        <button class="fw-btn auth-submit" type="submit">Login <i class='bx bx-right-arrow-alt'></i></button>
+        <div class="auth-divider"><span>or</span></div>
+        <a class="ggl-btn auth-google" id="google-login-btn" href="{{ url_for('auth.google_login', mode='login') }}">
+            {% include 'partials/google_icon.html' %}<span>Sign in with Google</span>
+        </a>
+        <p class="auth-switch">New to Getwheelz? <a data-signup="signupBtn">Sign Up</a></p>
+    </form>
+</div>
+<div class="signup-modal auth-modal" id="signUpModal" role="dialog" aria-modal="true" aria-labelledby="signupTitle">
+    <div class="auth-rail">
+        <span class="auth-label">GW / 26</span>
+        <span class="brand-mark auth-mark" aria-hidden="true"><span class="brand-ring"></span><span class="brand-cut"></span></span>
+        <span class="auth-brand">Getwheelz</span>
+        <span class="auth-live"><i></i> SYSTEM LIVE</span>
+        <button type="button" class="icon-btn auth-close" data-auth-close aria-label="Close"><i class='bx bx-x'></i></button>
+    </div>
+    <form action="{{ url_for('auth.signup') }}" method="post" class="signup-form" aria-label="Create an account">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <p class="auth-kicker">IDENTITY / 02</p>
+        <h2 id="signupTitle">Create your account</h2>
+        <p class="auth-sub">Join as a customer, workshop owner, or mechanic.</p>
+        <label class="field">
+            <span class="field-h"><span class="field-label">Full name</span></span>
+            <input type="text" name="name" placeholder="Jordan Smith" autocomplete="name" required>
+        </label>
+        <label class="field">
+            <span class="field-h"><span class="field-label">Email</span></span>
+            <input type="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+        </label>
+        <label class="field">
+            <span class="field-h"><span class="field-label">Password</span></span>
+            <div class="pw-wrap">
+                <input type="password" name="password" minlength="8" placeholder="8+ characters" autocomplete="off" data-lpignore="true" spellcheck="false" required>
+                <button type="button" class="pw-toggle" aria-label="Show password"><i class='bx bx-show'></i></button>
+            </div>
+        </label>
+        <label class="field">
+            <span class="field-h"><span class="field-label">Confirm password</span></span>
+            <div class="pw-wrap">
+                <input type="password" name="confirm_password" minlength="8" placeholder="Repeat password" autocomplete="off" data-lpignore="true" spellcheck="false" required>
+                <button type="button" class="pw-toggle" aria-label="Show password"><i class='bx bx-show'></i></button>
+            </div>
+        </label>
+        <label class="field">
+            <span class="field-h"><span class="field-label">Join as</span></span>
+            <select name="role">
+                <option value="customer">Customer</option>
+                <option value="owner">Workshop Owner</option>
+                <option value="mechanic">Mechanic</option>
+            </select>
+        </label>
+        <label class="auth-consent">
+            <input type="checkbox" name="accept_terms" required>
+            <span>I agree to the <a href="{{ url_for('legal.terms') }}" target="_blank" rel="noopener">Terms and Conditions</a> and the <a href="{{ url_for('legal.privacy') }}" target="_blank" rel="noopener">Privacy Policy</a>.</span>
+        </label>
+        <button class="fw-btn auth-submit" type="submit">Sign Up <i class='bx bx-right-arrow-alt'></i></button>
+        <div class="auth-divider"><span>or</span></div>
+        <a class="ggl-btn auth-google" id="google-signup-btn" href="{{ url_for('auth.google_login', mode='signup') }}">
+            {% include 'partials/google_icon.html' %}<span>Sign up with Google</span>
+        </a>
+        <p class="auth-switch">Already have an account? <a data-login="loginBtn">Login</a></p>
+    </form>
+</div>

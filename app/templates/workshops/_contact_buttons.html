@@ -1,0 +1,6 @@
+{# Call / WhatsApp for a workshop — public on the hero card (the owner publishes these numbers so
+   customers can reach the workshop). `contact_buttons` comes from app/contact.py and carries the
+   tel:// / wa.me hrefs; numbers are rendered separately from the hero card details block. #}
+{% if contact_buttons.call %}<a class="px-ghost sm" href="{{ contact_buttons.call }}"><i class='bx bx-phone-call'></i> Call</a>{% endif %}
+{% if contact_buttons.whatsapp %}<a class="px-ghost sm" href="{{ contact_buttons.whatsapp }}" target="_blank" rel="noopener"><i class='bx bxl-whatsapp'></i> WhatsApp</a>{% endif %}
+{% if not contact_buttons.call and not contact_buttons.whatsapp %}<span class="px-contact-note">The owner hasn't added a phone or WhatsApp number yet.</span>{% endif %}

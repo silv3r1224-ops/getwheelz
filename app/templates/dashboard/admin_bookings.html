@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Bookings Oversight — Admin — Getwheelz{% endblock %}
+
+{% block head %}{% endblock %}
+
+{% block content %}
+{% from 'partials/robot.html' import neo_ico %}
+<div class="admin-layout" id="adminLayout">
+
+    <aside class="admin-sidebar" id="sideBar">
+        <div class="sidebar-header">
+            <i class='bx bxs-shield-alt-2'></i>
+            <span>Admin Panel</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('dashboard.admin') }}" class="sidebar-link">
+                <i class='bx bx-grid-alt'></i> Back to Dashboard
+            </a>
+            <a href="{{ url_for('dashboard.admin_bookings') }}" class="sidebar-link active">
+                <i class='bx bx-calendar-check'></i> Bookings
+            </a>
+            <a href="{{ url_for('dashboard.admin_services') }}" class="sidebar-link">
+                <i class='bx bx-detail'></i> Service Catalog
+            </a>
+            {% if session.get('is_main_admin') %}
+            <a href="{{ url_for('dashboard.admin_subadmins') }}" class="sidebar-link">
+                <i class='bx bx-user-plus'></i> Sub-admin Management
+            </a>
+            {% endif %}
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-link">
+                <i class='bx bx-log-out'></i> Logout
+            </a>
+        </div>
+    </aside>
+
+    <main class="admin-main">
+        <header class="admin-hero">
+            <div class="admin-hero-top">
+                <div class="admin-hero-left">
+                    <div class="admin-hero-icon"><i class='bx bx-calendar-check'></i></div>
+                    <div class="admin-hero-text">
+                        <span class="admin-eyebrow"><i class='bx bxs-dashboard'></i> Oversight</span>
+                        <h1>All Platform <span class="accent">Bookings</span></h1>
+                        <p>Monitor all service bookings across workshops on the platform.</p>
+                    </div>
+                </div>
+                <div class="neo-corner">{{ neo_ico('working', 120, '', wander=False) }}</div>
+            </div>
+
+            <div class="admin-hero-strip">
+                <div class="strip-cell">
+                    <span class="strip-lab"><i class='bx bx-calendar-event'></i> Total</span>
+                    <span class="strip-val strip-stat">{{ bookings | length }}</span>
+                </div>
+                {% if workshop_filter_id %}
+                <a href="{{ url_for('dashboard.admin_bookings') }}" class="strip-cell hot">
+                    <span class="strip-lab"><i class='bx bx-filter-alt'></i> Filtered</span>
+                    <span class="strip-val">{{ workshop_filter or 'One workshop' }} · show all</span>
+                </a>
+                {% endif %}
+                <a href="{{ url_for('dashboard.admin') }}" class="strip-cell">
+                    <span class="strip-lab"><i class='bx bx-arrow-back'></i> Dashboard</span>
+                    <span class="strip-val">Back to overview</span>
+                </a>
+            </div>
+        </header>
+
+        <section class="admin-section">
+            <h2>Bookings <span class="px-ghellis-tail">ledger.</span></h2>
+            {% if bookings %}
+            <div class="sa-table-wrap">
+                <table class="admin-table sa-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Workshop</th>
+                            <th>Customer</th>
+                            <th>Service</th>
+                            <th>Requested Time</th>
+                            <th>Status</th>
+                            <th>Payment</th>
+                            <th class="actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in bookings %}
+                        <tr>
+                            <td>#{{ b.b_id }}</td>
+                            <td>
+                                <a class="profile-link" href="{{ url_for('dashboard.admin_workshop_preview', token=b.w_id | wtoken) }}">
+                                    {{ b.workshop_name }}
+                                </a>
+                            </td>
+                            <td>
+                                {{ b.customer_name }}
+                                <span class="sa-person-email">{{ b.customer_email }}</span>
+                            </td>
+                            <td>{{ b.s_name }}</td>
+                            <td class="sa-muted">{{ b.requested_time.strftime('%d %b %Y, %I:%M %p') }}</td>
+                            <td>
+                                <span class="status-badge status-{{ b.status }}">{{ b.status | status_label }}</span>
+                            </td>
+                            <td>
+                                {% if b.paid_amount %}
+                                <span class="status-badge status-completed">Paid ({{ b.paid_amount | money }})</span>
+                                {% else %}
+                                <span class="status-badge status-pending">Unpaid</span>
+                                {% endif %}
+                            </td>
+                            <td class="actions">
+                                {% if b.status in ('pending', 'confirmed', 'in_progress') %}
+                                <button type="button" class="mini-btn danger js-confirm"
+                                    data-url="{{ url_for('dashboard.admin_cancel_booking', b_id=b.b_id) }}"
+                                    data-title="Cancel booking #{{ b.b_id }}?"
+                                    data-msg="The booking for {{ b.customer_name }} at {{ b.workshop_name }} will be marked as cancelled.">
+                                    <i class='bx bx-x'></i> Cancel
+                                </button>
+                                {% else %}
+                                <span class="sa-muted">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'violet') }}No bookings found on the platform yet.</p>
+            {% endif %}
+        </section>
+    </main>
+</div>
+
+{# generic confirmation modal (driven by admin.js .js-confirm) #}
+<div class="delete-con" id="confirmCon" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <h2 id="confirmTitle">Are you sure?</h2>
+    <p id="confirmMsg"></p>
+    <div class="delete-actions">
+        <form id="confirmForm" method="post" action="">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button id="confirmBtn" type="submit" class="sure-btn danger">Yes, continue</button>
+        </form>
+        <button type="button" id="cancelConfirm" class="sure-btn cancel">Cancel</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin.js', v='3') }}" defer></script>
+{% endblock %}

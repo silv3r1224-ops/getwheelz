@@ -1,0 +1,85 @@
+{% if session.user_id %}
+<nav class="mobile-bottom-nav" aria-label="Mobile Bottom Navigation">
+    {% if session.role == 'customer' %}
+    <a href="{{ url_for('customer.home') }}" class="mb-nav-item {% if request.endpoint == 'customer.home' %}active{% endif %}">
+        <i class='bx bx-home-alt'></i>
+        <span>Home</span>
+    </a>
+    <a href="{{ url_for('workshops.search') }}" class="mb-nav-item {% if 'workshops.search' in request.endpoint %}active{% endif %}">
+        <i class='bx bx-search-alt'></i>
+        <span>Search</span>
+    </a>
+    <a href="{{ url_for('bookings.my_bookings') }}" class="mb-nav-item {% if 'bookings' in request.endpoint %}active{% endif %}">
+        <i class='bx bx-calendar-check'></i>
+        <span>Bookings</span>
+    </a>
+    <a href="{{ url_for('customer.bookmarks') }}" class="mb-nav-item {% if 'bookmarks' in request.endpoint %}active{% endif %}">
+        <i class='bx bx-bookmark'></i>
+        <span>Saved</span>
+    </a>
+    <a href="{{ url_for('main.inbox') }}" class="mb-nav-item {% if 'inbox' in request.endpoint %}active{% endif %}">
+        <i class='bx bx-envelope'></i>
+        {% if inbox_unread_count %}<b class="mb-nav-badge" data-mail-badge aria-hidden="true">{{ inbox_unread_count if inbox_unread_count < 100 else '99+' }}</b>{% endif %}
+        <span>Inbox</span>
+    </a>
+    <a href="{{ url_for('dashboard.profile') }}" class="mb-nav-item {% if 'profile' in request.endpoint %}active{% endif %}">
+        <i class='bx bx-user-circle'></i>
+        <span>Profile</span>
+    </a>
+    {% elif session.role == 'owner' %}
+    <a href="{{ url_for('dashboard.owner') }}" class="mb-nav-item active">
+        <i class='bx bx-grid-alt'></i>
+        <span>Dashboard</span>
+    </a>
+    <a href="{{ url_for('main.inbox') }}" class="mb-nav-item">
+        <i class='bx bx-envelope'></i>
+        {% if inbox_unread_count %}<b class="mb-nav-badge" data-mail-badge aria-hidden="true">{{ inbox_unread_count if inbox_unread_count < 100 else '99+' }}</b>{% endif %}
+        <span>Inbox</span>
+    </a>
+    <a href="{{ url_for('dashboard.profile') }}" class="mb-nav-item">
+        <i class='bx bx-user-circle'></i>
+        <span>Profile</span>
+    </a>
+    <a href="{{ url_for('auth.logout') }}" class="mb-nav-item">
+        <i class='bx bx-log-out'></i>
+        <span>Logout</span>
+    </a>
+    {% elif session.role == 'mechanic' %}
+    <a href="{{ url_for('mechanics.home') }}" class="mb-nav-item active">
+        <i class='bx bx-grid-alt'></i>
+        <span>Dashboard</span>
+    </a>
+    <a href="{{ url_for('main.inbox') }}" class="mb-nav-item">
+        <i class='bx bx-envelope'></i>
+        {% if inbox_unread_count %}<b class="mb-nav-badge" data-mail-badge aria-hidden="true">{{ inbox_unread_count if inbox_unread_count < 100 else '99+' }}</b>{% endif %}
+        <span>Inbox</span>
+    </a>
+    <a href="{{ url_for('dashboard.profile') }}" class="mb-nav-item">
+        <i class='bx bx-user-circle'></i>
+        <span>Profile</span>
+    </a>
+    <a href="{{ url_for('auth.logout') }}" class="mb-nav-item">
+        <i class='bx bx-log-out'></i>
+        <span>Logout</span>
+    </a>
+    {% elif session.role == 'admin' %}
+    <a href="{{ url_for('dashboard.admin') }}" class="mb-nav-item active">
+        <i class='bx bx-grid-alt'></i>
+        <span>Admin</span>
+    </a>
+    <a href="{{ url_for('main.inbox') }}" class="mb-nav-item">
+        <i class='bx bx-envelope'></i>
+        {% if inbox_unread_count %}<b class="mb-nav-badge" data-mail-badge aria-hidden="true">{{ inbox_unread_count if inbox_unread_count < 100 else '99+' }}</b>{% endif %}
+        <span>Inbox</span>
+    </a>
+    <a href="{{ url_for('dashboard.profile') }}" class="mb-nav-item">
+        <i class='bx bx-user-circle'></i>
+        <span>Profile</span>
+    </a>
+    <a href="{{ url_for('auth.logout') }}" class="mb-nav-item">
+        <i class='bx bx-log-out'></i>
+        <span>Logout</span>
+    </a>
+    {% endif %}
+</nav>
+{% endif %}

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Booking Requested — Getwheelz{% endblock %}
+
+{% block head %}
+{% include 'partials/px_head.html' %}
+{% endblock %}
+
+{% from 'partials/robot.html' import robot %}
+{% block content %}
+<div class="px px-customer-booking">
+
+    {# ===================== HERO ===================== #}
+    <section class="px-confirm reveal">
+        <div class="px-wrap px-narrow">
+            <div class="px-kicker-row" style="justify-content: center;"><span>CUSTOMER / 04</span><span>REQUEST SENT</span></div>
+            <span class="px-eyebrow"><i class='bx bx-check-circle'></i> Done</span>
+            {# NEO hammering on the left, NEO tightening a screw on the right: the booking is being worked on #}
+            <div class="neo-duo">
+                {{ robot('working', 130, follow=False, label='NEO working with a hammer') }}
+                <div class="px-check"><i class='bx bx-check'></i></div>
+                {{ robot('screwing', 130, follow=False, label='NEO tightening a screw') }}
+            </div>
+            <h1 class="px-title">
+                <span class="px-title-line">Booking</span>
+                <span class="px-title-line px-title-accent">requested.</span>
+            </h1>
+            <p class="px-lead" style="margin: 0 auto;">Your request is with the workshop. You will see it move to Accepted under My Bookings once they accept. If the workshop does not answer within 48 hours, the request is cancelled automatically and you are told. Nothing is paid until the job is completed.</p>
+
+            <div class="px-card px-receipt">
+                <div class="px-receipt-top">
+                    <small>Booking #{{ booking.b_id }}</small>
+                    <span class="px-badge {{ booking.status }}">{{ booking.status | status_label }}</span>
+                </div>
+                <div class="px-divider"></div>
+                <div class="px-sum-row"><span>Workshop</span><b>{{ booking.workshop_name }}</b></div>
+                <div class="px-sum-row"><span>Address</span><b>{{ booking.address or '—' }}</b></div>
+                <div class="px-sum-row"><span>Service</span><b>{{ booking.s_name }}</b></div>
+                {% if booking.vehicle_description %}<div class="px-sum-row"><span>Vehicle</span><b>{{ VEHICLE_SINGULAR[booking.vehicle_type] }}: {{ booking.vehicle_description }}</b></div>{% endif %}
+                <div class="px-sum-row"><span>Requested time</span><b>{{ booking.requested_time.strftime('%a, %d %b %Y, %I:%M %p') }}</b></div>
+            </div>
+
+            <div class="px-timeline">
+                <div class="px-tl done"><i class='bx bx-check'></i><div><b>Request sent</b><span>The workshop has your request.</span></div></div>
+                <div class="px-tl now"><i class='bx bx-time-five'></i><div><b>Waiting for the workshop</b><span>They review it and confirm the time.</span></div></div>
+                <div class="px-tl"><i class='bx bx-wrench'></i><div><b>Service day</b><span>Visit the workshop at the confirmed time.</span></div></div>
+            </div>
+
+            <div class="px-btn-row" style="justify-content: center; margin-top: 26px;">
+                <a href="{{ url_for('bookings.my_bookings') }}" class="px-btn">View my bookings</a>
+                <a href="{{ url_for('customer.home') }}" class="px-ghost">Back to home</a>
+            </div>
+        </div>
+    </section>
+
+    {# ===================== MARQUEE ===================== #}
+    <div class="px-edition-marquee" aria-hidden="true">
+        <span>REQUEST SENT&nbsp;&nbsp; / &nbsp;&nbsp;WAITING ON THE WORKSHOP&nbsp;&nbsp; / &nbsp;&nbsp;CONFIRMATION&nbsp;&nbsp; / &nbsp;&nbsp;REQUEST SENT&nbsp;&nbsp; / &nbsp;&nbsp;</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/premium-scroll.js', v='puzzle-4') }}" defer></script>
+{% endblock %}

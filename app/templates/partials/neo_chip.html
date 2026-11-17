@@ -1,0 +1,19 @@
+{# NEO chip: the round avatar used by the guided tour and the flash messages.
+   Use: {% from 'partials/neo_chip.html' import neo_chip %}  {{ neo_chip('happy', 56) }}
+   Moods: neutral | happy | excited | working | error  (error = worried eyes, used for anything that went wrong).
+   Colours come from CSS (.nc-*), so the chip follows the light and dark theme. #}
+{% macro neo_chip(mood='neutral', size=56, id='', label='NEO') -%}
+<svg class="nc" data-mood="{{ mood }}"{% if id %} id="{{ id }}"{% endif %} width="{{ size }}" height="{{ size }}" viewBox="0 0 100 100" role="img" aria-label="{{ label }}" focusable="false">
+    <path class="nc-arc" d="M84 22 C98 40 96 70 74 88 C60 98 36 99 20 88" />
+    <circle class="nc-disc" cx="48" cy="50" r="42" />
+    <g class="nc-ant"><path d="M30 14 L28 24" /><path d="M66 14 L68 24" /><path d="M30 86 L28 76" /><path d="M66 86 L68 76" /></g>
+    <path class="nc-visor" d="M17 31 Q48 26 79 30 L80 69 Q48 74 16 70 Z" />
+    <g class="nc-face">
+        <g class="nc-m nc-m-neutral"><g class="nc-eyes"><ellipse cx="37" cy="48" rx="3.6" ry="6" /><ellipse cx="59" cy="48" rx="3.6" ry="6" /></g><path class="nc-line" d="M43 60 L53 60" /></g>
+        <g class="nc-m nc-m-happy"><path class="nc-line" d="M32 52 Q37 42 42 52" /><path class="nc-line" d="M54 52 Q59 42 64 52" /><path class="nc-line" d="M42 59 Q48 65 54 59" /></g>
+        <g class="nc-m nc-m-excited"><g class="nc-eyes"><ellipse cx="37" cy="48" rx="4.6" ry="7.6" /><ellipse cx="59" cy="48" rx="4.6" ry="7.6" /></g><path class="nc-open" d="M41 58 Q48 68 55 58 Z" /></g>
+        <g class="nc-m nc-m-working"><g class="nc-eyes"><ellipse cx="37" cy="48" rx="3.6" ry="6" /><ellipse cx="59" cy="48" rx="3.6" ry="6" /></g><path class="nc-line" d="M41 60 L45 57 L49 61 L53 57 L56 60" /></g>
+        <g class="nc-m nc-m-error"><path class="nc-line nc-bad" d="M32 43 L42 49 L32 55" /><path class="nc-line nc-bad" d="M64 43 L54 49 L64 55" /><path class="nc-line nc-bad" d="M42 62 Q48 57 54 62" /></g>
+    </g>
+</svg>
+{%- endmacro %}

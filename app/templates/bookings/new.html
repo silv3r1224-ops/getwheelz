@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Book a Service — Getwheelz{% endblock %}
+
+{% block head %}
+{% include 'partials/px_head.html' %}
+{% endblock %}
+
+{% block content %}
+{% from 'partials/robot.html' import neo_ico %}
+{% from 'partials/vehicle_icon.html' import vehicle_icon %}
+<div class="px px-customer-booking">
+
+    {# ===================== HERO ===================== #}
+    <section class="px-hero reveal">
+        <div class="neo-side" aria-hidden="true">{{ neo_ico('working', 170, '', wander=False) }}</div>
+        <div class="px-wrap">
+            <a class="px-back" href="{{ url_for('workshops.selected', w_id=workshop.w_id) }}"><i class='bx bx-arrow-back'></i> Back to workshop</a>
+            <div class="px-kicker-row"><span>CUSTOMER / 02</span><span>BOOK A SERVICE</span></div>
+            <span class="px-eyebrow"><i class='bx bx-wrench'></i> Request</span>
+            <h1 class="px-title">
+                <span class="px-title-line">Book a service</span>
+                <span class="px-title-line px-title-accent">at {{ workshop.name }}.</span>
+            </h1>
+            <p class="px-lead"><i class='bx bx-map'></i> {{ workshop.address or 'Address not listed' }}</p>
+            {% if not workshop.is_open %}
+            <p class="oc-notice"><i class='bx bx-info-circle'></i> This workshop is closed right now. You can still send a request for a later time.</p>
+            {% endif %}
+
+            <ul class="px-trust">
+                <li><i class='bx bxs-check-circle'></i> Describe your vehicle and pick a service</li>
+                <li><i class='bx bx-calendar-plus'></i> Choose a time</li>
+                <li><i class='bx bxs-check-shield'></i> The workshop confirms</li>
+            </ul>
+        </div>
+    </section>
+
+    {# ===================== MARQUEE ===================== #}
+    <div class="px-edition-marquee" aria-hidden="true">
+        <span>BOOK A SERVICE&nbsp;&nbsp; / &nbsp;&nbsp;PICK YOUR TIME&nbsp;&nbsp; / &nbsp;&nbsp;REQUEST &amp; TRACK&nbsp;&nbsp; / &nbsp;&nbsp;BOOK A SERVICE&nbsp;&nbsp; / &nbsp;&nbsp;</span>
+    </div>
+
+    {# ===================== BOOKING FORM ===================== #}
+    <section class="px-section reveal">
+        <div class="px-wrap">
+            {% if services %}
+            <div class="px-section-head">
+                <div>
+                    <span class="px-eyebrow"><i class='bx bx-list-check'></i> Your request</span>
+                    <h2>Choose what you <span class="px-ghellis-tail">need.</span></h2>
+                    <p>The workshop reviews your request and confirms it under My Bookings.</p>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('bookings.new', w_id=workshop.w_id) }}" class="px-form-grid" id="booking-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="px-card px-panel">
+                    <div class="px-step">
+                        <div class="px-step-head"><span class="px-step-num">1</span><h2>Your <span class="px-ghellis-tail">vehicle.</span></h2></div>
+                        {% if served_types | length > 1 %}
+                        <div class="gwv-radios" role="radiogroup" aria-label="Vehicle type" id="vehicle-types">
+                            {% for t in served_types %}
+                            <label class="gwv-check"><input type="radio" name="vehicle_type" value="{{ t }}" required {% if booking_vehicle == t %}checked{% endif %}> {{ vehicle_icon(t, 18) }} {{ VEHICLE_SINGULAR[t] }}</label>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <input type="hidden" name="vehicle_type" value="{{ served_types[0] }}">
+                        <p><span class="gwv-badge">{{ vehicle_icon(served_types[0], 16) }} {{ VEHICLE_SINGULAR[served_types[0]] }}</span> This workshop serves {{ VEHICLE_PLURAL[served_types[0]] | lower }}.</p>
+                        {% endif %}
+                        <div class="px-field" style="margin-top: 12px;">
+                            <label for="vehicle_description">Make, model and plate <small>(plate is optional)</small></label>
+                            <input class="px-input" type="text" id="vehicle_description" name="vehicle_description" maxlength="150" required
+                                value="{{ vehicle_description }}" placeholder="e.g. Honda City 2019, AS01 AB 1234" autocomplete="off">
+                        </div>
+                    </div>
+
+                    <div class="px-step">
+                        <div class="px-step-head"><span class="px-step-num">2</span><h2>Choose a <span class="px-ghellis-tail">service.</span></h2></div>
+                        <div class="px-choices" role="radiogroup" aria-label="Service">
+                            {% for service in services %}
+                            <label class="px-choice" data-vehicle="{{ service.vehicle_type }}">
+                                <input type="radio" name="s_id" value="{{ service.s_id }}" required
+                                    data-name="{{ service.s_name }}"
+                                    data-price="{{ service.price_range or '' }}"
+                                    data-duration="{{ service.duration or '' }}"
+                                    {% if preselected_service == service.s_id %}checked{% endif %}>
+                                <span class="px-choice-body">
+                                    <span class="px-radio"></span>
+                                    <span class="px-choice-info">
+                                        <strong>{{ service.s_name }}</strong>{% if served_types | length > 1 %} <span class="gwv-badge">{{ VEHICLE_SINGULAR[service.vehicle_type] }}</span>{% endif %}
+                                        <span>{% if service.duration %}About {{ service.duration }}{% else %}Duration on request{% endif %}</span>
+                                    </span>
+                                    {% if service.price_range %}<span class="px-choice-price">{{ service.price_range }}</span>{% endif %}
+                                </span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="px-step" style="margin-bottom: 0;">
+                        <div class="px-step-head"><span class="px-step-num">3</span><h2>Pick a date and <span class="px-ghellis-tail">time.</span></h2></div>
+                        <div class="px-field">
+                            <label for="requested_time">Preferred date and time</label>
+                            <input class="px-input" type="datetime-local" id="requested_time" name="requested_time"
+                                value="{{ time_value }}" min="{{ min_time }}" required>
+                        </div>
+                        <div class="px-quick" aria-label="Quick picks">
+                            <button type="button" data-days="1">Tomorrow, 10:00 AM</button>
+                            <button type="button" data-days="2">In 2 days, 10:00 AM</button>
+                            <button type="button" data-days="7">Next week, 10:00 AM</button>
+                        </div>
+                    </div>
+                </div>
+
+                <aside class="px-card px-summary px-side">
+                    <h2>Your <span class="px-ghellis-tail">booking.</span></h2>
+                    <div class="px-sum-row"><span>Workshop</span><b>{{ workshop.name }}</b></div>
+                    <div class="px-sum-row"><span>Vehicle</span><b id="sum-vehicle">Not described yet</b></div>
+                    <div class="px-sum-row"><span>Service</span><b id="sum-service">Not chosen yet</b></div>
+                    <div class="px-sum-row"><span>Price</span><b id="sum-price">—</b></div>
+                    <div class="px-sum-row"><span>Duration</span><b id="sum-duration">—</b></div>
+                    <div class="px-sum-row"><span>When</span><b id="sum-when">Not chosen yet</b></div>
+                    <div class="px-divider"></div>
+                    <p class="px-note"><i class='bx bx-info-circle' style="color: var(--px-accent-hi);"></i>
+                        This sends a request. The workshop confirms it, and you can follow the status under My Bookings.</p>
+                    <button type="submit" class="px-btn block">Send booking request</button>
+                </aside>
+            </form>
+            {% else %}
+            <div class="px-card px-empty" style="margin-top: 26px;">
+                {{ neo_ico('neutral', 100, 'amber') }}
+                <h3>No services to book yet</h3>
+                <p>This workshop hasn't listed any services. Try another workshop.</p>
+                <a class="px-btn sm" href="{{ url_for('workshops.search') }}">Browse workshops</a>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/premium-scroll.js', v='puzzle-4') }}" defer></script>
+<script src="{{ url_for('static', filename='js/pages/booking_new.js', v='1') }}"></script>
+{% endblock %}

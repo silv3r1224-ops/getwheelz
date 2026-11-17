@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}{{ person.name }} — Admin — Getwheelz{% endblock %}
+
+{% block content %}
+{% from 'partials/robot.html' import neo_ico %}
+<div class="admin-layout" id="adminLayout">
+
+    <aside class="admin-sidebar" id="sideBar">
+        <div class="sidebar-header">
+            <i class='bx bxs-shield-alt-2'></i>
+            <span>Admin Panel</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('dashboard.admin') }}" class="sidebar-link"><i class='bx bx-arrow-back'></i> Back to dashboard</a>
+            <a href="#overview" class="sidebar-link active"><i class='bx bx-user-circle'></i> Profile</a>
+            {% if person.role == 'owner' %}
+            <a href="#pfWorkshops" class="sidebar-link"><i class='bx bx-store'></i> Workshops</a>
+            {% elif person.role == 'mechanic' %}
+            <a href="#pfWorks" class="sidebar-link"><i class='bx bx-store'></i> Works at</a>
+            {% else %}
+            <a href="#pfBookings" class="sidebar-link"><i class='bx bx-calendar'></i> Bookings</a>
+            {% endif %}
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-link"><i class='bx bx-log-out'></i> Logout</a>
+        </div>
+    </aside>
+
+    <main class="admin-main wp-main">
+
+        {# ---------------- slim profile header (no hero card) ---------------- #}
+        <div class="profile-head" id="overview">
+            <div class="team-avatar">
+                {% if person.profile_picture %}
+                <img loading="lazy" decoding="async" src="{{ url_for('static', filename=person.profile_picture) }}" alt="{{ person.name }}">
+                {% else %}
+                <span>{{ person.name[:1] | upper }}</span>
+                {% endif %}
+            </div>
+            <div class="profile-head-text">
+                <h1>{{ person.name }}</h1>
+                <p>
+                    <i class='bx bx-show'></i> Admin view · read-only
+                    {% if person.role == 'owner' %}<i class='bx bxs-crown'></i> Workshop Owner
+                    {% elif person.role == 'mechanic' %}<i class='bx bxs-wrench'></i> Mechanic
+                    {% else %}<i class='bx bxs-user'></i> Customer{% endif %}
+                    <i class='bx bx-envelope'></i> {{ person.email }}
+                </p>
+            </div>
+            <div class="profile-head-actions">
+                <a href="javascript:history.back()" class="sa-btn"><i class='bx bx-arrow-back'></i> Go back</a>
+                {% if person.is_suspended %}
+                <span class="status-badge status-pending"><i class='bx bx-power-off'></i> Suspended</span>
+                <form method="post" action="{{ url_for('dashboard.set_user_suspension', u_id=person.u_id, action='restore') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="sa-btn confirm"><i class='bx bx-check-circle'></i> Restore account</button>
+                </form>
+                {% else %}
+                <button type="button" class="sa-btn danger js-confirm"
+                    data-url="{{ url_for('dashboard.set_user_suspension', u_id=person.u_id, action='suspend') }}"
+                    data-title="Suspend this account?"
+                    data-msg="This person will be signed out and blocked from logging in until the account is restored. Their data is kept.">
+                    <i class='bx bx-power-off'></i> Suspend account
+                </button>
+                {% endif %}
+                <button type="button" class="sa-btn danger deleteAcc"
+                    data-delete-url="{{ url_for('dashboard.admin_terminate', role=person.role, u_id=person.u_id) }}">
+                    <i class='bx bx-trash'></i> Delete account
+                </button>
+            </div>
+        </div>
+
+        <div class="admin-hero-strip">
+            {% if person.role == 'owner' %}
+            <div class="strip-cell">
+                <span class="strip-lab"><i class='bx bxs-buildings'></i> Workshops</span>
+                <span class="strip-val strip-stat">{{ workshops | length }}</span>
+            </div>
+            <div class="strip-cell">
+                <span class="strip-lab"><i class='bx bxs-group'></i> Mechanics employed</span>
+                <span class="strip-val strip-stat">{{ workshops | sum(attribute='team_size') }}</span>
+            </div>
+            <div class="strip-cell">
+                <span class="strip-lab"><i class='bx bx-check-double'></i> Jobs completed</span>
+                <span class="strip-val strip-stat">{{ jobs or 0 }}</span>
+            </div>
+            <div class="strip-cell">
+                <span class="strip-lab"><i class='bx bx-hash'></i> User ID</span>
+                <span class="strip-val">{{ person.u_id }}</span>
+            </div>
+            {% elif person.role == 'mechanic' %}
+            <div class="strip-cell">
+                <span class="strip-lab"><i class='bx bx-medal'></i> Experience</span>
+                <span class="strip-val strip-stat">{{ details.experience_yrs if details and details.experience_yrs else '—' }}{% if details and details.experience_yrs %} yrs{% endif %}</span>
+            </div>
+            <div class="strip-cell {{ 'hot' if details and details.active_stat and details.active_stat | lower in ['active', 'available'] else '' }}">
+                <span class="strip-lab"><i class='bx bx-pulse'></i> Availability</span>
+                <span class="strip-val" style="text-transform:capitalize;">{{ (details.active_stat if details else None) or '—' }}</span>
+            </div>
+            <div class="strip-cell">
+                <span class="strip-lab"><i class='bx bx-calendar'></i> Member since</span>
+                <span class="strip-val">{{ person.created_at.strftime('%d %b %Y') if person.created_at else '—' }}</span>
+            </div>
+            <div class="strip-cell">
+                <span class="strip-lab"><i class='bx bx-hash'></i> User ID</span>
+                <span class="strip-val">{{ person.u_id }}</span>
+            </div>
+            {% else %}
+            <div class="strip-cell">
+                <span class="strip-lab"><i class='bx bx-calendar-check'></i> Total bookings</span>
+                <span class="strip-val strip-stat">{{ jobs.total if jobs else 0 }}</span>
+            </div>
+            <div class="strip-cell">
+                <span class="strip-lab"><i class='bx bx-hourglass'></i> Pending</span>
+                <span class="strip-val strip-stat">{{ jobs.pending if jobs else 0 }}</span>
+            </div>
+            <div class="strip-cell">
+                <span class="strip-lab"><i class='bx bx-check-circle'></i> Completed</span>
+                <span class="strip-val strip-stat">{{ jobs.completed if jobs else 0 }}</span>
+            </div>
+            <div class="strip-cell">
+                <span class="strip-lab"><i class='bx bx-phone'></i> Phone</span>
+                <span class="strip-val">{{ details.phone_no if details and details.phone_no else 'Not provided' }}</span>
+            </div>
+            <div class="strip-cell">
+                <span class="strip-lab"><i class='bx bx-hash'></i> User ID</span>
+                <span class="strip-val">{{ person.u_id }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        {# ---------------- owner: workshops ---------------- #}
+        {% if person.role == 'owner' %}
+        <section class="admin-section wp-panel" id="pfWorkshops">
+            <h2><span class="px-ghellis-tail">Workshops.</span></h2>
+            {% if workshops %}
+            <div class="workshop-join-list">
+                {% for w in workshops %}
+                <a class="workshop-join-card" href="{{ url_for('dashboard.admin_workshop_preview', token=w.w_id | wtoken) }}">
+                    <div class="workshop-join-card-photo">
+                        {% if w.photo_path %}
+                        <img loading="lazy" decoding="async" src="{{ url_for('static', filename=w.photo_path) }}" alt="{{ w.name }}">
+                        {% else %}
+                        <div class="workshop-join-photo-placeholder"><i class='bx bx-store'></i></div>
+                        {% endif %}
+                    </div>
+                    <div class="workshop-join-card-info">
+                        <h3>{{ w.name }}</h3>
+                        {% if w.status != 'approved' %}
+                        <span class="status-badge status-{{ 'pending' if w.status == 'pending' else 'rejected' }}">
+                            {{ 'Pending approval' if w.status == 'pending' else 'Rejected' }}
+                        </span>
+                        {% endif %}
+                        <p><i class='bx bx-map'></i> {{ w.address or 'Address not listed' }}</p>
+                        {% if w.contact_no %}<p><i class='bx bx-phone'></i> {{ w.contact_no }}</p>{% endif %}
+                        {% if w.status == 'rejected' and w.rejection_reason %}
+                        <p class="rej-reason"><i class='bx bx-error-circle'></i> {{ w.rejection_reason }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="workshop-capacity"><i class='bx bx-group'></i><span>{{ w.team_size }}/{{ w.capacity }}</span></div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'amber') }}No workshop created yet.</p>
+            {% endif %}
+        </section>
+
+        {# ---------------- mechanic: works at ---------------- #}
+        {% elif person.role == 'mechanic' %}
+        <section class="admin-section wp-panel" id="pfWorks">
+            <h2>Works <span class="px-ghellis-tail">at.</span></h2>
+            {% if jr_status == 'pending' %}
+            <p class="jr-note"><i class='bx bx-hourglass'></i> This mechanic has a pending join request awaiting review.</p>
+            {% endif %}
+            {% if details and details.w_id %}
+            <div class="workshop-join-list">
+                <a class="workshop-join-card" href="{{ url_for('dashboard.admin_workshop_preview', token=details.w_id | wtoken) }}">
+                    <div class="workshop-join-card-photo">
+                        {% if details.photo_path %}
+                        <img loading="lazy" decoding="async" src="{{ url_for('static', filename=details.photo_path) }}" alt="{{ details.workshop_name }}">
+                        {% else %}
+                        <div class="workshop-join-photo-placeholder"><i class='bx bx-store'></i></div>
+                        {% endif %}
+                    </div>
+                    <div class="workshop-join-card-info">
+                        <h3>{{ details.workshop_name }}</h3>
+                        <p><i class='bx bx-map'></i> {{ details.address or 'Address not listed' }}</p>
+                    </div>
+                </a>
+            </div>
+            {% else %}
+            <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'amber') }}Not assigned to any workshop yet.</p>
+            {% endif %}
+        </section>
+
+        {# ---------------- customer: bookings ---------------- #}
+        {% else %}
+        <section class="admin-section wp-panel" id="pfBookings">
+            <h2>Recent <span class="px-ghellis-tail">bookings.</span></h2>
+            {% if bookings %}
+            <div style="overflow-x:auto;">
+                <table class="admin-table">
+                    <thead>
+                        <tr><th>#</th><th>Workshop</th><th>Service</th><th>Requested for</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for b in bookings %}
+                        <tr>
+                            <td>{{ b.b_id }}</td>
+                            <td>{{ b.workshop_name }}</td>
+                            <td>{{ b.s_name }}</td>
+                            <td>{{ b.requested_time.strftime('%d %b %Y, %I:%M %p') }}</td>
+                            <td><span class="status-badge status-{{ b.status }}">{{ b.status | status_label }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="no-results neo-note">{{ neo_ico('neutral', 52, 'amber') }}No bookings yet.</p>
+            {% endif %}
+        </section>
+        {% endif %}
+    </main>
+</div>
+
+{# delete confirmation pop-up (same markup admin.js already drives on the dashboard) #}
+<div class="delete-con" id="deleteCon" role="dialog" aria-modal="true" aria-labelledby="deleteTitle">
+    <h2 id="deleteTitle">Are you sure?</h2>
+    <p>
+        {% if person.role == 'owner' %}
+        This owner's account and their workshop (with its services and bookings) will be permanently deleted.
+        {% elif person.role == 'customer' %}
+        This customer's account and their bookings will be permanently deleted.
+        {% else %}
+        This mechanic's account will be permanently deleted.
+        {% endif %}
+    </p>
+    <div class="delete-actions">
+        <form id="deleteForm" method="post" action="">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button id="confirmDel" type="submit" class="sure-btn danger">Yes, delete</button>
+        </form>
+        <button type="button" id="cancelDel" class="sure-btn cancel">Cancel</button>
+    </div>
+</div>
+
+{# generic confirmation modal (driven by admin.js .js-confirm) #}
+<div class="delete-con" id="confirmCon" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <h2 id="confirmTitle">Are you sure?</h2>
+    <p id="confirmMsg"></p>
+    <div class="delete-actions">
+        <form id="confirmForm" method="post" action="">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button id="confirmBtn" type="submit" class="sure-btn danger">Yes, continue</button>
+        </form>
+        <button type="button" id="cancelConfirm" class="sure-btn cancel">Cancel</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin.js', v='3') }}" defer></script>
+{% endblock %}
